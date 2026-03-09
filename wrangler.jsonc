@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "terminal",
+  "compatibility_date": "2026-03-01",
+  "assets": {
+    "not_found_handling": "single-page-application"
+  },
+  "vars": {
+    "API_BASE_URL": "https://terminal.thedailycatalyst.site"
+  }
+  // API_KEY goes in .dev.vars (local) and CF dashboard (prod)
+}
