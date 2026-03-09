@@ -6,6 +6,7 @@ import { FundamentalsPanel } from "../components/quote/fundamentals";
 import { KeyStats } from "../components/quote/key-stats";
 import { QuoteHeader } from "../components/quote/quote-header";
 import { Skeleton } from "../components/ui/loading";
+import { WatchlistButton } from "../components/watchlist/watchlist-button";
 import { useFundamentals } from "../hooks/use-fundamentals";
 import { useHistory } from "../hooks/use-history";
 import { useQuote } from "../hooks/use-quote";
@@ -73,6 +74,7 @@ export function StockPage() {
 						>
 							Financials →
 						</Link>
+						<WatchlistButton symbol={symbol} />
 					</div>
 				</div>
 			</div>

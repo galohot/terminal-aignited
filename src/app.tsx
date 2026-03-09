@@ -4,6 +4,7 @@ import { AppShell } from "./components/layout/app-shell";
 import { DashboardPage } from "./pages/dashboard";
 import { FinancialsPage } from "./pages/financials";
 import { StockPage } from "./pages/stock";
+import { WatchlistPage } from "./pages/watchlist";
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -23,6 +24,7 @@ export function App() {
 						<Route path="/" element={<DashboardPage />} />
 						<Route path="/stock/:symbol" element={<StockPage />} />
 						<Route path="/stock/:symbol/financials" element={<FinancialsPage />} />
+						<Route path="/watchlist" element={<WatchlistPage />} />
 					</Routes>
 				</AppShell>
 			</BrowserRouter>
