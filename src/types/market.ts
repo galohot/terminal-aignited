@@ -88,3 +88,27 @@ export interface Fundamentals {
 	};
 	updated_at: string;
 }
+
+export interface BatchResponse {
+	quotes: Quote[];
+	errors: { symbol: string; error: string }[];
+	cached: boolean;
+}
+
+export interface SearchResponse {
+	results: SearchResult[];
+}
+
+export interface HistoryParams {
+	period?: string;
+	interval?: string;
+	start?: string;
+	end?: string;
+}
+
+export interface FinancialsResponse {
+	symbol: string;
+	type: string;
+	period: string;
+	data: Record<string, unknown>;
+}
