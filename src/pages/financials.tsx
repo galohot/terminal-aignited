@@ -8,6 +8,7 @@ import {
 } from "../components/financials/statement-tabs";
 import { Skeleton } from "../components/ui/loading";
 import { useFinancials } from "../hooks/use-financials";
+import { useKeyboardShortcut } from "../hooks/use-keyboard";
 import { useQuote } from "../hooks/use-quote";
 
 export function FinancialsPage() {
@@ -33,6 +34,13 @@ export function FinancialsPage() {
 		setPeriod(p);
 		setSearchParams({ type, period: p });
 	};
+
+	// Keyboard shortcuts
+	useKeyboardShortcut("i", () => handleTypeChange("income"), [period]);
+	useKeyboardShortcut("b", () => handleTypeChange("balance"), [period]);
+	useKeyboardShortcut("c", () => handleTypeChange("cashflow"), [period]);
+	useKeyboardShortcut("a", () => handlePeriodChange("annual"), [type]);
+	useKeyboardShortcut("q", () => handlePeriodChange("quarterly"), [type]);
 
 	return (
 		<div>

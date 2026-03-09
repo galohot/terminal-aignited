@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { ChartToolbar } from "../components/charts/chart-toolbar";
 import { PriceChart } from "../components/charts/price-chart";
 import { FundamentalsPanel } from "../components/quote/fundamentals";
@@ -9,17 +9,29 @@ import { Skeleton } from "../components/ui/loading";
 import { WatchlistButton } from "../components/watchlist/watchlist-button";
 import { useFundamentals } from "../hooks/use-fundamentals";
 import { useHistory } from "../hooks/use-history";
+import { useKeyboardShortcut } from "../hooks/use-keyboard";
 import { useQuote } from "../hooks/use-quote";
 import { DEFAULT_PERIOD_INDEX, PERIOD_OPTIONS } from "../lib/constants";
 
 export function StockPage() {
 	const { symbol = "" } = useParams<{ symbol: string }>();
+	const navigate = useNavigate();
 	const [periodIndex, setPeriodIndex] = useState(DEFAULT_PERIOD_INDEX);
 	const selected = PERIOD_OPTIONS[periodIndex];
 
 	const quote = useQuote(symbol);
 	const history = useHistory(symbol, selected.period, selected.interval);
 	const fundamentals = useFundamentals(symbol);
+
+	// Keyboard shortcuts: F=financials, 1-9=chart period
+	useKeyboardShortcut("f", () => navigate(`/stock/${symbol}/financials`), [navigate, symbol]);
+	useKeyboardShortcut("3", () => setPeriodIndex(2), []);
+	useKeyboardShortcut("4", () => setPeriodIndex(3), []);
+	useKeyboardShortcut("5", () => setPeriodIndex(4), []);
+	useKeyboardShortcut("6", () => setPeriodIndex(5), []);
+	useKeyboardShortcut("7", () => setPeriodIndex(6), []);
+	useKeyboardShortcut("8", () => setPeriodIndex(7), []);
+	useKeyboardShortcut("9", () => setPeriodIndex(8), []);
 
 	if (quote.isLoading) {
 		return (

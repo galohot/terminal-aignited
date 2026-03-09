@@ -1,8 +1,15 @@
+import { clsx } from "clsx";
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { CommandBar } from "../search/command-bar";
 
+const NAV_LINKS = [
+	{ to: "/", label: "Markets" },
+	{ to: "/watchlist", label: "Watchlist" },
+] as const;
+
 export function Header() {
+	const location = useLocation();
 	const [time, setTime] = useState(() => formatUTCTime());
 
 	useEffect(() => {
@@ -15,6 +22,22 @@ export function Header() {
 			<Link to="/" className="shrink-0 font-mono text-sm font-medium text-t-green">
 				TERMINAL
 			</Link>
+			<nav className="hidden items-center gap-1 sm:flex">
+				{NAV_LINKS.map((link) => (
+					<Link
+						key={link.to}
+						to={link.to}
+						className={clsx(
+							"rounded px-2 py-1 font-mono text-xs transition-colors",
+							location.pathname === link.to
+								? "bg-t-hover text-t-text"
+								: "text-t-text-muted hover:bg-t-hover hover:text-t-text-secondary",
+						)}
+					>
+						{link.label}
+					</Link>
+				))}
+			</nav>
 			<CommandBar />
 			<span className="shrink-0 font-mono text-xs text-t-text-muted">{time} UTC</span>
 		</header>
