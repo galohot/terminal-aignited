@@ -61,12 +61,12 @@ export interface SearchResult {
 export interface Fundamentals {
 	symbol: string;
 	name: string;
-	sector: string;
-	industry: string;
-	country: string;
-	website: string;
-	employees: number;
-	description: string;
+	sector: string | null;
+	industry: string | null;
+	country: string | null;
+	website: string | null;
+	employees: number | null;
+	description: string | null;
 	financials: {
 		market_cap: number;
 		pe_ratio: number;

@@ -9,10 +9,12 @@ export function FundamentalsPanel({ data }: { data: FundamentalsType }) {
 				</h3>
 			</div>
 			<div className="space-y-2 px-3 py-2 text-xs">
-				<InfoRow label="Sector" value={data.sector} />
-				<InfoRow label="Industry" value={data.industry} />
-				<InfoRow label="Country" value={data.country} />
-				<InfoRow label="Employees" value={data.employees.toLocaleString("en-US")} />
+				{data.sector && <InfoRow label="Sector" value={data.sector} />}
+				{data.industry && <InfoRow label="Industry" value={data.industry} />}
+				{data.country && <InfoRow label="Country" value={data.country} />}
+				{data.employees != null && (
+					<InfoRow label="Employees" value={data.employees.toLocaleString("en-US")} />
+				)}
 				{data.website && (
 					<div className="flex justify-between">
 						<span className="text-t-text-muted">Website</span>
