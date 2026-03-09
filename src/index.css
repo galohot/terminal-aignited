@@ -1,1 +1,53 @@
 @import "tailwindcss";
+
+@theme {
+	--color-t-bg: #0a0a0a;
+	--color-t-surface: #111111;
+	--color-t-hover: #1a1a1a;
+	--color-t-border: #262626;
+	--color-t-border-active: #404040;
+	--color-t-text: #e5e5e5;
+	--color-t-text-secondary: #a3a3a3;
+	--color-t-text-muted: #525252;
+	--color-t-green: #22c55e;
+	--color-t-green-dim: #16a34a40;
+	--color-t-red: #ef4444;
+	--color-t-red-dim: #dc262640;
+	--color-t-blue: #3b82f6;
+	--color-t-amber: #f59e0b;
+	--color-t-purple: #a855f7;
+	--font-sans: "Inter", system-ui, sans-serif;
+	--font-mono: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
+}
+
+body {
+	font-family: var(--font-sans);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes price-flash-green {
+	0% {
+		background-color: var(--color-t-green-dim);
+	}
+	100% {
+		background-color: transparent;
+	}
+}
+
+@keyframes price-flash-red {
+	0% {
+		background-color: var(--color-t-red-dim);
+	}
+	100% {
+		background-color: transparent;
+	}
+}
+
+.flash-green {
+	animation: price-flash-green 400ms ease-out;
+}
+
+.flash-red {
+	animation: price-flash-red 400ms ease-out;
+}
