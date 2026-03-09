@@ -2,6 +2,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { AppShell } from "./components/layout/app-shell";
 import { DashboardPage } from "./pages/dashboard";
+import { FinancialsPage } from "./pages/financials";
+import { StockPage } from "./pages/stock";
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -19,6 +21,8 @@ export function App() {
 				<AppShell>
 					<Routes>
 						<Route path="/" element={<DashboardPage />} />
+						<Route path="/stock/:symbol" element={<StockPage />} />
+						<Route path="/stock/:symbol/financials" element={<FinancialsPage />} />
 					</Routes>
 				</AppShell>
 			</BrowserRouter>
