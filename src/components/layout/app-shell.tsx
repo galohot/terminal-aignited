@@ -1,6 +1,7 @@
 import { type ReactNode, useState } from "react";
 import { useNavigate } from "react-router";
 import { useGlobalKeyboard, useKeyboardShortcut } from "../../hooks/use-keyboard";
+import { useRealtime } from "../../hooks/use-realtime";
 import { KeyboardHelp } from "../ui/keyboard-help";
 import { Header } from "./header";
 import { StatusBar } from "./status-bar";
@@ -10,6 +11,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 	const [showHelp, setShowHelp] = useState(false);
 
 	useGlobalKeyboard();
+	useRealtime();
 
 	useKeyboardShortcut("1", () => navigate("/"), [navigate]);
 	useKeyboardShortcut("2", () => navigate("/watchlist"), [navigate]);
