@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { CommandBar } from "../search/command-bar";
 
 export function Header() {
 	const [time, setTime] = useState(() => formatUTCTime());
@@ -10,11 +11,12 @@ export function Header() {
 	}, []);
 
 	return (
-		<header className="flex h-12 shrink-0 items-center justify-between border-b border-t-border bg-t-surface px-4">
-			<Link to="/" className="font-mono text-sm font-medium text-t-green">
+		<header className="flex h-12 shrink-0 items-center gap-4 border-b border-t-border bg-t-surface px-4">
+			<Link to="/" className="shrink-0 font-mono text-sm font-medium text-t-green">
 				TERMINAL
 			</Link>
-			<span className="font-mono text-xs text-t-text-muted">{time} UTC</span>
+			<CommandBar />
+			<span className="shrink-0 font-mono text-xs text-t-text-muted">{time} UTC</span>
 		</header>
 	);
 }
