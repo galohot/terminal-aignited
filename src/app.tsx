@@ -4,6 +4,7 @@ import { AppShell } from "./components/layout/app-shell";
 import { ChartsPage } from "./pages/charts";
 import { DashboardPage } from "./pages/dashboard";
 import { FinancialsPage } from "./pages/financials";
+import { IdxCompanyPage } from "./pages/idx-company";
 import { StockPage } from "./pages/stock";
 import { WatchlistPage } from "./pages/watchlist";
 
@@ -25,6 +26,7 @@ export function App() {
 						<Route path="/" element={<DashboardPage />} />
 						<Route path="/stock/:symbol" element={<StockPage />} />
 						<Route path="/stock/:symbol/financials" element={<FinancialsPage />} />
+						<Route path="/idx/:kode" element={<IdxCompanyPage />} />
 						<Route path="/watchlist" element={<WatchlistPage />} />
 						<Route path="/charts" element={<ChartsPage />} />
 					</Routes>

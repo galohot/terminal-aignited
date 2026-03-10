@@ -140,3 +140,64 @@ export interface NewsParams {
 	ticker?: string;
 	hours?: number;
 }
+
+// IDX Company types
+
+export interface IdxCompany {
+	kode_emiten: string;
+	name: string;
+	sector: string;
+	sub_sector: string;
+	listing_date: string;
+	papan_pencatatan: string;
+}
+
+export interface IdxDirector {
+	insider_name: string;
+	position: string;
+	is_independent: boolean;
+}
+
+export interface IdxCommissioner {
+	insider_name: string;
+	position: string;
+	is_independent: boolean;
+}
+
+export interface IdxShareholder {
+	insider_name: string;
+	shares_owned: number;
+	percentage: number;
+}
+
+export interface IdxCompanyDetail extends IdxCompany {
+	industry: string;
+	sub_industry: string | null;
+	address: string;
+	phone: string;
+	email: string;
+	website: string;
+	kegiatan_usaha: string;
+	directors: IdxDirector[];
+	commissioners: IdxCommissioner[];
+	shareholders: IdxShareholder[];
+}
+
+export interface IdxFinancial {
+	period_year: number;
+	period_quarter: number;
+	data: {
+		ROE: number | null;
+		ROA: number | null;
+		NPM: number | null;
+		DER: number | null;
+		PER: number | null;
+		PBV: number | null;
+	};
+}
+
+export interface IdxFinancialsResponse {
+	kode_emiten: string;
+	financials: IdxFinancial[];
+	total: number;
+}

@@ -35,8 +35,14 @@ export function StockPage() {
 	useRealtimeSubscription(symbolList);
 	const realtimePrice = useRealtimeStore((s) => s.prices[symbol]);
 
-	// Keyboard shortcuts: F=financials, W=watchlist toggle, 3-9=chart period
+	const isJK = symbol.endsWith(".JK");
+	const idxKode = isJK ? symbol.replace(".JK", "") : "";
+
+	// Keyboard shortcuts: F=financials, W=watchlist toggle, I=IDX profile, 3-9=chart period
 	useKeyboardShortcut("f", () => navigate(`/stock/${symbol}/financials`), [navigate, symbol]);
+	useKeyboardShortcut("i", () => {
+		if (isJK) navigate(`/idx/${idxKode}`);
+	}, [navigate, isJK, idxKode]);
 	useKeyboardShortcut("w", () => (hasSymbol ? removeSymbol(symbol) : addSymbol(symbol)), [
 		hasSymbol,
 		symbol,
@@ -114,13 +120,21 @@ export function StockPage() {
 				</div>
 				<div className="flex flex-col gap-4">
 					<KeyStats quote={liveQuote} fundamentals={fundamentals.data} />
-					<div className="flex gap-2">
+					<div className="flex flex-wrap gap-2">
 						<Link
 							to={`/stock/${symbol}/financials`}
 							className="flex-1 rounded border border-t-border bg-t-surface px-3 py-1.5 text-center font-mono text-xs text-t-text-secondary transition-colors hover:bg-t-hover"
 						>
 							Financials →
 						</Link>
+						{isJK && (
+							<Link
+								to={`/idx/${idxKode}`}
+								className="flex-1 rounded border border-t-border bg-t-surface px-3 py-1.5 text-center font-mono text-xs text-t-text-secondary transition-colors hover:bg-t-hover"
+							>
+								IDX Profile →
+							</Link>
+						)}
 						<WatchlistButton symbol={symbol} />
 					</div>
 				</div>
