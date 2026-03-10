@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { ChartToolbar } from "../components/charts/chart-toolbar";
 import { PriceChart } from "../components/charts/price-chart";
+import { StockNewsSection } from "../components/market/news-panel";
 import { FundamentalsPanel } from "../components/quote/fundamentals";
 import { KeyStats } from "../components/quote/key-stats";
 import { QuoteHeader } from "../components/quote/quote-header";
@@ -49,6 +50,9 @@ export function StockPage() {
 	useKeyboardShortcut("7", () => setPeriodIndex(6), []);
 	useKeyboardShortcut("8", () => setPeriodIndex(7), []);
 	useKeyboardShortcut("9", () => setPeriodIndex(8), []);
+	useKeyboardShortcut("n", () => {
+		document.getElementById("news-section")?.scrollIntoView({ behavior: "smooth" });
+	}, []);
 
 	if (quote.isLoading) {
 		return (
@@ -104,6 +108,9 @@ export function StockPage() {
 							<FundamentalsPanel data={fundamentals.data} />
 						</div>
 					)}
+					<div className="mt-4">
+						<StockNewsSection ticker={symbol} />
+					</div>
 				</div>
 				<div className="flex flex-col gap-4">
 					<KeyStats quote={liveQuote} fundamentals={fundamentals.data} />

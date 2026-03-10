@@ -2,21 +2,11 @@ import { clsx } from "clsx";
 import { ExternalLink, Newspaper } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNews } from "../../hooks/use-news";
-import type { NewsCategory, NewsItem, NewsSentiment } from "../../types/market";
+import type { NewsArticle, NewsSentiment } from "../../types/market";
 import { Skeleton } from "../ui/loading";
 
-const CATEGORY_OPTIONS: Array<{ label: string; value: NewsCategory | "all" }> = [
-	{ label: "All", value: "all" },
-	{ label: "IDX", value: "idx" },
-	{ label: "Market", value: "market" },
-	{ label: "Commodity", value: "commodity" },
-	{ label: "Policy", value: "policy" },
-	{ label: "Geo", value: "geopolitical" },
-	{ label: "Tech", value: "tech" },
-];
-
 export function NewsPanel() {
-	const [category, setCategory] = useState<NewsCategory | "all">("all");
+	const [category, setCategory] = useState<string>("all");
 	const { data, error, isLoading } = useNews({
 		category: category === "all" ? undefined : category,
 		hours: 48,
@@ -24,6 +14,15 @@ export function NewsPanel() {
 	});
 
 	const items = data?.news ?? [];
+
+	// Derive category tabs dynamically from the "all" fetch
+	const allData = useNews({ hours: 48, limit: 50 });
+	const categories = useMemo(() => {
+		const allItems = allData.data?.news ?? [];
+		const unique = [...new Set(allItems.map((n) => n.category))].sort();
+		return ["all", ...unique];
+	}, [allData.data]);
+
 	const itemCountLabel = useMemo(() => {
 		if (isLoading) return "Loading";
 		if (!data) return "0";
@@ -46,19 +45,19 @@ export function NewsPanel() {
 			</div>
 
 			<div className="mt-4 flex flex-wrap gap-2">
-				{CATEGORY_OPTIONS.map((option) => (
+				{categories.map((cat) => (
 					<button
-						key={option.value}
+						key={cat}
 						type="button"
-						onClick={() => setCategory(option.value)}
+						onClick={() => setCategory(cat)}
 						className={clsx(
 							"rounded-full border px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] transition-colors",
-							category === option.value
+							category === cat
 								? "border-white/20 bg-white text-black"
 								: "border-white/10 bg-white/[0.04] text-t-text-secondary hover:bg-white/10 hover:text-white",
 						)}
 					>
-						{option.label}
+						{formatCategory(cat)}
 					</button>
 				))}
 			</div>
@@ -66,6 +65,7 @@ export function NewsPanel() {
 			<div className="mt-4 grid gap-3 lg:grid-cols-2">
 				{isLoading ? (
 					Array.from({ length: 4 }).map((_, index) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholders
 						<div key={index} className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
 							<Skeleton className="mb-3 h-4 w-28 rounded-full" />
 							<Skeleton className="mb-3 h-8 w-full rounded-xl" />
@@ -91,16 +91,70 @@ export function NewsPanel() {
 	);
 }
 
-function NewsCard({ item }: { item: NewsItem }) {
-	const link = item.daily_catalyst_slug
-		? `https://thedailycatalyst.site/article/${item.daily_catalyst_slug}`
-		: item.source_url;
+export function StockNewsSection({ ticker }: { ticker: string }) {
+	const { data, isLoading } = useNews({ ticker, limit: 5 });
+	const items = data?.news ?? [];
+
+	if (isLoading) {
+		return (
+			<div id="news-section" className="space-y-3">
+				<div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-t-amber">
+					<Newspaper className="h-3.5 w-3.5" />
+					Related News
+				</div>
+				{Array.from({ length: 3 }).map((_, i) => (
+					// biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholders
+					<div key={i} className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
+						<Skeleton className="mb-2 h-4 w-3/4 rounded-full" />
+						<Skeleton className="h-3 w-1/2 rounded-full" />
+					</div>
+				))}
+			</div>
+		);
+	}
+
+	if (items.length === 0) return null;
+
+	return (
+		<div id="news-section" className="space-y-3">
+			<div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-t-amber">
+				<Newspaper className="h-3.5 w-3.5" />
+				Related News
+			</div>
+			{items.map((item) => (
+				<a
+					key={item.id}
+					href={`https://thedailycatalyst.site/article/${item.daily_catalyst_slug}`}
+					target="_blank"
+					rel="noreferrer"
+					className="group block rounded-xl border border-white/8 bg-white/[0.03] p-3 transition-colors hover:bg-white/[0.06]"
+				>
+					<div className="flex items-center gap-2">
+						<Chip tone={sentimentTone(item.sentiment)}>{item.sentiment}</Chip>
+						<span className="font-mono text-[11px] text-t-text-muted">
+							{formatAge(item.published_at)}
+						</span>
+					</div>
+					<h4 className="mt-2 text-sm font-medium leading-5 text-white group-hover:text-t-amber">
+						{item.title}
+					</h4>
+					<p className="mt-1 line-clamp-2 text-xs leading-5 text-t-text-secondary">
+						{item.summary}
+					</p>
+				</a>
+			))}
+		</div>
+	);
+}
+
+function NewsCard({ item }: { item: NewsArticle }) {
+	const link = `https://thedailycatalyst.site/article/${item.daily_catalyst_slug}`;
 
 	return (
 		<article className="min-w-0 rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
 			<div className="flex flex-wrap items-center gap-2">
 				<Chip>{formatCategory(item.category)}</Chip>
-				{item.sentiment && <Chip tone={sentimentTone(item.sentiment)}>{item.sentiment}</Chip>}
+				<Chip tone={sentimentTone(item.sentiment)}>{item.sentiment}</Chip>
 				<span className="font-mono text-[11px] text-t-text-muted">
 					{formatAge(item.published_at)}
 				</span>
@@ -111,31 +165,27 @@ function NewsCard({ item }: { item: NewsItem }) {
 			</h3>
 			<p className="mt-2 break-words text-sm leading-6 text-t-text-secondary">{item.summary}</p>
 
-			{((item.related_tickers?.length ?? 0) > 0 || (item.related_sectors?.length ?? 0) > 0) && (
+			{(item.related_tickers.length > 0 || item.related_sectors.length > 0) && (
 				<div className="mt-3 flex flex-wrap gap-2">
-					{item.related_tickers?.slice(0, 4).map((ticker) => (
+					{item.related_tickers.slice(0, 4).map((ticker) => (
 						<Tag key={ticker}>{ticker}</Tag>
 					))}
-					{item.related_sectors?.slice(0, 2).map((sector) => (
+					{item.related_sectors.slice(0, 2).map((sector) => (
 						<Tag key={sector}>{sector}</Tag>
 					))}
 				</div>
 			)}
 
 			<div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-				<div className="min-w-0 break-words text-xs text-t-text-muted">
-					{item.source_name ?? "Daily Catalyst"}
-				</div>
-				{link && (
-					<a
-						href={link}
-						target="_blank"
-						rel="noreferrer"
-						className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-t-text-secondary transition-colors hover:bg-white/10 hover:text-white"
-					>
-						Read <ExternalLink className="h-3 w-3" />
-					</a>
-				)}
+				<div className="min-w-0 break-words text-xs text-t-text-muted">{item.source_name}</div>
+				<a
+					href={link}
+					target="_blank"
+					rel="noreferrer"
+					className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-t-text-secondary transition-colors hover:bg-white/10 hover:text-white"
+				>
+					Read <ExternalLink className="h-3 w-3" />
+				</a>
 			</div>
 		</article>
 	);
@@ -187,17 +237,17 @@ function Tag({ children }: { children: string }) {
 	);
 }
 
-function formatCategory(category: NewsCategory) {
+function formatCategory(category: string) {
+	if (category === "all") return "All";
 	if (category === "idx") return "IDX";
-	if (category === "geopolitical") return "Geopolitical";
-	return category;
+	return category.charAt(0).toUpperCase() + category.slice(1);
 }
 
 function sentimentTone(sentiment: NewsSentiment) {
-	if (sentiment === "bullish") return "green";
-	if (sentiment === "bearish") return "red";
-	if (sentiment === "mixed") return "yellow";
-	return "neutral";
+	if (sentiment === "bullish") return "green" as const;
+	if (sentiment === "bearish") return "red" as const;
+	if (sentiment === "mixed") return "yellow" as const;
+	return "neutral" as const;
 }
 
 function formatAge(iso: string) {
