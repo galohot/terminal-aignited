@@ -1,5 +1,6 @@
 import { clsx } from "clsx";
 import { X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { formatPercent, formatPrice } from "../../lib/format";
 import type { Quote } from "../../types/market";
@@ -16,11 +17,27 @@ export function WatchlistRow({ quote, onRemove, selected = false }: WatchlistRow
 	const isPositive = quote.change >= 0;
 	const changeColor = isPositive ? "text-t-green" : "text-t-red";
 
+	// Flash on price change
+	const [flash, setFlash] = useState<"up" | "down" | null>(null);
+	const prevPrice = useRef(quote.price);
+
+	useEffect(() => {
+		if (quote.price !== prevPrice.current) {
+			setFlash(quote.price > prevPrice.current ? "up" : "down");
+			prevPrice.current = quote.price;
+			const t = setTimeout(() => setFlash(null), 600);
+			return () => clearTimeout(t);
+		}
+	}, [quote.price]);
+
+	const rowFlash = flash === "up" ? "bg-t-green/10" : flash === "down" ? "bg-t-red/10" : "";
+
 	return (
 		<tr
 			className={clsx(
 				"cursor-pointer border-b border-t-border transition-colors hover:bg-t-hover",
 				selected && "bg-t-hover",
+				rowFlash,
 			)}
 			onClick={() => navigate(`/stock/${quote.symbol}`)}
 		>

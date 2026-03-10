@@ -6,10 +6,12 @@ import {
 	Landmark,
 	ScanSearch,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useMemo } from "react";
 import { Link } from "react-router";
 import { useMarkets } from "../../hooks/use-markets";
+import { useRealtimeSubscription } from "../../hooks/use-realtime";
 import { formatPercent, formatPrice, formatTime, formatVolume } from "../../lib/format";
+import { useRealtimeStore } from "../../stores/realtime-store";
 import type { MarketOverview, Quote } from "../../types/market";
 import { MarketGridSkeleton } from "../ui/loading";
 
@@ -17,6 +19,24 @@ const JAKARTA_TIME_ZONE = "Asia/Jakarta";
 
 export function MarketGrid() {
 	const { data, isLoading, error, refetch } = useMarkets();
+
+	// Hooks must be called unconditionally before any early returns
+	const allSymbols = useMemo(() => {
+		if (!data) return [];
+		const syms = [
+			...data.indices.indonesia,
+			...data.indices.asia_pacific,
+			...data.indices.us,
+			...data.indices.europe,
+			...data.commodities,
+			...data.forex,
+			...data.crypto,
+		].map((q) => q.symbol);
+		return [...new Set(syms)];
+	}, [data]);
+
+	useRealtimeSubscription(allSymbols);
+	const realtimePrices = useRealtimeStore((s) => s.prices);
 
 	if (isLoading) return <MarketGridSkeleton />;
 
@@ -42,16 +62,50 @@ export function MarketGrid() {
 
 	if (!data) return null;
 
+	// Apply realtime overlay to a list of quotes
+	const withRealtime = (quotes: Quote[]): Quote[] =>
+		quotes.map((q) => {
+			const rt = realtimePrices[q.symbol];
+			if (!rt) return q;
+			return {
+				...q,
+				price: rt.price,
+				change: rt.change,
+				change_percent: rt.changePercent,
+				volume: rt.volume || q.volume,
+			};
+		});
+
 	const jakarta = formatJakartaNow();
 	const session = getJakartaSession();
-	const indonesiaBoard = data.indices.indonesia;
-	const apacBoard = data.indices.asia_pacific;
-	const westernBoard = [...data.indices.us, ...data.indices.europe];
+	const indonesiaBoard = withRealtime(data.indices.indonesia);
+	const apacBoard = withRealtime(data.indices.asia_pacific);
+	const westernBoard = withRealtime([...data.indices.us, ...data.indices.europe]);
 	const localLeaders = sortByMagnitude(indonesiaBoard).slice(0, 3);
 	const apacLeaders = sortByMagnitude(apacBoard).slice(0, 6);
 	const westernLeaders = sortByMagnitude(westernBoard).slice(0, 6);
-	const macroQuotes = buildMacroQuotes(data);
-	const agendaItems = buildAgendaItems(data);
+	const macroQuotes = buildMacroQuotes({
+		...data,
+		indices: {
+			...data.indices,
+			indonesia: indonesiaBoard,
+			asia_pacific: apacBoard,
+			us: withRealtime(data.indices.us),
+			europe: withRealtime(data.indices.europe),
+		},
+		commodities: withRealtime(data.commodities),
+		forex: withRealtime(data.forex),
+		crypto: withRealtime(data.crypto),
+	});
+	const agendaItems = buildAgendaItems({
+		...data,
+		indices: {
+			...data.indices,
+			indonesia: indonesiaBoard,
+			asia_pacific: apacBoard,
+		},
+		commodities: withRealtime(data.commodities),
+	});
 
 	return (
 		<div className="min-h-full bg-[radial-gradient(circle_at_top_left,rgba(255,187,0,0.12),transparent_32%),radial-gradient(circle_at_top_right,rgba(16,185,129,0.10),transparent_28%)]">
@@ -206,14 +260,14 @@ export function MarketGrid() {
 						title="Commodity Drivers"
 						description="Keep the drivers that matter to Indonesian sentiment and cyclicals in view."
 					>
-						<QuoteList quotes={data.commodities} maxItems={6} tone="macro" />
+						<QuoteList quotes={withRealtime(data.commodities)} maxItems={6} tone="macro" />
 					</SectionPanel>
 					<SectionPanel
 						icon={<Globe2 className="h-4 w-4" />}
 						title="Currency Watch"
 						description="Rupiah context should be visible on the homepage, not buried behind search."
 					>
-						<QuoteList quotes={data.forex} maxItems={6} tone="macro" />
+						<QuoteList quotes={withRealtime(data.forex)} maxItems={6} tone="macro" />
 					</SectionPanel>
 				</section>
 

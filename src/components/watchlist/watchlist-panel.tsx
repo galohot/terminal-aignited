@@ -1,4 +1,6 @@
 import { useBatchQuotes } from "../../hooks/use-batch-quotes";
+import { useRealtimeSubscription } from "../../hooks/use-realtime";
+import { useRealtimeStore } from "../../stores/realtime-store";
 import { useWatchlistStore } from "../../stores/watchlist-store";
 import { Skeleton } from "../ui/loading";
 import { WatchlistRow } from "./watchlist-row";
@@ -11,6 +13,10 @@ export function WatchlistPanel({ selectedIndex = -1 }: WatchlistPanelProps) {
 	const symbols = useWatchlistStore((s) => s.symbols);
 	const removeSymbol = useWatchlistStore((s) => s.removeSymbol);
 	const { data, isLoading } = useBatchQuotes(symbols);
+
+	// Subscribe all watchlist symbols to realtime updates
+	useRealtimeSubscription(symbols);
+	const realtimePrices = useRealtimeStore((s) => s.prices);
 
 	if (symbols.length === 0) {
 		return (
@@ -30,9 +36,21 @@ export function WatchlistPanel({ selectedIndex = -1 }: WatchlistPanelProps) {
 
 	const quotes = data?.quotes ?? [];
 
-	// Sort quotes to match watchlist order
+	// Sort quotes to match watchlist order, merge realtime data
 	const ordered = symbols
-		.map((sym) => quotes.find((q) => q.symbol === sym))
+		.map((sym) => {
+			const q = quotes.find((quote) => quote.symbol === sym);
+			if (!q) return null;
+			const rt = realtimePrices[sym];
+			if (!rt) return q;
+			return {
+				...q,
+				price: rt.price,
+				change: rt.change,
+				change_percent: rt.changePercent,
+				volume: rt.volume || q.volume,
+			};
+		})
 		.filter((q) => q != null);
 
 	return (

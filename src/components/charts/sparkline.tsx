@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
+import { useRealtimeStore } from "../../stores/realtime-store";
 
 interface SparklineProps {
 	symbol: string;
@@ -16,6 +17,8 @@ export function Sparkline({ symbol, width = 80, height = 24, positive = true }: 
 		enabled: !!symbol,
 	});
 
+	const realtimePrice = useRealtimeStore((s) => s.prices[symbol]);
+
 	const points = data?.data;
 	if (!points || points.length < 2) {
 		return (
@@ -31,7 +34,12 @@ export function Sparkline({ symbol, width = 80, height = 24, positive = true }: 
 		);
 	}
 
+	// Use historical closes, optionally append today's realtime price
 	const closes = points.map((p) => p.close);
+	if (realtimePrice) {
+		closes[closes.length - 1] = realtimePrice.price;
+	}
+
 	const min = Math.min(...closes);
 	const max = Math.max(...closes);
 	const range = max - min || 1;

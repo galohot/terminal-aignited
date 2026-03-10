@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { StatementTable } from "../components/financials/statement-table";
 import {
@@ -10,6 +10,9 @@ import { Skeleton } from "../components/ui/loading";
 import { useFinancials } from "../hooks/use-financials";
 import { useKeyboardShortcut } from "../hooks/use-keyboard";
 import { useQuote } from "../hooks/use-quote";
+import { useRealtimeSubscription } from "../hooks/use-realtime";
+import { formatPercent, formatPrice } from "../lib/format";
+import { useRealtimeStore } from "../stores/realtime-store";
 
 export function FinancialsPage() {
 	const { symbol = "" } = useParams<{ symbol: string }>();
@@ -24,6 +27,11 @@ export function FinancialsPage() {
 
 	const quote = useQuote(symbol);
 	const financials = useFinancials(symbol, type, period);
+
+	// Subscribe to realtime updates
+	const symbolList = useMemo(() => [symbol], [symbol]);
+	useRealtimeSubscription(symbolList);
+	const realtimePrice = useRealtimeStore((s) => s.prices[symbol]);
 
 	const handleTypeChange = (t: StatementType) => {
 		setType(t);
@@ -42,6 +50,9 @@ export function FinancialsPage() {
 	useKeyboardShortcut("a", () => handlePeriodChange("annual"), [type]);
 	useKeyboardShortcut("q", () => handlePeriodChange("quarterly"), [type]);
 
+	const livePrice = realtimePrice?.price ?? quote.data?.price;
+	const liveChange = realtimePrice?.changePercent ?? quote.data?.change_percent;
+
 	return (
 		<div>
 			<div className="flex items-center gap-3 border-b border-t-border bg-t-surface px-4 py-3">
@@ -53,6 +64,16 @@ export function FinancialsPage() {
 				</Link>
 				<span className="font-mono text-lg font-medium text-t-green">{symbol}</span>
 				<span className="text-sm text-t-text-secondary">{quote.data?.name ?? ""} — Financials</span>
+				{livePrice != null && (
+					<span className="ml-auto font-mono text-sm text-t-text">
+						{formatPrice(livePrice, quote.data?.currency)}
+					</span>
+				)}
+				{liveChange != null && (
+					<span className={`font-mono text-sm ${liveChange >= 0 ? "text-t-green" : "text-t-red"}`}>
+						{formatPercent(liveChange)}
+					</span>
+				)}
 			</div>
 
 			<StatementTabs
