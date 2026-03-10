@@ -349,9 +349,11 @@ function QuoteRow({ quote, tone }: { quote: Quote; tone: "apac" | "global" | "lo
 					<span className="truncate text-sm text-t-text-secondary">{quote.name}</span>
 				</div>
 				<div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] uppercase tracking-[0.18em] text-t-text-muted">
-					<span>{quote.exchange}</span>
-					<span>Vol {formatVolume(quote.volume)}</span>
-					<span>{quote.currency}</span>
+					{quote.exchange && <span>{quote.exchange}</span>}
+					{quote.volume != null && quote.volume > 0 && (
+						<span>Vol {formatVolume(quote.volume)}</span>
+					)}
+					{quote.currency && <span>{quote.currency}</span>}
 				</div>
 			</div>
 			<div className="flex min-w-[112px] flex-col items-end justify-center font-mono">

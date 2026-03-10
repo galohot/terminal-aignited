@@ -35,7 +35,8 @@ export function formatPercent(value: number): string {
 	return `${sign}${value.toFixed(2)}%`;
 }
 
-export function formatVolume(volume: number): string {
+export function formatVolume(volume: number | null | undefined): string {
+	if (volume == null || Number.isNaN(volume)) return "—";
 	return volumeFormatter.format(volume);
 }
 

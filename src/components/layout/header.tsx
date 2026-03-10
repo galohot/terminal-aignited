@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router";
 import { CommandBar } from "../search/command-bar";
 
 const NAV_LINKS = [
-	{ to: "/", label: "IDX Home" },
+	{ to: "/", label: "Home" },
 	{ to: "/watchlist", label: "Watchlist" },
 	{ to: "/charts", label: "Charts" },
 ] as const;
@@ -22,14 +22,14 @@ export function Header() {
 		<header className="flex h-14 shrink-0 items-center gap-4 border-b border-white/10 bg-[linear-gradient(180deg,rgba(16,24,23,0.98),rgba(10,14,14,0.96))] px-4">
 			<Link to="/" className="flex shrink-0 items-center gap-3">
 				<span className="rounded-md border border-t-amber/40 bg-t-amber/10 px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-t-amber">
-					ID
+					AI
 				</span>
 				<div className="leading-tight">
 					<div className="font-mono text-sm font-semibold tracking-[0.24em] text-white">
-						NUSANTARA
+						AIGNITED
 					</div>
 					<div className="hidden text-[10px] uppercase tracking-[0.22em] text-t-text-muted sm:block">
-						Jakarta Market Desk
+						Terminal
 					</div>
 				</div>
 			</Link>
