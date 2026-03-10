@@ -20,8 +20,8 @@ export function KeyStats({ quote, fundamentals }: KeyStatsProps) {
 		["Volume", formatVolume(quote.volume)],
 		["P/B", fin?.price_to_book != null ? fin.price_to_book.toFixed(2) : "—"],
 		["D/E", fin?.debt_to_equity != null ? fin.debt_to_equity.toFixed(2) : "—"],
-		["ROE", fin?.roe != null ? formatPercent(fin.roe * 100) : "—"],
-		["ROA", fin?.roa != null ? formatPercent(fin.roa * 100) : "—"],
+		["ROE", fin?.return_on_equity != null ? formatPercent(fin.return_on_equity * 100) : "—"],
+		["Margin", fin?.profit_margin != null ? formatPercent(fin.profit_margin * 100) : "—"],
 	];
 
 	return (

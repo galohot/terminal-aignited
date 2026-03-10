@@ -1,23 +1,14 @@
 import { useMemo } from "react";
-import type { IdxFinancial } from "../../types/market";
+import type { IdxFinancial, IdxFinancialData } from "../../types/market";
 
-const RATIO_LABELS: Record<string, string> = {
-	ROE: "Return on Equity",
-	ROA: "Return on Assets",
-	NPM: "Net Profit Margin",
-	DER: "Debt to Equity",
-	PER: "Price to Earnings",
-	PBV: "Price to Book",
-};
-
-const RATIO_SUFFIX: Record<string, string> = {
-	ROE: "%",
-	ROA: "%",
-	NPM: "%",
-	DER: "x",
-	PER: "x",
-	PBV: "x",
-};
+const RATIOS: { key: keyof IdxFinancialData; label: string; suffix: string }[] = [
+	{ key: "roe", label: "Return on Equity", suffix: "%" },
+	{ key: "roa", label: "Return on Assets", suffix: "%" },
+	{ key: "npm", label: "Net Profit Margin", suffix: "%" },
+	{ key: "deRatio", label: "Debt to Equity", suffix: "x" },
+	{ key: "per", label: "Price to Earnings", suffix: "x" },
+	{ key: "priceBV", label: "Price to Book", suffix: "x" },
+];
 
 export function RatioCard({ financials }: { financials: IdxFinancial[] }) {
 	const latest = financials[0];
@@ -28,13 +19,11 @@ export function RatioCard({ financials }: { financials: IdxFinancial[] }) {
 			.reverse()
 			.map((f) => ({
 				label: `Q${f.period_quarter} ${f.period_year}`,
-				...f.data,
+				data: f.data,
 			}));
 	}, [financials]);
 
 	if (!latest) return null;
-
-	const ratioKeys = Object.keys(RATIO_LABELS) as Array<keyof typeof RATIO_LABELS>;
 
 	return (
 		<div className="space-y-4">
@@ -48,17 +37,17 @@ export function RatioCard({ financials }: { financials: IdxFinancial[] }) {
 					</span>
 				</div>
 				<div className="grid grid-cols-2 gap-px bg-white/5 sm:grid-cols-3">
-					{ratioKeys.map((key) => {
-						const value = latest.data[key as keyof typeof latest.data];
+					{RATIOS.map(({ key, label, suffix }) => {
+						const value = latest.data[key] as number | null;
 						return (
 							<div key={key} className="bg-t-surface px-3 py-3">
 								<div className="font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
-									{key}
+									{key === "deRatio" ? "DER" : key === "priceBV" ? "PBV" : key.toUpperCase()}
 								</div>
 								<div className="mt-1 font-mono text-sm font-medium text-t-text">
-									{value != null ? `${value.toFixed(2)}${RATIO_SUFFIX[key]}` : "—"}
+									{value != null ? `${value.toFixed(2)}${suffix}` : "—"}
 								</div>
-								<div className="mt-0.5 text-[10px] text-t-text-muted">{RATIO_LABELS[key]}</div>
+								<div className="mt-0.5 text-[10px] text-t-text-muted">{label}</div>
 							</div>
 						);
 					})}
@@ -79,12 +68,12 @@ export function RatioCard({ financials }: { financials: IdxFinancial[] }) {
 									<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
 										Period
 									</th>
-									{ratioKeys.map((key) => (
+									{RATIOS.map(({ key }) => (
 										<th
 											key={key}
 											className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-t-text-muted"
 										>
-											{key}
+											{key === "deRatio" ? "DER" : key === "priceBV" ? "PBV" : key.toUpperCase()}
 										</th>
 									))}
 								</tr>
@@ -95,14 +84,14 @@ export function RatioCard({ financials }: { financials: IdxFinancial[] }) {
 										<td className="whitespace-nowrap px-3 py-2 font-mono text-t-text-secondary">
 											{row.label}
 										</td>
-										{ratioKeys.map((key) => {
-											const v = row[key as keyof typeof row];
+										{RATIOS.map(({ key }) => {
+											const v = row.data[key] as number | null;
 											return (
 												<td
 													key={key}
 													className="whitespace-nowrap px-3 py-2 text-right font-mono text-t-text"
 												>
-													{v != null ? `${(v as number).toFixed(2)}` : "—"}
+													{v != null ? v.toFixed(2) : "—"}
 												</td>
 											);
 										})}

@@ -21,6 +21,7 @@ import { useRealtimeStore } from "../../stores/realtime-store";
 import type { Quote } from "../../types/market";
 import { IdxIndicesGrid } from "../idx/indices-grid";
 import { MarketGridSkeleton } from "../ui/loading";
+import { ApacSessionBar } from "./apac-session-bar";
 import { NewsPanel } from "./news-panel";
 
 const JAKARTA_TIME_ZONE = "Asia/Jakarta";
@@ -339,6 +340,16 @@ export function MarketGrid() {
 						description="All IDX indices with daily performance. Color intensity reflects magnitude of change."
 					>
 						<IdxIndicesGrid />
+					</SectionPanel>
+				</section>
+
+				<section>
+					<SectionPanel
+						icon={<Globe2 className="h-4 w-4" />}
+						title="APAC Sessions"
+						description="Regional market session status and sentiment overview."
+					>
+						<ApacSessionBar apacQuotes={apacBoard} />
 					</SectionPanel>
 				</section>
 

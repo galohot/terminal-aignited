@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import type { IdxCommissioner, IdxDirector } from "../../types/market";
 
 export function BoardList({
@@ -62,7 +63,12 @@ function PersonRow({
 }) {
 	return (
 		<div className="flex items-center justify-between px-3 py-2">
-			<span className="min-w-0 truncate text-xs text-t-text">{name}</span>
+			<Link
+				to={`/idx/insiders?name=${encodeURIComponent(name)}`}
+				className="min-w-0 truncate text-xs text-t-text transition-colors hover:text-t-amber hover:underline"
+			>
+				{name}
+			</Link>
 			<div className="ml-3 flex shrink-0 items-center gap-2">
 				<span className="font-mono text-[11px] text-t-text-muted">{position}</span>
 				{isIndependent && (

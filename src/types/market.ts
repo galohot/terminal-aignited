@@ -68,18 +68,20 @@ export interface Fundamentals {
 	employees: number | null;
 	description: string | null;
 	financials: {
-		market_cap: number;
-		pe_ratio: number;
-		forward_pe: number;
-		peg_ratio: number;
-		price_to_book: number;
-		eps: number;
-		dividend_yield: number;
-		revenue: number;
-		net_income: number;
-		debt_to_equity: number;
-		roe: number;
-		roa: number;
+		market_cap: number | null;
+		pe_ratio: number | null;
+		forward_pe: number | null;
+		peg_ratio: number | null;
+		price_to_book: number | null;
+		eps: number | null;
+		dividend_yield: number | null;
+		revenue: number | null;
+		net_income: number | null;
+		debt_to_equity: number | null;
+		return_on_equity: number | null;
+		free_cash_flow: number | null;
+		operating_margin: number | null;
+		profit_margin: number | null;
 	};
 	earnings: {
 		next_date: string;
@@ -166,8 +168,8 @@ export interface IdxCommissioner {
 
 export interface IdxShareholder {
 	insider_name: string;
-	shares_owned: number;
-	percentage: number;
+	shares_owned: number | null;
+	percentage: number | null;
 }
 
 export interface IdxCompanyDetail extends IdxCompany {
@@ -183,17 +185,29 @@ export interface IdxCompanyDetail extends IdxCompany {
 	shareholders: IdxShareholder[];
 }
 
+export interface IdxFinancialData {
+	roe: number | null;
+	roa: number | null;
+	npm: number | null;
+	deRatio: number | null;
+	per: number | null;
+	priceBV: number | null;
+	eps: number | null;
+	bookValue: number | null;
+	assets: number | null;
+	liabilities: number | null;
+	equity: number | null;
+	sales: number | null;
+	ebt: number | null;
+	profitPeriod: number | null;
+	profitAttrOwner: number | null;
+	[key: string]: unknown;
+}
+
 export interface IdxFinancial {
 	period_year: number;
 	period_quarter: number;
-	data: {
-		ROE: number | null;
-		ROA: number | null;
-		NPM: number | null;
-		DER: number | null;
-		PER: number | null;
-		PBV: number | null;
-	};
+	data: IdxFinancialData;
 }
 
 export interface IdxFinancialsResponse {
@@ -244,5 +258,20 @@ export interface IdxBroker {
 
 export interface IdxBrokersResponse {
 	brokers: IdxBroker[];
+	total: number;
+}
+
+export interface IdxInsiderSearchResult {
+	insider_name: string;
+	kode_emiten: string;
+	company_name: string;
+	insider_type: "director" | "commissioner" | "shareholder";
+	position: string | null;
+	shares_owned: number | null;
+	percentage: number | null;
+}
+
+export interface IdxInsiderSearchResponse {
+	results: IdxInsiderSearchResult[];
 	total: number;
 }
