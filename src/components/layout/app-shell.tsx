@@ -1,5 +1,6 @@
 import { type ReactNode, useState } from "react";
 import { useNavigate } from "react-router";
+import { usePageTracking } from "../../hooks/use-analytics";
 import { useGlobalKeyboard, useKeyboardShortcut } from "../../hooks/use-keyboard";
 import { useRealtime } from "../../hooks/use-realtime";
 import { KeyboardHelp } from "../ui/keyboard-help";
@@ -12,6 +13,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 	useGlobalKeyboard();
 	useRealtime();
+	usePageTracking();
 
 	useKeyboardShortcut("1", () => navigate("/"), [navigate]);
 	useKeyboardShortcut("2", () => navigate("/watchlist"), [navigate]);
