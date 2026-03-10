@@ -30,12 +30,14 @@ async function handleProxy(request: Request, env: Env, subpath: string): Promise
 		url.searchParams.set(key, value);
 	});
 
+	const hasBody = request.method !== "GET" && request.method !== "HEAD";
 	const response = await fetch(url.toString(), {
 		method: request.method,
 		headers: {
 			"X-API-Key": env.API_KEY,
 			"Content-Type": "application/json",
 		},
+		body: hasBody ? request.body : undefined,
 	});
 
 	const headers = new Headers(response.headers);
