@@ -360,6 +360,41 @@ export interface IdxSectorsResponse {
 	total_sectors: number;
 }
 
+export interface IdxEntityGroup {
+	entity_group: string;
+	count: number;
+}
+
+export interface IdxEntityGroupsResponse {
+	entity_groups: IdxEntityGroup[];
+	total: number;
+}
+
+export interface IdxEntityHolding {
+	kode_emiten: string;
+	company_name: string;
+	total_percentage: number | null;
+	via_entities: string[];
+}
+
+export interface IdxEntityGroupHoldingsResponse {
+	entity_group: string;
+	holdings: IdxEntityHolding[];
+	total_companies: number;
+}
+
+export interface IdxTopConnector {
+	name: string;
+	companies: number;
+	types: string[];
+	entity_group: string | null;
+}
+
+export interface IdxTopConnectorsResponse {
+	connectors: IdxTopConnector[];
+	total: number;
+}
+
 export interface IdxInsiderSearchResult {
 	insider_name: string;
 	kode_emiten: string;

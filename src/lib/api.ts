@@ -9,6 +9,8 @@ import type {
 	IdxCompaniesResponse,
 	IdxCompanyDetail,
 	IdxCompanyFullResponse,
+	IdxEntityGroupHoldingsResponse,
+	IdxEntityGroupsResponse,
 	IdxFinancialSummaryResponse,
 	IdxFinancialsResponse,
 	IdxIndicesResponse,
@@ -17,6 +19,7 @@ import type {
 	IdxScreenerParams,
 	IdxScreenerResponse,
 	IdxSectorsResponse,
+	IdxTopConnectorsResponse,
 	MarketOverview,
 	NewsParams,
 	NewsResponse,
@@ -99,6 +102,22 @@ export const api = {
 			) as Record<string, string>,
 		),
 	idxSectors: () => fetchAPI<IdxSectorsResponse>("/idx/sectors"),
+	idxEntityGroups: () => fetchAPI<IdxEntityGroupsResponse>("/idx/entity-groups"),
+	idxEntityGroupHoldings: (group: string) =>
+		fetchAPI<IdxEntityGroupHoldingsResponse>(
+			`/idx/insiders/entity-group/${encodeURIComponent(group)}`,
+		),
+	idxTopConnectors: (params?: { limit?: number; type?: string }) =>
+		fetchAPI<IdxTopConnectorsResponse>(
+			"/idx/insiders/top-connectors",
+			params
+				? (Object.fromEntries(
+						Object.entries(params)
+							.filter(([, v]) => v != null && v !== "")
+							.map(([k, v]) => [k, String(v)]),
+					) as Record<string, string>)
+				: undefined,
+		),
 	idxInsiderSearch: (name: string) =>
 		fetchAPI<IdxInsiderSearchResponse>("/idx/insiders/search", { name }),
 };
