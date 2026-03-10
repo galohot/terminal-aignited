@@ -313,6 +313,53 @@ export interface IdxCompanyFullResponse {
 	peer_companies: IdxPeer[];
 }
 
+export interface IdxScreenerParams {
+	sector?: string;
+	roe_min?: number;
+	roe_max?: number;
+	per_min?: number;
+	per_max?: number;
+	der_max?: number;
+	npm_min?: number;
+	roa_min?: number;
+	eps_min?: number;
+	pbv_min?: number;
+	pbv_max?: number;
+	sort?: string;
+	order?: string;
+	limit?: number;
+	offset?: number;
+}
+
+export interface IdxScreenerResult {
+	kode_emiten: string;
+	name: string;
+	sector: string;
+	roe: number | null;
+	roa: number | null;
+	per: number | null;
+	npm: number | null;
+	der: number | null;
+	eps: number | null;
+	pbv: number | null;
+}
+
+export interface IdxScreenerResponse {
+	results: IdxScreenerResult[];
+	total: number;
+}
+
+export interface IdxSector {
+	sector: string;
+	company_count: number;
+	sub_sectors: string[];
+}
+
+export interface IdxSectorsResponse {
+	sectors: IdxSector[];
+	total_sectors: number;
+}
+
 export interface IdxInsiderSearchResult {
 	insider_name: string;
 	kode_emiten: string;

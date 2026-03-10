@@ -7,6 +7,7 @@ import { FinancialsPage } from "./pages/financials";
 import { IdxCompanyPage } from "./pages/idx-company";
 import { IdxExplorerPage } from "./pages/idx-explorer";
 import { IdxInsidersPage } from "./pages/idx-insiders";
+import { IdxScreenerPage } from "./pages/idx-screener";
 import { StockPage } from "./pages/stock";
 import { WatchlistPage } from "./pages/watchlist";
 
@@ -30,6 +31,7 @@ export function App() {
 						<Route path="/stock/:symbol/financials" element={<FinancialsPage />} />
 						<Route path="/idx" element={<IdxExplorerPage />} />
 						<Route path="/idx/insiders" element={<IdxInsidersPage />} />
+						<Route path="/idx/screener" element={<IdxScreenerPage />} />
 						<Route path="/idx/:kode" element={<IdxCompanyPage />} />
 						<Route path="/watchlist" element={<WatchlistPage />} />
 						<Route path="/charts" element={<ChartsPage />} />

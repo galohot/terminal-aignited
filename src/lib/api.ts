@@ -14,6 +14,9 @@ import type {
 	IdxIndicesResponse,
 	IdxInsiderSearchResponse,
 	IdxPeersResponse,
+	IdxScreenerParams,
+	IdxScreenerResponse,
+	IdxSectorsResponse,
 	MarketOverview,
 	NewsParams,
 	NewsResponse,
@@ -86,6 +89,16 @@ export const api = {
 	idxFinancialSummary: (kode: string) =>
 		fetchAPI<IdxFinancialSummaryResponse>(`/idx/financials/${kode}/summary`),
 	idxCompanyPeers: (kode: string) => fetchAPI<IdxPeersResponse>(`/idx/companies/${kode}/peers`),
+	idxScreener: (params: IdxScreenerParams) =>
+		fetchAPI<IdxScreenerResponse>(
+			"/idx/screener",
+			Object.fromEntries(
+				Object.entries(params)
+					.filter(([, v]) => v != null && v !== "")
+					.map(([k, v]) => [k, String(v)]),
+			) as Record<string, string>,
+		),
+	idxSectors: () => fetchAPI<IdxSectorsResponse>("/idx/sectors"),
 	idxInsiderSearch: (name: string) =>
 		fetchAPI<IdxInsiderSearchResponse>("/idx/insiders/search", { name }),
 };
