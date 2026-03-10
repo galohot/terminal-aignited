@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { AppShell } from "./components/layout/app-shell";
+import type { ApiError } from "./lib/api";
 import { ChartsPage } from "./pages/charts";
 import { DashboardPage } from "./pages/dashboard";
 import { FinancialsPage } from "./pages/financials";
@@ -17,6 +18,10 @@ const queryClient = new QueryClient({
 		queries: {
 			staleTime: 30_000,
 			refetchOnWindowFocus: false,
+			retry: (failureCount, error) => {
+				if ((error as ApiError).status === 429) return false;
+				return failureCount < 3;
+			},
 		},
 	},
 });

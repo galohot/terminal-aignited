@@ -27,6 +27,10 @@ import type {
 	SearchResponse,
 } from "../types/market";
 
+export interface ApiError extends Error {
+	status?: number;
+}
+
 const BASE = "/api/proxy";
 
 async function fetchAPI<T>(path: string, params?: Record<string, string>): Promise<T> {
@@ -40,7 +44,9 @@ async function fetchAPI<T>(path: string, params?: Record<string, string>): Promi
 	const res = await fetch(url.toString());
 	if (!res.ok) {
 		const err = await res.json().catch(() => ({ error: "unknown" }));
-		throw new Error((err as { message?: string }).message || `API error ${res.status}`);
+		const error = new Error((err as { message?: string }).message || `API error ${res.status}`);
+		(error as ApiError).status = res.status;
+		throw error;
 	}
 	return res.json() as Promise<T>;
 }

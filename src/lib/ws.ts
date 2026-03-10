@@ -37,7 +37,13 @@ export class MarketWS {
 
 		try {
 			const res = await fetch("/api/proxy/ws-ticket", { method: "POST" });
-			if (!res.ok) throw new Error("Failed to get WS ticket");
+			if (!res.ok) {
+				if (res.status === 429) {
+					// Rate limited — use longer backoff
+					this.reconnectDelay = Math.max(this.reconnectDelay, 15_000);
+				}
+				throw new Error(`Failed to get WS ticket (${res.status})`);
+			}
 			const { ticket } = (await res.json()) as { ticket: string };
 
 			const wsUrl = `wss://terminal.thedailycatalyst.site/ws?ticket=${ticket}`;
