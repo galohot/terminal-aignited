@@ -7,7 +7,7 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "tsc && vite build",
-		"preview": "wrangler pages dev dist",
+		"preview": "wrangler dev",
 		"deploy": "npm run build && npx wrangler deploy",
 		"check": "biome check --write .",
 		"lint": "biome lint .",
