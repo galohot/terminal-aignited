@@ -12,7 +12,7 @@ interface WatchlistStore {
 export const useWatchlistStore = create<WatchlistStore>()(
 	persist(
 		(set, get) => ({
-			symbols: ["^JKSE", "BBCA.JK", "AAPL", "BTC-USD", "GC=F"],
+			symbols: ["^JKSE", "BBCA.JK", "BMRI.JK", "TLKM.JK", "ANTM.JK"],
 			addSymbol: (symbol) =>
 				set((s) => ({
 					symbols: s.symbols.includes(symbol) ? s.symbols : [...s.symbols, symbol],

@@ -1,29 +1,39 @@
 @import "tailwindcss";
 
 @theme {
-	--color-t-bg: #0a0a0a;
-	--color-t-surface: #111111;
-	--color-t-hover: #1a1a1a;
-	--color-t-border: #262626;
-	--color-t-border-active: #404040;
-	--color-t-text: #e5e5e5;
-	--color-t-text-secondary: #a3a3a3;
-	--color-t-text-muted: #525252;
-	--color-t-green: #22c55e;
-	--color-t-green-dim: #16a34a40;
-	--color-t-red: #ef4444;
-	--color-t-red-dim: #dc262640;
-	--color-t-blue: #3b82f6;
-	--color-t-amber: #f59e0b;
-	--color-t-purple: #a855f7;
-	--font-sans: "Inter", system-ui, sans-serif;
-	--font-mono: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
+	--color-t-bg: #071111;
+	--color-t-surface: #101918;
+	--color-t-hover: #172322;
+	--color-t-border: #233534;
+	--color-t-border-active: #33514d;
+	--color-t-text: #edf2ef;
+	--color-t-text-secondary: #b8c3be;
+	--color-t-text-muted: #72857e;
+	--color-t-green: #3ddc91;
+	--color-t-green-dim: #3ddc9133;
+	--color-t-red: #ff6b6b;
+	--color-t-red-dim: #ff6b6b33;
+	--color-t-blue: #6ea8ff;
+	--color-t-amber: #ffbf47;
+	--color-t-purple: #8b7bff;
+	--font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
+	--font-mono: "IBM Plex Mono", "JetBrains Mono", "Consolas", monospace;
 }
 
 body {
+	min-height: 100vh;
+	background:
+		radial-gradient(circle at top left, rgba(255, 191, 71, 0.08), transparent 24%),
+		radial-gradient(circle at top right, rgba(61, 220, 145, 0.08), transparent 28%),
+		linear-gradient(180deg, #091312 0%, #050909 100%);
+	color: var(--color-t-text);
 	font-family: var(--font-sans);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+	min-height: 100vh;
 }
 
 @keyframes price-flash-green {
@@ -56,6 +66,11 @@ body {
 *:focus-visible {
 	outline: 2px solid var(--color-t-green);
 	outline-offset: 1px;
+}
+
+::selection {
+	background: rgba(255, 191, 71, 0.28);
+	color: white;
 }
 
 /* Scrollbar styling */
