@@ -4,6 +4,9 @@ import type {
 	Fundamentals,
 	HistoryParams,
 	HistoryResponse,
+	IdxBrokersResponse,
+	IdxCompaniesParams,
+	IdxCompaniesResponse,
 	IdxCompanyDetail,
 	IdxFinancialsResponse,
 	IdxIndicesResponse,
@@ -61,6 +64,18 @@ export const api = {
 				: undefined,
 		),
 	idxCompany: (kode: string) => fetchAPI<IdxCompanyDetail>(`/idx/companies/${kode}`),
+	idxCompanies: (params?: IdxCompaniesParams) =>
+		fetchAPI<IdxCompaniesResponse>(
+			"/idx/companies",
+			params
+				? (Object.fromEntries(
+						Object.entries(params)
+							.filter(([, v]) => v != null && v !== "")
+							.map(([k, v]) => [k, String(v)]),
+					) as Record<string, string>)
+				: undefined,
+		),
+	idxBrokers: () => fetchAPI<IdxBrokersResponse>("/idx/brokers"),
 	idxFinancials: (kode: string) => fetchAPI<IdxFinancialsResponse>(`/idx/financials/${kode}`),
 	idxIndices: () => fetchAPI<IdxIndicesResponse>("/idx/indices"),
 };

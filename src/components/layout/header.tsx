@@ -5,6 +5,7 @@ import { CommandBar } from "../search/command-bar";
 
 const NAV_LINKS = [
 	{ to: "/", label: "Home" },
+	{ to: "/idx", label: "IDX" },
 	{ to: "/watchlist", label: "Watchlist" },
 	{ to: "/charts", label: "Charts" },
 ] as const;

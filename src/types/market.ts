@@ -219,3 +219,30 @@ export interface IdxIndicesResponse {
 	indices: IdxIndex[];
 	total: number;
 }
+
+export interface IdxCompaniesResponse {
+	companies: IdxCompany[];
+	total: number;
+}
+
+export interface IdxCompaniesParams {
+	search?: string;
+	sector?: string;
+	limit?: number;
+	offset?: number;
+}
+
+export interface IdxBroker {
+	code: string;
+	name: string;
+	license: string;
+	status: string;
+	website: string;
+	phone: string;
+	email: string;
+}
+
+export interface IdxBrokersResponse {
+	brokers: IdxBroker[];
+	total: number;
+}
