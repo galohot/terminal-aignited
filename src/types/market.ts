@@ -201,3 +201,21 @@ export interface IdxFinancialsResponse {
 	financials: IdxFinancial[];
 	total: number;
 }
+
+export interface IdxIndex {
+	index_name: string;
+	index_code: string;
+	date: string;
+	open: number;
+	high: number;
+	low: number;
+	close: number;
+	volume: number;
+	change: number;
+	change_percent: number;
+}
+
+export interface IdxIndicesResponse {
+	indices: IdxIndex[];
+	total: number;
+}

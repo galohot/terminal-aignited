@@ -19,6 +19,7 @@ import { formatPercent, formatPrice, formatTime, formatVolume } from "../../lib/
 import type { ConnectionStatus } from "../../stores/realtime-store";
 import { useRealtimeStore } from "../../stores/realtime-store";
 import type { Quote } from "../../types/market";
+import { IdxIndicesGrid } from "../idx/indices-grid";
 import { MarketGridSkeleton } from "../ui/loading";
 import { NewsPanel } from "./news-panel";
 
@@ -329,6 +330,16 @@ export function MarketGrid() {
 
 				<section>
 					<NewsPanel />
+				</section>
+
+				<section>
+					<SectionPanel
+						icon={<Landmark className="h-4 w-4" />}
+						title="IDX Indices"
+						description="All IDX indices with daily performance. Color intensity reflects magnitude of change."
+					>
+						<IdxIndicesGrid />
+					</SectionPanel>
 				</section>
 
 				<section className="grid gap-4 xl:grid-cols-[1.05fr_1fr_0.9fr_0.9fr]">

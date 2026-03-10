@@ -6,6 +6,7 @@ import type {
 	HistoryResponse,
 	IdxCompanyDetail,
 	IdxFinancialsResponse,
+	IdxIndicesResponse,
 	MarketOverview,
 	NewsParams,
 	NewsResponse,
@@ -61,4 +62,5 @@ export const api = {
 		),
 	idxCompany: (kode: string) => fetchAPI<IdxCompanyDetail>(`/idx/companies/${kode}`),
 	idxFinancials: (kode: string) => fetchAPI<IdxFinancialsResponse>(`/idx/financials/${kode}`),
+	idxIndices: () => fetchAPI<IdxIndicesResponse>("/idx/indices"),
 };
