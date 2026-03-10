@@ -43,8 +43,8 @@ export function WatchlistPanel({ selectedIndex = -1 }: WatchlistPanelProps) {
 		return (
 			<div className="space-y-4">
 				<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-					{Array.from({ length: 4 }).map((_, index) => (
-						<Skeleton key={index} className="h-28 w-full rounded-[24px]" />
+					{["sk-1", "sk-2", "sk-3", "sk-4"].map((id) => (
+						<Skeleton key={id} className="h-28 w-full rounded-[24px]" />
 					))}
 				</div>
 				<Skeleton className="h-[420px] w-full rounded-[28px]" />

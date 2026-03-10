@@ -247,18 +247,21 @@ export function ChartsPage() {
 								layout === "triple" && "grid-cols-1 grid-rows-3 md:grid-cols-2 md:grid-rows-2",
 							)}
 						>
-							{Array.from({ length: count }).map((_, index) => (
-								<div
-									key={index}
-									className={clsx(layout === "triple" && index === 0 && "md:row-span-2")}
-								>
-									<ChartSlot
-										symbol={symbols[index]}
-										onSymbolChange={(symbol) => setSymbol(index, symbol)}
-										compact={layout !== "single" && !(layout === "triple" && index === 0)}
-									/>
-								</div>
-							))}
+							{Array.from({ length: count }).map((_, index) => {
+								const slotKey = `slot-${index}`;
+								return (
+									<div
+										key={slotKey}
+										className={clsx(layout === "triple" && index === 0 && "md:row-span-2")}
+									>
+										<ChartSlot
+											symbol={symbols[index]}
+											onSymbolChange={(symbol) => setSymbol(index, symbol)}
+											compact={layout !== "single" && !(layout === "triple" && index === 0)}
+										/>
+									</div>
+								);
+							})}
 						</div>
 					)}
 				</section>
