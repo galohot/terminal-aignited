@@ -3,11 +3,13 @@ import { Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrokerTable } from "../components/idx/broker-table";
 import { CompanyTable } from "../components/idx/company-table";
+import { SectorGrid } from "../components/idx/sector-grid";
 import { Skeleton } from "../components/ui/loading";
 import { useIdxCompanies } from "../hooks/use-idx-companies";
+import { useIdxSectors } from "../hooks/use-idx-screener";
 import { useKeyboardShortcut } from "../hooks/use-keyboard";
 
-type Tab = "companies" | "brokers";
+type Tab = "companies" | "brokers" | "sectors";
 const PAGE_SIZE = 50;
 
 export function IdxExplorerPage() {
@@ -97,6 +99,9 @@ export function IdxExplorerPage() {
 				</TabButton>
 				<TabButton active={tab === "brokers"} onClick={() => setTab("brokers")}>
 					Brokers
+				</TabButton>
+				<TabButton active={tab === "sectors"} onClick={() => setTab("sectors")}>
+					Sectors
 				</TabButton>
 			</div>
 
@@ -191,11 +196,30 @@ export function IdxExplorerPage() {
 						</>
 					)}
 				</>
-			) : (
+			) : tab === "brokers" ? (
 				<BrokerTable />
+			) : (
+				<SectorsTab />
 			)}
 		</div>
 	);
+}
+
+function SectorsTab() {
+	const { data, isLoading, error } = useIdxSectors();
+
+	if (isLoading) return <Skeleton className="h-[400px] w-full rounded-xl" />;
+	if (error || !data) {
+		return (
+			<div className="rounded-2xl border border-dashed border-t-border p-8 text-center text-sm text-t-text-muted">
+				Failed to load sector data.
+			</div>
+		);
+	}
+
+	const totalCompanies = data.sectors.reduce((sum, s) => sum + s.company_count, 0);
+
+	return <SectorGrid sectors={data.sectors} totalCompanies={totalCompanies} />;
 }
 
 function TabButton({
