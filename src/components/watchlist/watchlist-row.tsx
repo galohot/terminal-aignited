@@ -2,7 +2,7 @@ import { clsx } from "clsx";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { formatPercent, formatPrice } from "../../lib/format";
+import { formatPercent, formatPrice, formatVolume } from "../../lib/format";
 import type { Quote } from "../../types/market";
 import { Sparkline } from "../charts/sparkline";
 
@@ -16,8 +16,6 @@ export function WatchlistRow({ quote, onRemove, selected = false }: WatchlistRow
 	const navigate = useNavigate();
 	const isPositive = quote.change >= 0;
 	const changeColor = isPositive ? "text-t-green" : "text-t-red";
-
-	// Flash on price change
 	const [flash, setFlash] = useState<"up" | "down" | null>(null);
 	const prevPrice = useRef(quote.price);
 
@@ -25,8 +23,8 @@ export function WatchlistRow({ quote, onRemove, selected = false }: WatchlistRow
 		if (quote.price !== prevPrice.current) {
 			setFlash(quote.price > prevPrice.current ? "up" : "down");
 			prevPrice.current = quote.price;
-			const t = setTimeout(() => setFlash(null), 600);
-			return () => clearTimeout(t);
+			const timeout = setTimeout(() => setFlash(null), 600);
+			return () => clearTimeout(timeout);
 		}
 	}, [quote.price]);
 
@@ -35,35 +33,45 @@ export function WatchlistRow({ quote, onRemove, selected = false }: WatchlistRow
 	return (
 		<tr
 			className={clsx(
-				"cursor-pointer border-b border-t-border transition-colors hover:bg-t-hover",
-				selected && "bg-t-hover",
+				"cursor-pointer border-b border-white/8 transition-colors hover:bg-white/[0.04]",
+				selected && "bg-white/[0.05]",
 				rowFlash,
 			)}
 			onClick={() => navigate(`/stock/${quote.symbol}`)}
 		>
-			<td className="px-3 py-2 font-mono text-xs font-medium text-t-green">{quote.symbol}</td>
-			<td className="max-w-[200px] truncate px-3 py-2 text-xs text-t-text-secondary">
-				{quote.name}
+			<td className="px-4 py-3 align-top">
+				<div className="font-mono text-xs font-semibold text-t-green">{quote.symbol}</div>
+				<div className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-t-text-muted">
+					{quote.exchange || quote.currency || "Market"}
+				</div>
 			</td>
-			<td className="px-3 py-2 text-right font-mono text-xs text-t-text">
+			<td className="max-w-[260px] px-4 py-3 align-top text-sm text-t-text-secondary">
+				<div className="truncate">{quote.name}</div>
+			</td>
+			<td className="px-4 py-3 text-right align-top font-mono text-sm text-white">
 				{formatPrice(quote.price, quote.currency)}
 			</td>
-			<td className={`px-3 py-2 text-right font-mono text-xs ${changeColor}`}>
+			<td className={`px-4 py-3 text-right align-top font-mono text-sm ${changeColor}`}>
 				{formatPercent(quote.change_percent)}
 			</td>
-			<td className="px-3 py-2">
-				<Sparkline symbol={quote.symbol} positive={isPositive} />
+			<td className="px-4 py-3 text-right align-top font-mono text-xs text-t-text-secondary">
+				{quote.volume ? formatVolume(quote.volume) : "—"}
 			</td>
-			<td className="px-3 py-2 text-right">
+			<td className="px-4 py-3">
+				<div className="h-10 min-w-[110px]">
+					<Sparkline symbol={quote.symbol} positive={isPositive} />
+				</div>
+			</td>
+			<td className="px-4 py-3 text-right align-top">
 				<button
 					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
+					onClick={(event) => {
+						event.stopPropagation();
 						onRemove(quote.symbol);
 					}}
-					className="rounded p-0.5 text-t-text-muted transition-colors hover:bg-t-border hover:text-t-red"
+					className="rounded-full p-1 text-t-text-muted transition-colors hover:bg-white/10 hover:text-t-red"
 				>
-					<X className="h-3 w-3" />
+					<X className="h-3.5 w-3.5" />
 				</button>
 			</td>
 		</tr>

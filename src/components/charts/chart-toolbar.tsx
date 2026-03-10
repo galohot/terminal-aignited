@@ -11,16 +11,16 @@ export function ChartToolbar({
 	onSelect,
 }: ChartToolbarProps) {
 	return (
-		<div className="flex items-center gap-1 px-4 py-2">
+		<div className="flex flex-wrap items-center gap-1 border-b border-white/8 px-4 py-2">
 			{PERIOD_OPTIONS.map((opt, i) => (
 				<button
 					key={opt.label}
 					type="button"
 					onClick={() => onSelect(i)}
 					className={clsx(
-						"rounded px-2 py-0.5 font-mono text-xs transition-colors",
+						"rounded-full px-2.5 py-1 font-mono text-xs transition-colors",
 						i === selectedIndex
-							? "bg-t-border-active text-t-text"
+							? "bg-white text-black"
 							: "text-t-text-muted hover:bg-t-hover hover:text-t-text-secondary",
 					)}
 				>

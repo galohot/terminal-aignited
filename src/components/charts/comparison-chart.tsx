@@ -79,12 +79,15 @@ export function ComparisonChart({ datasets, height = 400 }: ComparisonChartProps
 	}, [datasets, height]);
 
 	return (
-		<div>
-			<div ref={containerRef} style={{ height }} className="w-full" />
+		<div className="h-full rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]">
+			<div ref={containerRef} style={{ height }} className="w-full rounded-[24px]" />
 			{datasets.length > 1 && (
-				<div className="flex items-center gap-4 px-4 py-2">
+				<div className="flex flex-wrap items-center gap-2 border-t border-white/8 px-4 py-3">
 					{datasets.map((ds, i) => (
-						<span key={ds.symbol} className="flex items-center gap-1.5 font-mono text-xs">
+						<span
+							key={ds.symbol}
+							className="flex items-center gap-1.5 rounded-full border border-white/8 bg-white/[0.04] px-2.5 py-1 font-mono text-xs"
+						>
 							<span
 								className="inline-block h-2 w-2 rounded-full"
 								style={{ backgroundColor: COLORS[i % COLORS.length] }}
