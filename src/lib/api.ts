@@ -8,9 +8,12 @@ import type {
 	IdxCompaniesParams,
 	IdxCompaniesResponse,
 	IdxCompanyDetail,
+	IdxCompanyFullResponse,
+	IdxFinancialSummaryResponse,
 	IdxFinancialsResponse,
 	IdxIndicesResponse,
 	IdxInsiderSearchResponse,
+	IdxPeersResponse,
 	MarketOverview,
 	NewsParams,
 	NewsResponse,
@@ -79,6 +82,10 @@ export const api = {
 	idxBrokers: () => fetchAPI<IdxBrokersResponse>("/idx/brokers"),
 	idxFinancials: (kode: string) => fetchAPI<IdxFinancialsResponse>(`/idx/financials/${kode}`),
 	idxIndices: () => fetchAPI<IdxIndicesResponse>("/idx/indices"),
+	idxCompanyFull: (kode: string) => fetchAPI<IdxCompanyFullResponse>(`/idx/companies/${kode}/full`),
+	idxFinancialSummary: (kode: string) =>
+		fetchAPI<IdxFinancialSummaryResponse>(`/idx/financials/${kode}/summary`),
+	idxCompanyPeers: (kode: string) => fetchAPI<IdxPeersResponse>(`/idx/companies/${kode}/peers`),
 	idxInsiderSearch: (name: string) =>
 		fetchAPI<IdxInsiderSearchResponse>("/idx/insiders/search", { name }),
 };

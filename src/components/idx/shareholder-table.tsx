@@ -13,7 +13,10 @@ export function ShareholderTable({ shareholders }: { shareholders: IdxShareholde
 			</div>
 			<div className="divide-y divide-white/5">
 				{shareholders.map((sh, i) => (
-					<div key={`${sh.insider_name}-${i}`} className="flex items-center justify-between px-3 py-2">
+					<div
+						key={`${sh.insider_name}-${i}`}
+						className="flex items-center justify-between px-3 py-2"
+					>
 						<Link
 							to={`/idx/insiders?name=${encodeURIComponent(sh.insider_name)}`}
 							className="min-w-0 truncate text-xs text-t-text transition-colors hover:text-t-amber hover:underline"

@@ -261,6 +261,58 @@ export interface IdxBrokersResponse {
 	total: number;
 }
 
+export interface IdxFinancialSummaryLatest {
+	period_year: number;
+	period_quarter: number;
+	roe: number | null;
+	roa: number | null;
+	npm: number | null;
+	per: number | null;
+	eps: number | null;
+	pbv: number | null;
+	der: number | null;
+	assets: number | null;
+	equity: number | null;
+	sales: number | null;
+}
+
+export interface IdxFinancialSummaryHistory {
+	period_year: number;
+	period_quarter: number;
+	roe: number | null;
+	roa: number | null;
+	eps: number | null;
+}
+
+export interface IdxFinancialSummaryResponse {
+	kode_emiten: string;
+	latest: IdxFinancialSummaryLatest | null;
+	history: IdxFinancialSummaryHistory[];
+	total_periods: number;
+}
+
+export interface IdxPeer {
+	kode_emiten: string;
+	company_name: string;
+	shared_insiders: number;
+	names: string[];
+}
+
+export interface IdxPeersResponse {
+	kode_emiten: string;
+	peers: IdxPeer[];
+	total: number;
+}
+
+export interface IdxCompanyFullResponse {
+	company: IdxCompanyDetail;
+	financials: IdxFinancialSummaryLatest | null;
+	directors: IdxDirector[];
+	commissioners: IdxCommissioner[];
+	shareholders: IdxShareholder[];
+	peer_companies: IdxPeer[];
+}
+
 export interface IdxInsiderSearchResult {
 	insider_name: string;
 	kode_emiten: string;

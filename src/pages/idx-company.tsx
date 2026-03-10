@@ -1,19 +1,20 @@
 import { Link, useParams } from "react-router";
 import { BoardList } from "../components/idx/board-list";
 import { CompanyHeader } from "../components/idx/company-header";
+import { PeerCompanies } from "../components/idx/peer-companies";
 import { RatioCard } from "../components/idx/ratio-card";
 import { ShareholderTable } from "../components/idx/shareholder-table";
 import { Skeleton } from "../components/ui/loading";
-import { useIdxCompany, useIdxFinancials } from "../hooks/use-idx-company";
+import { useIdxCompanyFull, useIdxFinancialSummary } from "../hooks/use-idx-company";
 
 export function IdxCompanyPage() {
 	const { kode = "" } = useParams<{ kode: string }>();
 	const upperKode = kode.toUpperCase();
 
-	const company = useIdxCompany(upperKode);
-	const financials = useIdxFinancials(upperKode);
+	const full = useIdxCompanyFull(upperKode);
+	const summary = useIdxFinancialSummary(upperKode);
 
-	if (company.isLoading) {
+	if (full.isLoading) {
 		return (
 			<div className="p-4">
 				<Skeleton className="mb-4 h-20 w-full" />
@@ -25,11 +26,11 @@ export function IdxCompanyPage() {
 		);
 	}
 
-	if (company.error || !company.data) {
+	if (full.error || !full.data) {
 		return (
 			<div className="flex flex-col items-center justify-center gap-3 p-12 text-center">
 				<p className="font-mono text-sm text-t-text-secondary">
-					{company.error?.message.includes("404")
+					{full.error?.message.includes("404")
 						? `Emiten "${upperKode}" not found`
 						: "Failed to load company data"}
 				</p>
@@ -43,7 +44,7 @@ export function IdxCompanyPage() {
 		);
 	}
 
-	const data = company.data;
+	const { company, financials, directors, commissioners, shareholders, peer_companies } = full.data;
 
 	return (
 		<div>
@@ -57,19 +58,23 @@ export function IdxCompanyPage() {
 				<span className="font-mono text-xs text-t-text-muted">IDX Company Profile</span>
 			</div>
 
-			<CompanyHeader company={data} />
+			<CompanyHeader company={company} />
 
 			<div className="grid grid-cols-1 gap-4 p-4 xl:grid-cols-[1fr_320px]">
 				<div className="space-y-4">
-					{financials.isLoading ? (
+					{summary.isLoading ? (
 						<Skeleton className="h-[300px] w-full" />
-					) : financials.data?.financials.length ? (
-						<RatioCard financials={financials.data.financials} />
-					) : null}
+					) : (
+						<RatioCard
+							latest={summary.data?.latest ?? financials}
+							history={summary.data?.history}
+						/>
+					)}
+					<PeerCompanies peers={peer_companies} />
 				</div>
 				<div className="space-y-4">
-					<ShareholderTable shareholders={data.shareholders} />
-					<BoardList directors={data.directors} commissioners={data.commissioners} />
+					<ShareholderTable shareholders={shareholders} />
+					<BoardList directors={directors} commissioners={commissioners} />
 				</div>
 			</div>
 		</div>
