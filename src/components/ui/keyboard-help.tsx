@@ -23,6 +23,22 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
 		],
 	},
 	{
+		title: "Watchlist",
+		shortcuts: [
+			["j / ↓", "Move down"],
+			["k / ↑", "Move up"],
+			["Enter", "Open symbol"],
+			["Del / Backspace", "Remove symbol"],
+		],
+	},
+	{
+		title: "Multi-Chart",
+		shortcuts: [
+			["L", "Cycle layout"],
+			["Shift+C", "Toggle comparison"],
+		],
+	},
+	{
 		title: "Financials",
 		shortcuts: [
 			["I", "Income Statement"],

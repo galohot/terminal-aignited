@@ -1,21 +1,27 @@
+import { clsx } from "clsx";
 import { X } from "lucide-react";
 import { useNavigate } from "react-router";
 import { formatPercent, formatPrice } from "../../lib/format";
 import type { Quote } from "../../types/market";
+import { Sparkline } from "../charts/sparkline";
 
 interface WatchlistRowProps {
 	quote: Quote;
 	onRemove: (symbol: string) => void;
+	selected?: boolean;
 }
 
-export function WatchlistRow({ quote, onRemove }: WatchlistRowProps) {
+export function WatchlistRow({ quote, onRemove, selected = false }: WatchlistRowProps) {
 	const navigate = useNavigate();
 	const isPositive = quote.change >= 0;
 	const changeColor = isPositive ? "text-t-green" : "text-t-red";
 
 	return (
 		<tr
-			className="cursor-pointer border-b border-t-border transition-colors hover:bg-t-hover"
+			className={clsx(
+				"cursor-pointer border-b border-t-border transition-colors hover:bg-t-hover",
+				selected && "bg-t-hover",
+			)}
 			onClick={() => navigate(`/stock/${quote.symbol}`)}
 		>
 			<td className="px-3 py-2 font-mono text-xs font-medium text-t-green">{quote.symbol}</td>
@@ -27,6 +33,9 @@ export function WatchlistRow({ quote, onRemove }: WatchlistRowProps) {
 			</td>
 			<td className={`px-3 py-2 text-right font-mono text-xs ${changeColor}`}>
 				{formatPercent(quote.change_percent)}
+			</td>
+			<td className="px-3 py-2">
+				<Sparkline symbol={quote.symbol} positive={isPositive} />
 			</td>
 			<td className="px-3 py-2 text-right">
 				<button

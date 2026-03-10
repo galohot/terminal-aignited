@@ -12,9 +12,10 @@ import type { HistoryPoint } from "../../types/market";
 
 interface PriceChartProps {
 	data: HistoryPoint[];
+	height?: number;
 }
 
-export function PriceChart({ data }: PriceChartProps) {
+export function PriceChart({ data, height = 400 }: PriceChartProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const chartRef = useRef<IChartApi | null>(null);
 
@@ -24,7 +25,7 @@ export function PriceChart({ data }: PriceChartProps) {
 
 		const chart = createChart(container, {
 			width: container.clientWidth,
-			height: 400,
+			height,
 			layout: {
 				background: { color: "#0a0a0a" },
 				textColor: "#a3a3a3",
@@ -88,7 +89,7 @@ export function PriceChart({ data }: PriceChartProps) {
 			chart.remove();
 			chartRef.current = null;
 		};
-	}, [data]);
+	}, [data, height]);
 
-	return <div ref={containerRef} className="h-[400px] w-full" />;
+	return <div ref={containerRef} style={{ height }} className="w-full" />;
 }

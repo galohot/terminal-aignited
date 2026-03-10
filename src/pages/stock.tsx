@@ -12,6 +12,7 @@ import { useHistory } from "../hooks/use-history";
 import { useKeyboardShortcut } from "../hooks/use-keyboard";
 import { useQuote } from "../hooks/use-quote";
 import { DEFAULT_PERIOD_INDEX, PERIOD_OPTIONS } from "../lib/constants";
+import { useWatchlistStore } from "../stores/watchlist-store";
 
 export function StockPage() {
 	const { symbol = "" } = useParams<{ symbol: string }>();
@@ -22,9 +23,18 @@ export function StockPage() {
 	const quote = useQuote(symbol);
 	const history = useHistory(symbol, selected.period, selected.interval);
 	const fundamentals = useFundamentals(symbol);
+	const hasSymbol = useWatchlistStore((s) => s.hasSymbol(symbol));
+	const addSymbol = useWatchlistStore((s) => s.addSymbol);
+	const removeSymbol = useWatchlistStore((s) => s.removeSymbol);
 
-	// Keyboard shortcuts: F=financials, 1-9=chart period
+	// Keyboard shortcuts: F=financials, W=watchlist toggle, 3-9=chart period
 	useKeyboardShortcut("f", () => navigate(`/stock/${symbol}/financials`), [navigate, symbol]);
+	useKeyboardShortcut("w", () => (hasSymbol ? removeSymbol(symbol) : addSymbol(symbol)), [
+		hasSymbol,
+		symbol,
+		addSymbol,
+		removeSymbol,
+	]);
 	useKeyboardShortcut("3", () => setPeriodIndex(2), []);
 	useKeyboardShortcut("4", () => setPeriodIndex(3), []);
 	useKeyboardShortcut("5", () => setPeriodIndex(4), []);

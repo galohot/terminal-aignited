@@ -3,7 +3,11 @@ import { useWatchlistStore } from "../../stores/watchlist-store";
 import { Skeleton } from "../ui/loading";
 import { WatchlistRow } from "./watchlist-row";
 
-export function WatchlistPanel() {
+interface WatchlistPanelProps {
+	selectedIndex?: number;
+}
+
+export function WatchlistPanel({ selectedIndex = -1 }: WatchlistPanelProps) {
 	const symbols = useWatchlistStore((s) => s.symbols);
 	const removeSymbol = useWatchlistStore((s) => s.removeSymbol);
 	const { data, isLoading } = useBatchQuotes(symbols);
@@ -11,7 +15,7 @@ export function WatchlistPanel() {
 	if (symbols.length === 0) {
 		return (
 			<div className="p-8 text-center font-mono text-sm text-t-text-muted">
-				Add symbols to your watchlist
+				Add symbols to your watchlist — use Ctrl+K to search
 			</div>
 		);
 	}
@@ -40,12 +44,18 @@ export function WatchlistPanel() {
 						<th className="px-3 py-2 text-left font-medium text-t-text-secondary">Name</th>
 						<th className="px-3 py-2 text-right font-medium text-t-text-secondary">Price</th>
 						<th className="px-3 py-2 text-right font-medium text-t-text-secondary">Change</th>
+						<th className="px-3 py-2 text-left font-medium text-t-text-secondary">5D</th>
 						<th className="w-8 px-3 py-2" />
 					</tr>
 				</thead>
 				<tbody>
-					{ordered.map((q) => (
-						<WatchlistRow key={q.symbol} quote={q} onRemove={removeSymbol} />
+					{ordered.map((q, i) => (
+						<WatchlistRow
+							key={q.symbol}
+							quote={q}
+							onRemove={removeSymbol}
+							selected={i === selectedIndex}
+						/>
 					))}
 				</tbody>
 			</table>

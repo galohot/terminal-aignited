@@ -6,6 +6,7 @@ import { CommandBar } from "../search/command-bar";
 const NAV_LINKS = [
 	{ to: "/", label: "Markets" },
 	{ to: "/watchlist", label: "Watchlist" },
+	{ to: "/charts", label: "Charts" },
 ] as const;
 
 export function Header() {
@@ -29,7 +30,8 @@ export function Header() {
 						to={link.to}
 						className={clsx(
 							"rounded px-2 py-1 font-mono text-xs transition-colors",
-							location.pathname === link.to
+							location.pathname === link.to ||
+								(link.to !== "/" && location.pathname.startsWith(link.to))
 								? "bg-t-hover text-t-text"
 								: "text-t-text-muted hover:bg-t-hover hover:text-t-text-secondary",
 						)}
