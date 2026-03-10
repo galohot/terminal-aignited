@@ -5,6 +5,8 @@ import type {
 	HistoryParams,
 	HistoryResponse,
 	MarketOverview,
+	NewsParams,
+	NewsResponse,
 	Quote,
 	SearchResponse,
 } from "../types/market";
@@ -44,4 +46,15 @@ export const api = {
 	fundamentals: (symbol: string) => fetchAPI<Fundamentals>(`/fundamentals/${symbol}`),
 	financials: (symbol: string, type: string, period: string) =>
 		fetchAPI<FinancialsResponse>(`/fundamentals/${symbol}/financials`, { type, period }),
+	news: (params?: NewsParams) =>
+		fetchAPI<NewsResponse>(
+			"/news",
+			params
+				? Object.fromEntries(
+						Object.entries(params)
+							.filter(([, value]) => value != null)
+							.map(([key, value]) => [key, String(value)]),
+					)
+				: undefined,
+		),
 };

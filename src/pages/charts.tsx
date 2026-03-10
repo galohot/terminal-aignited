@@ -267,18 +267,12 @@ export function ChartsPage() {
 	);
 }
 
-function WorkspaceCard({
-	label,
-	note,
-	value,
-}: {
-	label: string;
-	note: string;
-	value: string;
-}) {
+function WorkspaceCard({ label, note, value }: { label: string; note: string; value: string }) {
 	return (
 		<div className="min-w-0 rounded-[24px] border border-white/8 bg-white/[0.04] p-4">
-			<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-t-text-muted">{label}</div>
+			<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-t-text-muted">
+				{label}
+			</div>
 			<div className="mt-2 break-words text-sm font-semibold leading-6 text-white">{value}</div>
 			<div className="mt-2 break-words text-sm leading-6 text-t-text-secondary">{note}</div>
 		</div>
@@ -294,13 +288,7 @@ function KeyValue({ label, value }: { label: string; value: string }) {
 	);
 }
 
-function Pill({
-	children,
-	tone,
-}: {
-	children: ReactNode;
-	tone: "blue" | "green" | "neutral";
-}) {
+function Pill({ children, tone }: { children: ReactNode; tone: "blue" | "green" | "neutral" }) {
 	const classes =
 		tone === "blue"
 			? "border-t-blue/30 bg-t-blue/10 text-t-blue"
@@ -321,7 +309,9 @@ function ChartEmptyState({ body, title }: { body: string; title: string }) {
 	return (
 		<div className="flex h-full min-h-[320px] items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-white/[0.03] p-8 text-center">
 			<div className="max-w-md">
-				<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-t-amber">{title}</div>
+				<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-t-amber">
+					{title}
+				</div>
 				<p className="mt-3 text-sm leading-6 text-t-text-secondary">{body}</p>
 			</div>
 		</div>

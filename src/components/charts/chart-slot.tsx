@@ -50,8 +50,8 @@ export function ChartSlot({ symbol, onSymbolChange, compact = false }: ChartSlot
 					</div>
 					<div className="text-lg font-semibold text-white">{symbol}</div>
 					<p className="mt-2 text-sm leading-6 text-t-text-secondary">
-						The quote or historical series could not be loaded for this slot. Replace the symbol or retry
-						later.
+						The quote or historical series could not be loaded for this slot. Replace the symbol or
+						retry later.
 					</p>
 				</div>
 				<div className="flex flex-wrap gap-2">
@@ -89,7 +89,9 @@ export function ChartSlot({ symbol, onSymbolChange, compact = false }: ChartSlot
 								{selected.label}
 							</span>
 						</div>
-						<div className="mt-2 break-words text-sm text-t-text-secondary">{q?.name ?? "Loading instrument..."}</div>
+						<div className="mt-2 break-words text-sm text-t-text-secondary">
+							{q?.name ?? "Loading instrument..."}
+						</div>
 					</div>
 
 					<div className="grid max-w-full gap-1 text-left font-mono xl:text-right">
@@ -110,7 +112,9 @@ export function ChartSlot({ symbol, onSymbolChange, compact = false }: ChartSlot
 						<MiniMetric
 							icon={<BarChart3 className="h-3.5 w-3.5" />}
 							label="Day Range"
-							value={q ? `${formatPrice(q.low, q.currency)} - ${formatPrice(q.high, q.currency)}` : "—"}
+							value={
+								q ? `${formatPrice(q.low, q.currency)} - ${formatPrice(q.high, q.currency)}` : "—"
+							}
 						/>
 						<MiniMetric
 							icon={<RefreshCw className="h-3.5 w-3.5" />}
@@ -144,8 +148,8 @@ export function ChartSlot({ symbol, onSymbolChange, compact = false }: ChartSlot
 								No historical data
 							</div>
 							<p className="mt-3 text-sm leading-6 text-t-text-secondary">
-								There is no chart series available for the selected period. Try a different symbol or
-								time range.
+								There is no chart series available for the selected period. Try a different symbol
+								or time range.
 							</p>
 						</div>
 					</div>
@@ -155,15 +159,7 @@ export function ChartSlot({ symbol, onSymbolChange, compact = false }: ChartSlot
 	);
 }
 
-function MiniMetric({
-	icon,
-	label,
-	value,
-}: {
-	icon: ReactNode;
-	label: string;
-	value: string;
-}) {
+function MiniMetric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
 	return (
 		<div className="min-w-0 rounded-2xl border border-white/8 bg-white/[0.04] px-3 py-2">
 			<div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-t-text-muted">

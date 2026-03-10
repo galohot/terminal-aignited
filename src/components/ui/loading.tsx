@@ -47,7 +47,10 @@ export function MarketGridSkeleton() {
 			</div>
 			<div className="grid gap-4 xl:grid-cols-3">
 				{PANEL_KEYS.slice(0, 3).map((pk) => (
-					<div key={`summary-${pk}`} className="rounded-[24px] border border-t-border bg-t-surface p-4">
+					<div
+						key={`summary-${pk}`}
+						className="rounded-[24px] border border-t-border bg-t-surface p-4"
+					>
 						<Skeleton className="mb-3 h-4 w-36" />
 						{ROW_KEYS.slice(0, 3).map((rk) => (
 							<Skeleton key={rk} className="mb-2 h-20 w-full rounded-2xl" />

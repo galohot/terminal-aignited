@@ -46,7 +46,13 @@ export const useChartLayoutStore = create<ChartLayoutStore>()(
 
 					const nonEmpty = next.filter(Boolean).length;
 					const layout =
-						nonEmpty <= 1 ? "single" : nonEmpty === 2 ? "split" : nonEmpty === 3 ? "triple" : "quad";
+						nonEmpty <= 1
+							? "single"
+							: nonEmpty === 2
+								? "split"
+								: nonEmpty === 3
+									? "triple"
+									: "quad";
 
 					return { layout, symbols: next };
 				}),

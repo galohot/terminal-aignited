@@ -11,9 +11,11 @@ export function WatchlistPage() {
 	const removeSymbol = useWatchlistStore((state) => state.removeSymbol);
 	const [selectedIndex, setSelectedIndex] = useState(-1);
 
-	useKeyboardShortcut("j", () => setSelectedIndex((index) => Math.min(index + 1, symbols.length - 1)), [
-		symbols.length,
-	]);
+	useKeyboardShortcut(
+		"j",
+		() => setSelectedIndex((index) => Math.min(index + 1, symbols.length - 1)),
+		[symbols.length],
+	);
 	useKeyboardShortcut("k", () => setSelectedIndex((index) => Math.max(index - 1, 0)), []);
 	useKeyboardShortcut(
 		"arrowdown",

@@ -20,6 +20,7 @@ import type { ConnectionStatus } from "../../stores/realtime-store";
 import { useRealtimeStore } from "../../stores/realtime-store";
 import type { Quote } from "../../types/market";
 import { MarketGridSkeleton } from "../ui/loading";
+import { NewsPanel } from "./news-panel";
 
 const JAKARTA_TIME_ZONE = "Asia/Jakarta";
 
@@ -93,7 +94,9 @@ export function MarketGrid() {
 		return (
 			<div className="flex min-h-full flex-col items-center justify-center gap-3 p-12 text-center">
 				<p className="font-mono text-sm text-t-text-secondary">
-					{is503 ? "Market data is warming up. Try again in a moment." : "Markets are unavailable right now."}
+					{is503
+						? "Market data is warming up. Try again in a moment."
+						: "Markets are unavailable right now."}
 				</p>
 				{!is503 && (
 					<button
@@ -227,8 +230,8 @@ export function MarketGrid() {
 												Feed notice
 											</div>
 											<p className="mt-1 text-sm leading-6 text-t-text-secondary">
-												Quotes are delayed. Check feed freshness before using this overview as a live
-												board.
+												Quotes are delayed. Check feed freshness before using this overview as a
+												live board.
 											</p>
 										</div>
 									</div>
@@ -312,11 +315,20 @@ export function MarketGrid() {
 						>
 							<div className="space-y-2">
 								{deskInsights.map((item) => (
-									<InsightCard key={item.title} body={item.body} title={item.title} tone={item.tone} />
+									<InsightCard
+										key={item.title}
+										body={item.body}
+										title={item.title}
+										tone={item.tone}
+									/>
 								))}
 							</div>
 						</SectionPanel>
 					</div>
+				</section>
+
+				<section>
+					<NewsPanel />
 				</section>
 
 				<section className="grid gap-4 xl:grid-cols-[1.05fr_1fr_0.9fr_0.9fr]">
@@ -437,7 +449,9 @@ function SectionPanel({
 						<span className="text-t-green">{icon}</span>
 						{title}
 					</div>
-					<p className="max-w-2xl break-words text-sm leading-6 text-t-text-secondary">{description}</p>
+					<p className="max-w-2xl break-words text-sm leading-6 text-t-text-secondary">
+						{description}
+					</p>
 				</div>
 			</div>
 			{children}
@@ -498,13 +512,19 @@ function QuoteRow({ quote, tone }: { quote: Quote; tone: QuoteTone }) {
 				</div>
 				<div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] uppercase tracking-[0.18em] text-t-text-muted">
 					{quote.exchange && <span>{quote.exchange}</span>}
-					{quote.volume != null && quote.volume > 0 && <span>Vol {formatVolume(quote.volume)}</span>}
+					{quote.volume != null && quote.volume > 0 && (
+						<span>Vol {formatVolume(quote.volume)}</span>
+					)}
 					{quote.currency && <span>{quote.currency}</span>}
 				</div>
 			</div>
 			<div className="flex min-w-[96px] max-w-[120px] flex-col items-end justify-center font-mono">
-				<div className="break-words text-right text-sm text-white">{formatPrice(quote.price, quote.currency)}</div>
-				<div className={`break-words text-right text-sm ${changeColor}`}>{formatPercent(changePercent)}</div>
+				<div className="break-words text-right text-sm text-white">
+					{formatPrice(quote.price, quote.currency)}
+				</div>
+				<div className={`break-words text-right text-sm ${changeColor}`}>
+					{formatPercent(changePercent)}
+				</div>
 			</div>
 		</Link>
 	);
@@ -544,7 +564,9 @@ function FocusCard({
 					<div className="font-mono text-[11px] uppercase tracking-[0.24em] text-t-text-muted">
 						{kicker}
 					</div>
-					<div className="mt-2 break-words font-mono text-xl font-semibold text-white">{quote.symbol}</div>
+					<div className="mt-2 break-words font-mono text-xl font-semibold text-white">
+						{quote.symbol}
+					</div>
 					<div className="mt-1 break-words text-sm text-t-text-secondary">{quote.name}</div>
 				</div>
 				<div className="rounded-full border border-white/10 bg-black/20 px-2 py-1 font-mono text-[11px] text-t-text-secondary">
@@ -605,13 +627,7 @@ function SignalLine({ label, value }: { label: string; value: string }) {
 	);
 }
 
-function Badge({
-	children,
-	tone,
-}: {
-	children: ReactNode;
-	tone: BadgeTone;
-}) {
+function Badge({ children, tone }: { children: ReactNode; tone: BadgeTone }) {
 	const classes =
 		tone === "amber"
 			? "border-t-amber/30 bg-t-amber/10 text-t-amber"
@@ -738,7 +754,8 @@ function buildHeroNarrative({
 }) {
 	const local = indonesiaBoard[0] ?? null;
 	const apacLead = sortByMagnitude(apacBoard)[0] ?? null;
-	const macroLead = sortByMagnitude(commoditiesBoard)[0] ?? findQuote(forexBoard, ["usd/idr", "usdidr", "idr"]);
+	const macroLead =
+		sortByMagnitude(commoditiesBoard)[0] ?? findQuote(forexBoard, ["usd/idr", "usdidr", "idr"]);
 	const usLead = sortByMagnitude(usBoard)[0] ?? null;
 
 	const localText = local
@@ -779,20 +796,32 @@ function buildHeroMetrics({
 		{
 			icon: <Landmark className="h-4 w-4" />,
 			label: "Local Lead",
-			value: local ? `${local.symbol} ${formatPercent(getChangePercent(local))}` : "Awaiting Indonesia",
-			secondary: local ? `${local.name} at ${formatPrice(local.price, local.currency)}` : "Domestic benchmark loads here first",
+			value: local
+				? `${local.symbol} ${formatPercent(getChangePercent(local))}`
+				: "Awaiting Indonesia",
+			secondary: local
+				? `${local.name} at ${formatPrice(local.price, local.currency)}`
+				: "Domestic benchmark loads here first",
 		},
 		{
 			icon: <TrendingUp className="h-4 w-4" />,
 			label: "Rupiah Watch",
-			value: rupiah ? `${rupiah.symbol} ${formatPrice(rupiah.price, rupiah.currency)}` : "Awaiting FX",
-			secondary: rupiah ? `${formatPercent(getChangePercent(rupiah))} on the currency board` : "USD/IDR becomes the primary FX proxy here",
+			value: rupiah
+				? `${rupiah.symbol} ${formatPrice(rupiah.price, rupiah.currency)}`
+				: "Awaiting FX",
+			secondary: rupiah
+				? `${formatPercent(getChangePercent(rupiah))} on the currency board`
+				: "USD/IDR becomes the primary FX proxy here",
 		},
 		{
 			icon: <Globe2 className="h-4 w-4" />,
 			label: "APAC Lead",
-			value: apacLead ? `${apacLead.symbol} ${formatPercent(getChangePercent(apacLead))}` : "Awaiting APAC",
-			secondary: apacLead ? `${apacLead.name} is the strongest regional move` : "Regional breadth will populate this slot",
+			value: apacLead
+				? `${apacLead.symbol} ${formatPercent(getChangePercent(apacLead))}`
+				: "Awaiting APAC",
+			secondary: apacLead
+				? `${apacLead.name} is the strongest regional move`
+				: "Regional breadth will populate this slot",
 		},
 		{
 			icon: <Activity className="h-4 w-4" />,
@@ -1066,7 +1095,11 @@ function countQuotes(quotes: Quote[]) {
 }
 
 function formatConnectionStatus(status: ConnectionStatus) {
-	return status === "connected" ? "Connected" : status === "connecting" ? "Connecting" : "Disconnected";
+	return status === "connected"
+		? "Connected"
+		: status === "connecting"
+			? "Connecting"
+			: "Disconnected";
 }
 
 function getFeedFreshness(updatedAt: string): FreshnessState {

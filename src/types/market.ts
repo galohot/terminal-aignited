@@ -112,3 +112,34 @@ export interface FinancialsResponse {
 	period: string;
 	data: Record<string, unknown>;
 }
+
+export type NewsCategory = "market" | "idx" | "commodity" | "geopolitical" | "policy" | "tech";
+
+export type NewsSentiment = "bullish" | "bearish" | "neutral" | "mixed";
+
+export interface NewsItem {
+	id: number;
+	title: string;
+	summary: string;
+	source_url?: string | null;
+	source_name?: string | null;
+	category: NewsCategory;
+	sentiment?: NewsSentiment | null;
+	related_tickers?: string[] | null;
+	related_sectors?: string[] | null;
+	published_at: string;
+	created_at: string;
+	daily_catalyst_slug?: string | null;
+}
+
+export interface NewsResponse {
+	news: NewsItem[];
+	total: number;
+}
+
+export interface NewsParams {
+	limit?: number;
+	category?: NewsCategory;
+	ticker?: string;
+	hours?: number;
+}

@@ -31,8 +31,8 @@ export function WatchlistPanel({ selectedIndex = -1 }: WatchlistPanelProps) {
 					</div>
 					<h2 className="text-2xl font-semibold text-white">Build your first market board.</h2>
 					<p className="mt-3 text-sm leading-6 text-t-text-secondary">
-						Add symbols from search and they will appear here with live prices, sparkline context, and
-						keyboard navigation.
+						Add symbols from search and they will appear here with live prices, sparkline context,
+						and keyboard navigation.
 					</p>
 				</div>
 			</div>
@@ -86,7 +86,9 @@ export function WatchlistPanel({ selectedIndex = -1 }: WatchlistPanelProps) {
 			};
 		})
 		.filter((quote): quote is Quote => quote != null);
-	const missingSymbols = symbols.filter((symbol) => !ordered.some((quote) => quote.symbol === symbol));
+	const missingSymbols = symbols.filter(
+		(symbol) => !ordered.some((quote) => quote.symbol === symbol),
+	);
 	const advancers = ordered.filter((quote) => quote.change_percent > 0).length;
 	const decliners = ordered.filter((quote) => quote.change_percent < 0).length;
 	const leader = [...ordered].sort((a, b) => b.change_percent - a.change_percent)[0] ?? null;
@@ -112,13 +114,21 @@ export function WatchlistPanel({ selectedIndex = -1 }: WatchlistPanelProps) {
 					icon={<TrendingUp className="h-4 w-4" />}
 					label="Leader"
 					value={leader ? `${leader.symbol} ${formatPercent(leader.change_percent)}` : "—"}
-					note={leader ? `${leader.name} at ${formatPrice(leader.price, leader.currency)}` : "Awaiting quotes"}
+					note={
+						leader
+							? `${leader.name} at ${formatPrice(leader.price, leader.currency)}`
+							: "Awaiting quotes"
+					}
 				/>
 				<SummaryCard
 					icon={<TrendingDown className="h-4 w-4" />}
 					label="Laggard"
 					value={laggard ? `${laggard.symbol} ${formatPercent(laggard.change_percent)}` : "—"}
-					note={laggard ? `${laggard.name} at ${formatPrice(laggard.price, laggard.currency)}` : "Awaiting quotes"}
+					note={
+						laggard
+							? `${laggard.name} at ${formatPrice(laggard.price, laggard.currency)}`
+							: "Awaiting quotes"
+					}
 				/>
 			</div>
 
