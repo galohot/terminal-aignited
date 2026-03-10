@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useHistory } from "../../hooks/use-history";
 import { useQuote } from "../../hooks/use-quote";
+import { useRealtimeSubscription } from "../../hooks/use-realtime";
 import { DEFAULT_PERIOD_INDEX, PERIOD_OPTIONS } from "../../lib/constants";
 import { formatPercent, formatPrice } from "../../lib/format";
+import { useRealtimeStore } from "../../stores/realtime-store";
 import { Skeleton } from "../ui/loading";
 import { ChartToolbar } from "./chart-toolbar";
 import { PriceChart } from "./price-chart";
@@ -19,6 +21,9 @@ export function ChartSlot({ symbol, onSymbolChange, compact = false }: ChartSlot
 	const selected = PERIOD_OPTIONS[periodIndex];
 	const quote = useQuote(symbol);
 	const history = useHistory(symbol, selected.period, selected.interval);
+	const symbolList = useMemo(() => (symbol ? [symbol] : []), [symbol]);
+	useRealtimeSubscription(symbolList);
+	const realtimePrice = useRealtimeStore((s) => (symbol ? s.prices[symbol] : undefined));
 
 	if (!symbol) {
 		return (
@@ -59,7 +64,11 @@ export function ChartSlot({ symbol, onSymbolChange, compact = false }: ChartSlot
 				{history.isLoading ? (
 					<Skeleton className="h-full w-full" />
 				) : history.data ? (
-					<PriceChart data={history.data.data} height={compact ? 200 : undefined} />
+					<PriceChart
+						data={history.data.data}
+						height={compact ? 200 : undefined}
+						realtimePrice={realtimePrice}
+					/>
 				) : null}
 			</div>
 		</div>

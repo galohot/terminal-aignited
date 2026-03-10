@@ -1,25 +1,50 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { MarketWS } from "../lib/ws";
 import { useRealtimeStore } from "../stores/realtime-store";
 
-export function useRealtime() {
-	const setStatus = useRealtimeStore((s) => s.setStatus);
-	const setSnapshot = useRealtimeStore((s) => s.setSnapshot);
-	const updatePrice = useRealtimeStore((s) => s.updatePrice);
-	const wsRef = useRef<MarketWS | null>(null);
+let sharedWS: MarketWS | null = null;
+let refCount = 0;
 
-	useEffect(() => {
-		const ws = new MarketWS({
-			onSnapshot: setSnapshot,
-			onPrice: updatePrice,
-			onStatusChange: setStatus,
+function acquireWS() {
+	if (!sharedWS) {
+		sharedWS = new MarketWS({
+			onSnapshot: (data) => useRealtimeStore.getState().setSnapshot(data),
+			onPrice: (update) => useRealtimeStore.getState().updatePrice(update),
+			onStatusChange: (status) => useRealtimeStore.getState().setStatus(status),
 		});
-		wsRef.current = ws;
-		ws.connect();
+		sharedWS.connect();
+	}
+	refCount++;
+	return sharedWS;
+}
+
+function releaseWS() {
+	refCount--;
+	if (refCount <= 0 && sharedWS) {
+		sharedWS.disconnect();
+		sharedWS = null;
+		refCount = 0;
+	}
+}
+
+/** Initializes the global WS connection. Call once in AppShell. */
+export function useRealtime() {
+	useEffect(() => {
+		acquireWS();
+		return () => releaseWS();
+	}, []);
+}
+
+/** Subscribe to realtime updates for specific symbols. */
+export function useRealtimeSubscription(symbols: string[]) {
+	useEffect(() => {
+		if (!sharedWS || symbols.length === 0) return;
+
+		sharedWS.subscribe(symbols);
 
 		return () => {
-			ws.disconnect();
-			wsRef.current = null;
+			sharedWS?.unsubscribe(symbols);
 		};
-	}, [setStatus, setSnapshot, updatePrice]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- symbols array is memoized by caller
+	}, [symbols]);
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { ChartToolbar } from "../components/charts/chart-toolbar";
 import { PriceChart } from "../components/charts/price-chart";
@@ -11,7 +11,9 @@ import { useFundamentals } from "../hooks/use-fundamentals";
 import { useHistory } from "../hooks/use-history";
 import { useKeyboardShortcut } from "../hooks/use-keyboard";
 import { useQuote } from "../hooks/use-quote";
+import { useRealtimeSubscription } from "../hooks/use-realtime";
 import { DEFAULT_PERIOD_INDEX, PERIOD_OPTIONS } from "../lib/constants";
+import { useRealtimeStore } from "../stores/realtime-store";
 import { useWatchlistStore } from "../stores/watchlist-store";
 
 export function StockPage() {
@@ -26,6 +28,11 @@ export function StockPage() {
 	const hasSymbol = useWatchlistStore((s) => s.hasSymbol(symbol));
 	const addSymbol = useWatchlistStore((s) => s.addSymbol);
 	const removeSymbol = useWatchlistStore((s) => s.removeSymbol);
+
+	// Subscribe to realtime updates for this symbol
+	const symbolList = useMemo(() => [symbol], [symbol]);
+	useRealtimeSubscription(symbolList);
+	const realtimePrice = useRealtimeStore((s) => s.prices[symbol]);
 
 	// Keyboard shortcuts: F=financials, W=watchlist toggle, 3-9=chart period
 	useKeyboardShortcut("f", () => navigate(`/stock/${symbol}/financials`), [navigate, symbol]);
@@ -70,16 +77,27 @@ export function StockPage() {
 		);
 	}
 
+	// Merge realtime data over REST quote when available
+	const liveQuote = realtimePrice
+		? {
+				...quote.data,
+				price: realtimePrice.price,
+				change: realtimePrice.change,
+				change_percent: realtimePrice.changePercent,
+				volume: realtimePrice.volume || quote.data.volume,
+			}
+		: quote.data;
+
 	return (
 		<div>
-			<QuoteHeader quote={quote.data} />
+			<QuoteHeader quote={liveQuote} />
 			<div className="grid grid-cols-1 gap-4 p-4 xl:grid-cols-[1fr_280px]">
 				<div>
 					<ChartToolbar selectedIndex={periodIndex} onSelect={setPeriodIndex} />
 					{history.isLoading ? (
 						<Skeleton className="h-[400px] w-full" />
 					) : history.data ? (
-						<PriceChart data={history.data.data} />
+						<PriceChart data={history.data.data} realtimePrice={realtimePrice} />
 					) : null}
 					{fundamentals.data && (
 						<div className="mt-4">
@@ -88,7 +106,7 @@ export function StockPage() {
 					)}
 				</div>
 				<div className="flex flex-col gap-4">
-					<KeyStats quote={quote.data} fundamentals={fundamentals.data} />
+					<KeyStats quote={liveQuote} fundamentals={fundamentals.data} />
 					<div className="flex gap-2">
 						<Link
 							to={`/stock/${symbol}/financials`}
