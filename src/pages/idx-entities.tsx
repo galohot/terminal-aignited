@@ -1,6 +1,8 @@
 import { clsx } from "clsx";
 import { useState } from "react";
 import { Link } from "react-router";
+import { ConnectorsBar } from "../components/idx/connectors-bar";
+import { HoldingsLollipop } from "../components/idx/holdings-lollipop";
 import { IdxNav } from "../components/idx/idx-nav";
 import { Skeleton } from "../components/ui/loading";
 import {
@@ -103,7 +105,7 @@ function EntityGroupsTab() {
 				)}
 			</div>
 
-			{/* Holdings table */}
+			{/* Holdings chart */}
 			<div className="rounded-lg border border-t-border bg-t-surface">
 				{!selectedGroup ? (
 					<div className="p-8 text-center text-sm text-t-text-muted">
@@ -133,49 +135,7 @@ function EntityGroupsTab() {
 								</Link>
 							) : null}
 						</div>
-						<div className="overflow-x-auto">
-							<table className="w-full text-xs">
-								<thead>
-									<tr className="border-b border-white/10 bg-white/[0.02]">
-										<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
-											Code
-										</th>
-										<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
-											Company
-										</th>
-										<th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
-											Stake %
-										</th>
-										<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
-											Via
-										</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-white/5">
-									{holdings.data?.holdings.map((h) => (
-										<tr key={h.kode_emiten} className="transition-colors hover:bg-white/[0.04]">
-											<td className="whitespace-nowrap px-3 py-2">
-												<Link
-													to={`/idx/${h.kode_emiten}`}
-													className="font-mono text-xs font-medium text-t-green transition-colors hover:text-t-amber hover:underline"
-												>
-													{h.kode_emiten}
-												</Link>
-											</td>
-											<td className="max-w-[250px] truncate px-3 py-2 text-t-text-secondary">
-												{h.company_name}
-											</td>
-											<td className="whitespace-nowrap px-3 py-2 text-right font-mono font-medium text-t-amber">
-												{h.total_percentage != null ? `${h.total_percentage.toFixed(2)}%` : "—"}
-											</td>
-											<td className="px-3 py-2 text-t-text-muted">
-												{h.via_entities.join(", ") || "—"}
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
+						<HoldingsLollipop holdings={holdings.data?.holdings ?? []} />
 					</>
 				)}
 			</div>
@@ -221,64 +181,7 @@ function ConnectorsTab() {
 					No connectors found.
 				</div>
 			) : (
-				<div className="overflow-x-auto rounded-lg border border-t-border">
-					<table className="w-full text-xs">
-						<thead>
-							<tr className="border-b border-white/10 bg-white/[0.02]">
-								<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
-									Name
-								</th>
-								<th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
-									Companies
-								</th>
-								<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
-									Roles
-								</th>
-								<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
-									Group
-								</th>
-							</tr>
-						</thead>
-						<tbody className="divide-y divide-white/5">
-							{connectors.data.connectors.map((c) => (
-								<tr key={c.name} className="transition-colors hover:bg-white/[0.04]">
-									<td className="whitespace-nowrap px-3 py-2">
-										<Link
-											to={`/idx/insiders?name=${encodeURIComponent(c.name)}`}
-											className="text-xs text-t-text transition-colors hover:text-t-amber hover:underline"
-										>
-											{c.name}
-										</Link>
-									</td>
-									<td className="whitespace-nowrap px-3 py-2 text-right font-mono font-medium text-t-green">
-										{c.companies}
-									</td>
-									<td className="px-3 py-2">
-										<div className="flex flex-wrap gap-1">
-											{c.types.map((t) => (
-												<span
-													key={t}
-													className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-t-text-muted"
-												>
-													{t}
-												</span>
-											))}
-										</div>
-									</td>
-									<td className="whitespace-nowrap px-3 py-2">
-										{c.entity_group ? (
-											<span className="rounded-full border border-t-amber/30 bg-t-amber/10 px-2 py-0.5 font-mono text-[10px] text-t-amber">
-												{formatGroupName(c.entity_group)}
-											</span>
-										) : (
-											<span className="text-t-text-muted">—</span>
-										)}
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
+				<ConnectorsBar connectors={connectors.data.connectors} />
 			)}
 		</div>
 	);

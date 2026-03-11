@@ -3,6 +3,7 @@ import { BoardList } from "../components/idx/board-list";
 import { CompanyHeader } from "../components/idx/company-header";
 import { InsiderNetworkGraph } from "../components/idx/insider-network-graph";
 import { PeerCompanies } from "../components/idx/peer-companies";
+import { PeerRadarChart } from "../components/idx/peer-radar-chart";
 import { RatioCard } from "../components/idx/ratio-card";
 import { ShareholderTable } from "../components/idx/shareholder-table";
 import { Skeleton } from "../components/ui/loading";
@@ -84,6 +85,11 @@ export function IdxCompanyPage() {
 					<PeerCompanies peers={peer_companies} />
 				</div>
 				<div className="space-y-4">
+					<PeerRadarChart
+						kode={upperKode}
+						financials={financials}
+						peers={peer_companies}
+					/>
 					<ShareholderTable shareholders={shareholders} />
 					<BoardList directors={directors} commissioners={commissioners} />
 				</div>

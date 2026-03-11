@@ -5,6 +5,7 @@ import { BrokerTable } from "../components/idx/broker-table";
 import { CompanyTable } from "../components/idx/company-table";
 import { IdxNav } from "../components/idx/idx-nav";
 import { SectorGrid } from "../components/idx/sector-grid";
+import { SectorTreemap } from "../components/idx/sector-treemap";
 import { Skeleton } from "../components/ui/loading";
 import { useIdxCompanies } from "../hooks/use-idx-companies";
 import { useIdxSectors } from "../hooks/use-idx-screener";
@@ -221,9 +222,14 @@ function SectorsTab() {
 		);
 	}
 
-	const totalCompanies = data.sectors.reduce((sum, s) => sum + s.company_count, 0);
-
-	return <SectorGrid sectors={data.sectors} totalCompanies={totalCompanies} />;
+	return (
+		<SectorTreemap
+			sectors={data.sectors}
+			onSectorClick={(sector) => {
+				window.location.href = `/idx/screener?sector=${encodeURIComponent(sector)}&sort=roe&order=desc`;
+			}}
+		/>
+	);
 }
 
 function TabButton({

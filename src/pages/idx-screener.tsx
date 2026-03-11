@@ -2,6 +2,7 @@ import { clsx } from "clsx";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { IdxNav } from "../components/idx/idx-nav";
+import { ScreenerBubbleChart } from "../components/idx/screener-bubble-chart";
 import { Skeleton } from "../components/ui/loading";
 import { useIdxScreener, useIdxSectors } from "../hooks/use-idx-screener";
 import { usePageTitle } from "../hooks/use-page-title";
@@ -81,6 +82,7 @@ function buildParamsFromURL(sp: URLSearchParams): IdxScreenerParams {
 export function IdxScreenerPage() {
 	usePageTitle("Stock Screener");
 	const [searchParams, setSearchParams] = useSearchParams();
+	const [view, setView] = useState<"table" | "scatter">("table");
 
 	const params = useMemo(() => buildParamsFromURL(searchParams), [searchParams]);
 	const codesParam = searchParams.get("codes");
@@ -370,6 +372,45 @@ export function IdxScreenerPage() {
 				</div>
 			) : (
 				<>
+					{/* View toggle + results count */}
+					<div className="mb-3 flex items-center justify-between">
+						<span className="font-mono text-xs text-t-text-muted">
+							{data.results.length === data.total
+								? `${data.total} result${data.total !== 1 ? "s" : ""}`
+								: `${data.results.length} of ${data.total} results`}
+						</span>
+						<div className="flex items-center gap-1">
+							<button
+								type="button"
+								onClick={() => setView("table")}
+								className={clsx(
+									"rounded-l-lg border px-3 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors",
+									view === "table"
+										? "border-white/20 bg-white text-black"
+										: "border-white/10 bg-white/[0.04] text-t-text-secondary hover:bg-white/10 hover:text-white",
+								)}
+							>
+								Table
+							</button>
+							<button
+								type="button"
+								onClick={() => setView("scatter")}
+								className={clsx(
+									"rounded-r-lg border border-l-0 px-3 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors",
+									view === "scatter"
+										? "border-white/20 bg-white text-black"
+										: "border-white/10 bg-white/[0.04] text-t-text-secondary hover:bg-white/10 hover:text-white",
+								)}
+							>
+								Scatter
+							</button>
+						</div>
+					</div>
+
+					{view === "scatter" ? (
+						<ScreenerBubbleChart results={data.results} />
+					) : (
+					<>
 					<div className="overflow-x-auto rounded-lg border border-t-border">
 						<table className="w-full text-xs">
 							<thead>
@@ -481,6 +522,8 @@ export function IdxScreenerPage() {
 								</PageButton>
 							</div>
 						</div>
+					)}
+					</>
 					)}
 				</>
 			)}

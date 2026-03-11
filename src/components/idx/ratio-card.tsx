@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { IdxFinancialSummaryHistory, IdxFinancialSummaryLatest } from "../../types/market";
+import { MetricSparkline } from "./metric-sparkline";
 
 const LATEST_RATIOS: { key: keyof IdxFinancialSummaryLatest; label: string; suffix: string }[] = [
 	{ key: "roe", label: "Return on Equity", suffix: "%" },
@@ -10,10 +11,10 @@ const LATEST_RATIOS: { key: keyof IdxFinancialSummaryLatest; label: string; suff
 	{ key: "pbv", label: "Price to Book", suffix: "x" },
 ];
 
-const HISTORY_RATIOS: { key: keyof IdxFinancialSummaryHistory; label: string }[] = [
-	{ key: "roe", label: "ROE" },
-	{ key: "roa", label: "ROA" },
-	{ key: "eps", label: "EPS" },
+const SPARK_METRICS = [
+	{ key: "roe" as const, label: "ROE", suffix: "%", color: "#22c55e", type: "line" as const },
+	{ key: "roa" as const, label: "ROA", suffix: "%", color: "#3b82f6", type: "line" as const },
+	{ key: "eps" as const, label: "EPS", suffix: "", color: "#f59e0b", type: "bar" as const },
 ];
 
 export function RatioCard({
@@ -65,45 +66,34 @@ export function RatioCard({
 						<h3 className="text-xs font-medium uppercase tracking-wider text-t-text-secondary">
 							Ratio History
 						</h3>
+						<span className="font-mono text-[11px] text-t-text-muted">
+							{sortedHistory.length} quarters
+						</span>
 					</div>
-					<div className="overflow-x-auto">
-						<table className="w-full text-xs">
-							<thead>
-								<tr className="border-b border-white/5">
-									<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
-										Period
-									</th>
-									{HISTORY_RATIOS.map(({ key, label }) => (
-										<th
-											key={key}
-											className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-t-text-muted"
-										>
+					<div className="grid grid-cols-3 gap-px bg-white/5">
+						{SPARK_METRICS.map(({ key, label, suffix, color, type }) => {
+							const vals = sortedHistory.map((h) => h[key]);
+							const last = [...vals].reverse().find((v) => v != null);
+							return (
+								<div key={key} className="bg-t-surface px-3 py-2.5">
+									<div className="mb-1 flex items-baseline justify-between">
+										<span className="font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
 											{label}
-										</th>
-									))}
-								</tr>
-							</thead>
-							<tbody className="divide-y divide-white/5">
-								{sortedHistory.map((row) => (
-									<tr key={`${row.period_year}-${row.period_quarter}`}>
-										<td className="whitespace-nowrap px-3 py-2 font-mono text-t-text-secondary">
-											Q{row.period_quarter} {row.period_year}
-										</td>
-										{HISTORY_RATIOS.map(({ key }) => {
-											const v = row[key] as number | null;
-											return (
-												<td
-													key={key}
-													className="whitespace-nowrap px-3 py-2 text-right font-mono text-t-text"
-												>
-													{v != null ? v.toFixed(2) : "—"}
-												</td>
-											);
-										})}
-									</tr>
-								))}
-							</tbody>
-						</table>
+										</span>
+										{last != null && (
+											<span
+												className="font-mono text-[11px] font-medium"
+												style={{ color }}
+											>
+												{last.toFixed(1)}
+												{suffix}
+											</span>
+										)}
+									</div>
+									<MetricSparkline data={vals} color={color} type={type} />
+								</div>
+							);
+						})}
 					</div>
 				</div>
 			)}
