@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router";
 import { BoardList } from "../components/idx/board-list";
 import { CompanyHeader } from "../components/idx/company-header";
+import { InsiderNetworkGraph } from "../components/idx/insider-network-graph";
 import { PeerCompanies } from "../components/idx/peer-companies";
 import { RatioCard } from "../components/idx/ratio-card";
 import { ShareholderTable } from "../components/idx/shareholder-table";
@@ -72,6 +73,14 @@ export function IdxCompanyPage() {
 							history={summary.data?.history}
 						/>
 					)}
+					<InsiderNetworkGraph
+						kode={upperKode}
+						companyName={company.name}
+						directors={directors}
+						commissioners={commissioners}
+						shareholders={shareholders}
+						peers={peer_companies}
+					/>
 					<PeerCompanies peers={peer_companies} />
 				</div>
 				<div className="space-y-4">
