@@ -50,6 +50,21 @@ export interface MarketOverview {
 	updated_at: string;
 }
 
+export interface DashboardResponse {
+	markets: MarketOverview;
+	news: NewsArticle[];
+	idx_indices: IdxIndex[];
+}
+
+export interface NewsCategoryItem {
+	name: string;
+	count: number;
+}
+
+export interface NewsCategoriesResponse {
+	categories: NewsCategoryItem[];
+}
+
 export interface SearchResult {
 	symbol: string;
 	name: string | null;
@@ -315,6 +330,7 @@ export interface IdxCompanyFullResponse {
 
 export interface IdxScreenerParams {
 	sector?: string;
+	sub_sector?: string;
 	roe_min?: number;
 	roe_max?: number;
 	per_min?: number;
@@ -335,6 +351,9 @@ export interface IdxScreenerResult {
 	kode_emiten: string;
 	name: string;
 	sector: string;
+	sub_sector?: string;
+	period_year?: number;
+	period_quarter?: number;
 	roe: number | null;
 	roa: number | null;
 	per: number | null;

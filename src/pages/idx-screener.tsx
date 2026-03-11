@@ -1,6 +1,7 @@
 import { clsx } from "clsx";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
+import { IdxNav } from "../components/idx/idx-nav";
 import { Skeleton } from "../components/ui/loading";
 import { useIdxScreener, useIdxSectors } from "../hooks/use-idx-screener";
 import type { IdxScreenerParams } from "../types/market";
@@ -65,7 +66,18 @@ export function IdxScreenerPage() {
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	const params = useMemo(() => buildParamsFromURL(searchParams), [searchParams]);
-	const { data, isLoading, error } = useIdxScreener(params);
+	const codesParam = searchParams.get("codes");
+	const codesSet = useMemo(
+		() => (codesParam ? new Set(codesParam.split(",")) : null),
+		[codesParam],
+	);
+	const groupLabel = searchParams.get("group") || null;
+	const { data: rawData, isLoading, error } = useIdxScreener(params);
+	const data = useMemo(() => {
+		if (!rawData || !codesSet) return rawData;
+		const filtered = rawData.results.filter((r) => codesSet.has(r.kode_emiten));
+		return { results: filtered, total: filtered.length };
+	}, [rawData, codesSet]);
 	const sectors = useIdxSectors();
 
 	// Local filter state for debounced inputs
@@ -207,12 +219,39 @@ export function IdxScreenerPage() {
 
 	return (
 		<div className="mx-auto max-w-[1600px] p-4">
+			<IdxNav />
 			<div className="mb-4">
 				<h1 className="font-mono text-lg font-semibold tracking-wide text-white">Stock Screener</h1>
 				<p className="mt-1 text-sm text-t-text-secondary">
 					Filter IDX companies by financial metrics.
 				</p>
 			</div>
+
+			{/* Group filter banner */}
+			{codesSet && (
+				<div className="mb-4 flex items-center gap-3 rounded-lg border border-t-amber/25 bg-t-amber/10 px-4 py-2.5">
+					<span className="font-mono text-xs text-t-amber">
+						Showing {codesSet.size} companies{groupLabel ? ` from ${groupLabel}` : ""}
+					</span>
+					<button
+						type="button"
+						onClick={() => {
+							setSearchParams(
+								(prev) => {
+									const next = new URLSearchParams(prev);
+									next.delete("codes");
+									next.delete("group");
+									return next;
+								},
+								{ replace: true },
+							);
+						}}
+						className="rounded-full border border-t-amber/30 bg-t-amber/20 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-t-amber transition-colors hover:bg-t-amber/30"
+					>
+						Show all
+					</button>
+				</div>
+			)}
 
 			{/* Presets */}
 			<div className="mb-4 flex flex-wrap gap-2">

@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
+import { IdxNav } from "../components/idx/idx-nav";
 import { InsiderResults } from "../components/idx/insider-results";
 import { Skeleton } from "../components/ui/loading";
 import { useIdxInsiderSearch } from "../hooks/use-idx-insiders";
@@ -35,6 +36,7 @@ export function IdxInsidersPage() {
 
 	return (
 		<div className="mx-auto max-w-[1600px] p-4">
+			<IdxNav />
 			<div className="mb-4">
 				<h1 className="font-mono text-lg font-semibold tracking-wide text-white">
 					Insider Network

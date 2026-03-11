@@ -1,7 +1,7 @@
 import { clsx } from "clsx";
 import { ExternalLink, Newspaper } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useNews } from "../../hooks/use-news";
+import { useNews, useNewsCategories } from "../../hooks/use-news";
 import type { NewsArticle, NewsSentiment } from "../../types/market";
 import { Skeleton } from "../ui/loading";
 
@@ -15,13 +15,11 @@ export function NewsPanel() {
 
 	const items = data?.news ?? [];
 
-	// Derive category tabs dynamically from the "all" fetch
-	const allData = useNews({ hours: 48, limit: 50 });
+	const catData = useNewsCategories();
 	const categories = useMemo(() => {
-		const allItems = allData.data?.news ?? [];
-		const unique = [...new Set(allItems.map((n) => n.category))].sort();
-		return ["all", ...unique];
-	}, [allData.data]);
+		const cats = catData.data?.categories ?? [];
+		return ["all", ...cats.map((c) => c.name)];
+	}, [catData.data]);
 
 	const itemCountLabel = useMemo(() => {
 		if (isLoading) return "Loading";

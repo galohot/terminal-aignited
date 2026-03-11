@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrokerTable } from "../components/idx/broker-table";
 import { CompanyTable } from "../components/idx/company-table";
+import { IdxNav } from "../components/idx/idx-nav";
 import { SectorGrid } from "../components/idx/sector-grid";
 import { Skeleton } from "../components/ui/loading";
 import { useIdxCompanies } from "../hooks/use-idx-companies";
@@ -86,6 +87,7 @@ export function IdxExplorerPage() {
 
 	return (
 		<div className="mx-auto max-w-[1600px] p-4">
+			<IdxNav />
 			<div className="mb-4">
 				<h1 className="font-mono text-lg font-semibold tracking-wide text-white">IDX Explorer</h1>
 				<p className="mt-1 text-sm text-t-text-secondary">

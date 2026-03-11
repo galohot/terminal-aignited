@@ -22,6 +22,11 @@ const queryClient = new QueryClient({
 				if ((error as ApiError).status === 429) return false;
 				return failureCount < 3;
 			},
+			retryDelay: (attemptIndex, error) => {
+				const retryAfter = (error as ApiError).retryAfter;
+				if (retryAfter) return retryAfter * 1000;
+				return Math.min(1000 * 2 ** attemptIndex, 30_000);
+			},
 		},
 	},
 });

@@ -1,5 +1,6 @@
 import type {
 	BatchResponse,
+	DashboardResponse,
 	FinancialsResponse,
 	Fundamentals,
 	HistoryParams,
@@ -21,6 +22,7 @@ import type {
 	IdxSectorsResponse,
 	IdxTopConnectorsResponse,
 	MarketOverview,
+	NewsCategoriesResponse,
 	NewsParams,
 	NewsResponse,
 	Quote,
@@ -29,6 +31,7 @@ import type {
 
 export interface ApiError extends Error {
 	status?: number;
+	retryAfter?: number;
 }
 
 const BASE = "/api/proxy";
@@ -46,12 +49,15 @@ async function fetchAPI<T>(path: string, params?: Record<string, string>): Promi
 		const err = await res.json().catch(() => ({ error: "unknown" }));
 		const error = new Error((err as { message?: string }).message || `API error ${res.status}`);
 		(error as ApiError).status = res.status;
+		const retryAfter = res.headers.get("Retry-After");
+		if (retryAfter) (error as ApiError).retryAfter = Number(retryAfter);
 		throw error;
 	}
 	return res.json() as Promise<T>;
 }
 
 export const api = {
+	dashboard: () => fetchAPI<DashboardResponse>("/dashboard"),
 	quote: (symbol: string) => fetchAPI<Quote>(`/quotes/${symbol}`),
 	batchQuotes: (symbols: string[]) =>
 		fetchAPI<BatchResponse>("/quotes/batch", { symbols: symbols.join(",") }),
@@ -79,6 +85,7 @@ export const api = {
 					)
 				: undefined,
 		),
+	newsCategories: () => fetchAPI<NewsCategoriesResponse>("/news/categories"),
 	idxCompany: (kode: string) => fetchAPI<IdxCompanyDetail>(`/idx/companies/${kode}`),
 	idxCompanies: (params?: IdxCompaniesParams) =>
 		fetchAPI<IdxCompaniesResponse>(

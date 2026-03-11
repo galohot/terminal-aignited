@@ -16,3 +16,11 @@ export function useNews(params: NewsParams) {
 		refetchInterval: 300_000,
 	});
 }
+
+export function useNewsCategories() {
+	return useQuery({
+		queryKey: ["news-categories"],
+		queryFn: () => api.newsCategories(),
+		staleTime: 300_000,
+	});
+}

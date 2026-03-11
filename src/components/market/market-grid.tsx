@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
 import { Link } from "react-router";
-import { useMarkets } from "../../hooks/use-markets";
+import { useDashboard } from "../../hooks/use-dashboard";
 import { useRealtimeSubscription } from "../../hooks/use-realtime";
 import { formatPercent, formatPrice, formatTime, formatVolume } from "../../lib/format";
 import type { ConnectionStatus } from "../../stores/realtime-store";
@@ -68,7 +68,8 @@ interface InsightItem {
 }
 
 export function MarketGrid() {
-	const { data, isLoading, error, refetch } = useMarkets();
+	const { data: dashData, isLoading, error, refetch } = useDashboard();
+	const data = dashData?.markets ?? null;
 
 	const allSymbols = useMemo(() => {
 		if (!data) return [];

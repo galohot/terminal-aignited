@@ -1,6 +1,7 @@
 import { clsx } from "clsx";
 import { useState } from "react";
 import { Link } from "react-router";
+import { IdxNav } from "../components/idx/idx-nav";
 import { Skeleton } from "../components/ui/loading";
 import {
 	useIdxEntityGroupHoldings,
@@ -29,6 +30,7 @@ export function IdxEntitiesPage() {
 
 	return (
 		<div className="mx-auto max-w-[1600px] p-4">
+			<IdxNav />
 			<div className="mb-4">
 				<h1 className="font-mono text-lg font-semibold tracking-wide text-white">IDX Power Map</h1>
 				<p className="mt-1 text-sm text-t-text-secondary">
@@ -113,13 +115,21 @@ function EntityGroupsTab() {
 					<div className="p-8 text-center text-sm text-t-text-muted">Failed to load holdings.</div>
 				) : (
 					<>
-						<div className="border-b border-t-border px-3 py-2">
+						<div className="flex items-center justify-between border-b border-t-border px-3 py-2">
 							<h3 className="text-xs font-medium text-t-text-secondary">
 								<span className="uppercase tracking-wider">{formatGroupName(selectedGroup)}</span>
 								<span className="ml-2 font-mono text-[11px] text-t-text-muted">
 									{holdings.data?.total_companies} companies
 								</span>
 							</h3>
+							{holdings.data?.holdings.length ? (
+								<Link
+									to={`/idx/screener?codes=${holdings.data.holdings.map((h) => h.kode_emiten).join(",")}&group=${encodeURIComponent(formatGroupName(selectedGroup))}&sort=roe&order=desc`}
+									className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-t-text-secondary transition-colors hover:bg-white/10 hover:text-white"
+								>
+									Screen
+								</Link>
+							) : null}
 						</div>
 						<div className="overflow-x-auto">
 							<table className="w-full text-xs">

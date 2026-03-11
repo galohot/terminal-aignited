@@ -7,6 +7,28 @@ const INITIAL_RECONNECT_DELAY = 3_000;
 const HEARTBEAT_INTERVAL = 30_000;
 const HEARTBEAT_TIMEOUT = 10_000;
 
+let cachedTicket: { ticket: string; expiresAt: number } | null = null;
+
+async function getTicket(): Promise<string> {
+	// Reuse cached ticket if still valid (with 30s buffer)
+	if (cachedTicket && Date.now() < cachedTicket.expiresAt - 30_000) {
+		return cachedTicket.ticket;
+	}
+
+	const res = await fetch("/api/proxy/ws-ticket", { method: "POST" });
+	if (!res.ok) {
+		cachedTicket = null;
+		throw Object.assign(new Error(`Failed to get WS ticket (${res.status})`), {
+			status: res.status,
+		});
+	}
+
+	const data = (await res.json()) as { ticket: string; expires_in?: number };
+	const ttl = (data.expires_in ?? 60) * 1000;
+	cachedTicket = { ticket: data.ticket, expiresAt: Date.now() + ttl };
+	return data.ticket;
+}
+
 export class MarketWS {
 	private ws: WebSocket | null = null;
 	private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -36,19 +58,13 @@ export class MarketWS {
 		this.onStatusChange("connecting");
 
 		try {
-			const res = await fetch("/api/proxy/ws-ticket", { method: "POST" });
-			if (!res.ok) {
-				if (res.status === 429) {
-					// Rate limited — use longer backoff
-					this.reconnectDelay = Math.max(this.reconnectDelay, 15_000);
-				}
-				throw new Error(`Failed to get WS ticket (${res.status})`);
-			}
-			const { ticket } = (await res.json()) as { ticket: string };
-
+			const ticket = await getTicket();
 			const wsUrl = `wss://terminal.thedailycatalyst.site/ws?ticket=${ticket}`;
 			this.ws = new WebSocket(wsUrl);
-		} catch {
+		} catch (err) {
+			if ((err as { status?: number }).status === 429) {
+				this.reconnectDelay = Math.max(this.reconnectDelay, 15_000);
+			}
 			this.onStatusChange("disconnected");
 			this.scheduleReconnect();
 			return;
@@ -79,6 +95,7 @@ export class MarketWS {
 
 		this.ws.onclose = (event: CloseEvent) => {
 			this.stopHeartbeat();
+			cachedTicket = null; // Force fresh ticket on reconnect
 			this.onStatusChange("disconnected");
 			if (event.code === 4001 || this.disposed) return;
 			this.scheduleReconnect();
