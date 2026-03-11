@@ -21,12 +21,16 @@ const PRESETS: Preset[] = [
 		params: { roe_min: 10, per_max: 15, der_max: 2, sort: "roe", order: "desc" },
 	},
 	{ label: "Low Debt", params: { der_max: 1, roe_min: 5, sort: "der", order: "asc" } },
+	{
+		label: "Large Cap",
+		params: { market_cap_min: 10_000_000_000_000, roe_min: 10, sort: "market_cap", order: "desc" },
+	},
 	{ label: "Bank", params: { sector: "Keuangan", sort: "roe", order: "desc" } },
 ];
 
-type SortField = "roe" | "roa" | "per" | "npm" | "der" | "eps" | "pbv";
+type SortField = "market_cap" | "roe" | "roa" | "per" | "npm" | "der" | "eps" | "pbv";
 
-const COLUMNS: { key: SortField; label: string; suffix: string }[] = [
+const RATIO_COLUMNS: { key: SortField; label: string; suffix: string }[] = [
 	{ key: "roe", label: "ROE", suffix: "%" },
 	{ key: "roa", label: "ROA", suffix: "%" },
 	{ key: "per", label: "PER", suffix: "x" },
@@ -35,6 +39,15 @@ const COLUMNS: { key: SortField; label: string; suffix: string }[] = [
 	{ key: "eps", label: "EPS", suffix: "" },
 	{ key: "pbv", label: "PBV", suffix: "x" },
 ];
+
+function formatMarketCap(value: number | null): string {
+	if (value == null) return "—";
+	const abs = Math.abs(value);
+	if (abs >= 1e12) return `${(value / 1e12).toFixed(1)}T`;
+	if (abs >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
+	if (abs >= 1e6) return `${(value / 1e6).toFixed(0)}M`;
+	return value.toLocaleString();
+}
 
 function parseNum(v: string | null): number | undefined {
 	if (v == null || v === "") return undefined;
@@ -45,6 +58,8 @@ function parseNum(v: string | null): number | undefined {
 function buildParamsFromURL(sp: URLSearchParams): IdxScreenerParams {
 	return {
 		sector: sp.get("sector") || undefined,
+		market_cap_min: parseNum(sp.get("market_cap_min")),
+		market_cap_max: parseNum(sp.get("market_cap_max")),
 		roe_min: parseNum(sp.get("roe_min")),
 		roe_max: parseNum(sp.get("roe_max")),
 		per_min: parseNum(sp.get("per_min")),
@@ -84,6 +99,8 @@ export function IdxScreenerPage() {
 	const [localFilters, setLocalFilters] = useState<Record<string, string>>(() => {
 		const entries: Record<string, string> = {};
 		for (const key of [
+			"market_cap_min",
+			"market_cap_max",
 			"roe_min",
 			"roe_max",
 			"per_min",
@@ -109,6 +126,8 @@ export function IdxScreenerPage() {
 					const next = new URLSearchParams(prev);
 					// Clear all filter keys first
 					for (const key of [
+						"market_cap_min",
+						"market_cap_max",
 						"roe_min",
 						"roe_max",
 						"per_min",
@@ -284,6 +303,7 @@ export function IdxScreenerPage() {
 						options={sectors.data?.sectors.map((s) => ({ value: s.sector, label: s.sector })) ?? []}
 						placeholder="All Sectors"
 					/>
+					<MarketCapFilter values={localFilters} onChange={setFilter} />
 					<FilterRange
 						label="ROE"
 						keyMin="roe_min"
@@ -361,7 +381,14 @@ export function IdxScreenerPage() {
 									<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
 										Sector
 									</th>
-									{COLUMNS.map((col) => (
+									<SortableHeader
+										label="Mkt Cap"
+										field="market_cap"
+										currentSort={currentSort}
+										currentOrder={currentOrder}
+										onClick={setSort}
+									/>
+									{RATIO_COLUMNS.map((col) => (
 										<SortableHeader
 											key={col.key}
 											label={col.label}
@@ -371,6 +398,9 @@ export function IdxScreenerPage() {
 											onClick={setSort}
 										/>
 									))}
+									<th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+										Div %
+									</th>
 								</tr>
 							</thead>
 							<tbody className="divide-y divide-white/5">
@@ -388,7 +418,10 @@ export function IdxScreenerPage() {
 											{row.name}
 										</td>
 										<td className="whitespace-nowrap px-3 py-2 text-t-text-muted">{row.sector}</td>
-										{COLUMNS.map((col) => {
+										<td className="whitespace-nowrap px-3 py-2 text-right font-mono text-t-text-secondary">
+											{formatMarketCap(row.market_cap)}
+										</td>
+										{RATIO_COLUMNS.map((col) => {
 											const v = row[col.key];
 											return (
 												<td
@@ -402,6 +435,9 @@ export function IdxScreenerPage() {
 												</td>
 											);
 										})}
+										<td className="whitespace-nowrap px-3 py-2 text-right font-mono text-t-text-secondary">
+											{row.dividend_yield != null ? `${row.dividend_yield.toFixed(2)}%` : "—"}
+										</td>
 									</tr>
 								))}
 							</tbody>
@@ -461,6 +497,8 @@ function ratioColor(key: SortField, value: number | null): string {
 			return value > 3 ? "text-t-red" : value <= 1 ? "text-t-green" : "text-t-text";
 		case "npm":
 			return value >= 20 ? "text-t-green" : value < 0 ? "text-t-red" : "text-t-text";
+		case "market_cap":
+			return "text-t-text-secondary";
 		default:
 			return "text-t-text";
 	}
@@ -595,6 +633,41 @@ function FilterInput({
 				placeholder="—"
 				className="w-16 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 font-mono text-xs text-white placeholder-t-text-muted outline-none transition-colors focus:border-t-amber/50"
 			/>
+		</label>
+	);
+}
+
+const MCAP_OPTIONS = [
+	{ value: "", label: "Any" },
+	{ value: "50000000000000", label: "> 50T (Mega)" },
+	{ value: "10000000000000", label: "> 10T (Large)" },
+	{ value: "1000000000000", label: "> 1T (Mid)" },
+	{ value: "100000000000", label: "> 100B (Small)" },
+];
+
+function MarketCapFilter({
+	values,
+	onChange,
+}: {
+	values: Record<string, string>;
+	onChange: (key: string, value: string) => void;
+}) {
+	return (
+		<label className="block">
+			<span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+				Market Cap
+			</span>
+			<select
+				value={values.market_cap_min ?? ""}
+				onChange={(e) => onChange("market_cap_min", e.target.value)}
+				className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-xs text-t-text-secondary outline-none transition-colors focus:border-t-amber/50"
+			>
+				{MCAP_OPTIONS.map((o) => (
+					<option key={o.value} value={o.value}>
+						{o.label}
+					</option>
+				))}
+			</select>
 		</label>
 	);
 }

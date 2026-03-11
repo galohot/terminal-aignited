@@ -331,6 +331,8 @@ export interface IdxCompanyFullResponse {
 export interface IdxScreenerParams {
 	sector?: string;
 	sub_sector?: string;
+	market_cap_min?: number;
+	market_cap_max?: number;
 	roe_min?: number;
 	roe_max?: number;
 	per_min?: number;
@@ -352,6 +354,9 @@ export interface IdxScreenerResult {
 	name: string;
 	sector: string;
 	sub_sector?: string;
+	market_cap: number | null;
+	pe_ratio: number | null;
+	dividend_yield: number | null;
 	period_year?: number;
 	period_quarter?: number;
 	roe: number | null;

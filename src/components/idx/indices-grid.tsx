@@ -96,8 +96,16 @@ function IndexGroup({ indices, label }: { indices: IdxIndex[]; label: string }) 
 	);
 }
 
+function deriveChangePercent(idx: IdxIndex): number {
+	if (Number.isFinite(idx.change_percent) && idx.change_percent !== 0) return idx.change_percent;
+	// API may return null change_percent — derive from change and previous close
+	const prevClose = idx.close - (idx.change ?? 0);
+	if (prevClose === 0 || !Number.isFinite(idx.change)) return 0;
+	return (idx.change / prevClose) * 100;
+}
+
 function IndexTile({ index }: { index: IdxIndex }) {
-	const pct = Number.isFinite(index.change_percent) ? index.change_percent : 0;
+	const pct = deriveChangePercent(index);
 	const tone = changeTone(pct);
 
 	return (
