@@ -28,6 +28,12 @@ import type {
 	Quote,
 	SearchResponse,
 } from "../types/market";
+import type {
+	IdxBrokerFlowHistoryResponse,
+	IdxBrokerFlowParams,
+	IdxBrokerFlowResponse,
+	IdxSectorPerformanceResponse,
+} from "../types/flow";
 
 export interface ApiError extends Error {
 	status?: number;
@@ -133,4 +139,22 @@ export const api = {
 		),
 	idxInsiderSearch: (name: string) =>
 		fetchAPI<IdxInsiderSearchResponse>("/idx/insiders/search", { name }),
+	idxSectorPerformance: () =>
+		fetchAPI<IdxSectorPerformanceResponse>("/idx/sectors/performance"),
+	idxBrokerFlow: (params?: IdxBrokerFlowParams) =>
+		fetchAPI<IdxBrokerFlowResponse>(
+			"/idx/broker-flow",
+			params
+				? (Object.fromEntries(
+						Object.entries(params)
+							.filter(([, v]) => v != null && v !== "")
+							.map(([k, v]) => [k, String(v)]),
+					) as Record<string, string>)
+				: undefined,
+		),
+	idxBrokerFlowHistory: (code: string, days?: number) =>
+		fetchAPI<IdxBrokerFlowHistoryResponse>(
+			`/idx/broker-flow/${code}/history`,
+			days ? { days: String(days) } : undefined,
+		),
 };

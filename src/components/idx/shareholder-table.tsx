@@ -12,9 +12,9 @@ export function ShareholderTable({ shareholders }: { shareholders: IdxShareholde
 				</h3>
 			</div>
 			<div className="divide-y divide-white/5">
-				{shareholders.map((sh) => (
+				{shareholders.map((sh, i) => (
 					<div
-						key={`${sh.insider_name}-${sh.percentage}`}
+						key={`${sh.insider_name}-${sh.percentage}-${i}`}
 						className="flex items-center justify-between px-3 py-2"
 					>
 						<Link

@@ -1,10 +1,11 @@
 import { clsx } from "clsx";
-import { Building2, Filter, Network, Search } from "lucide-react";
+import { Activity, Building2, Filter, Network, Search } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
 const IDX_LINKS = [
 	{ to: "/idx", label: "Explorer", icon: Search, exact: true },
 	{ to: "/idx/screener", label: "Screener", icon: Filter, exact: false },
+	{ to: "/idx/flow", label: "Flow", icon: Activity, exact: false },
 	{ to: "/idx/insiders", label: "Insiders", icon: Network, exact: false },
 	{ to: "/idx/entities", label: "Power Map", icon: Building2, exact: false },
 ] as const;

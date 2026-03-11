@@ -9,6 +9,7 @@ import { FinancialsPage } from "./pages/financials";
 import { IdxCompanyPage } from "./pages/idx-company";
 import { IdxEntitiesPage } from "./pages/idx-entities";
 import { IdxExplorerPage } from "./pages/idx-explorer";
+import { IdxFlowPage } from "./pages/idx-flow";
 import { IdxInsidersPage } from "./pages/idx-insiders";
 import { IdxScreenerPage } from "./pages/idx-screener";
 import { NotFoundPage } from "./pages/not-found";
@@ -46,6 +47,7 @@ export function App() {
 							<Route path="/idx" element={<IdxExplorerPage />} />
 							<Route path="/idx/insiders" element={<IdxInsidersPage />} />
 							<Route path="/idx/screener" element={<IdxScreenerPage />} />
+							<Route path="/idx/flow" element={<IdxFlowPage />} />
 							<Route path="/idx/entities" element={<IdxEntitiesPage />} />
 							<Route path="/idx/:kode" element={<IdxCompanyPage />} />
 							<Route path="/watchlist" element={<WatchlistPage />} />
