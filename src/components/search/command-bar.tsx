@@ -98,7 +98,7 @@ export function CommandBar() {
 	}
 
 	return (
-		<div ref={containerRef} className="relative flex-1 max-w-md">
+		<div ref={containerRef} className="relative min-w-0 flex-1 sm:max-w-md">
 			<div className="flex items-center gap-2 rounded border border-t-border bg-t-bg px-2.5 py-1 focus-within:border-t-border-active">
 				<Search className="h-3.5 w-3.5 shrink-0 text-t-text-muted" />
 				<input
