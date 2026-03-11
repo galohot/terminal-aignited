@@ -8,6 +8,7 @@ import {
 	useIdxEntityGroups,
 	useIdxTopConnectors,
 } from "../hooks/use-idx-entities";
+import { usePageTitle } from "../hooks/use-page-title";
 
 type Tab = "groups" | "connectors";
 type ConnectorType = "" | "director" | "commissioner" | "shareholder";
@@ -26,6 +27,7 @@ function formatGroupName(raw: string): string {
 }
 
 export function IdxEntitiesPage() {
+	usePageTitle("IDX Power Map");
 	const [tab, setTab] = useState<Tab>("groups");
 
 	return (

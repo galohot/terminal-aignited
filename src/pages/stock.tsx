@@ -11,6 +11,7 @@ import { WatchlistButton } from "../components/watchlist/watchlist-button";
 import { useFundamentals } from "../hooks/use-fundamentals";
 import { useHistory } from "../hooks/use-history";
 import { useKeyboardShortcut } from "../hooks/use-keyboard";
+import { usePageTitle } from "../hooks/use-page-title";
 import { useQuote } from "../hooks/use-quote";
 import { useRealtimeSubscription } from "../hooks/use-realtime";
 import { DEFAULT_PERIOD_INDEX, PERIOD_OPTIONS } from "../lib/constants";
@@ -19,6 +20,7 @@ import { useWatchlistStore } from "../stores/watchlist-store";
 
 export function StockPage() {
 	const { symbol = "" } = useParams<{ symbol: string }>();
+	usePageTitle(symbol ? `${symbol} Stock` : "Stock");
 	const navigate = useNavigate();
 	const [periodIndex, setPeriodIndex] = useState(DEFAULT_PERIOD_INDEX);
 	const selected = PERIOD_OPTIONS[periodIndex];

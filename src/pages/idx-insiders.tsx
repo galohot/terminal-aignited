@@ -6,8 +6,10 @@ import { InsiderResults } from "../components/idx/insider-results";
 import { Skeleton } from "../components/ui/loading";
 import { useIdxInsiderSearch } from "../hooks/use-idx-insiders";
 import { useKeyboardShortcut } from "../hooks/use-keyboard";
+import { usePageTitle } from "../hooks/use-page-title";
 
 export function IdxInsidersPage() {
+	usePageTitle("Insider Network");
 	const [searchParams, setSearchParams] = useSearchParams();
 	const initialName = searchParams.get("name") ?? "";
 	const [search, setSearch] = useState(initialName);

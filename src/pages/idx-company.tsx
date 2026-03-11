@@ -6,10 +6,12 @@ import { RatioCard } from "../components/idx/ratio-card";
 import { ShareholderTable } from "../components/idx/shareholder-table";
 import { Skeleton } from "../components/ui/loading";
 import { useIdxCompanyFull, useIdxFinancialSummary } from "../hooks/use-idx-company";
+import { usePageTitle } from "../hooks/use-page-title";
 
 export function IdxCompanyPage() {
 	const { kode = "" } = useParams<{ kode: string }>();
 	const upperKode = kode.toUpperCase();
+	usePageTitle(upperKode ? `${upperKode} — IDX Company` : "IDX Company");
 
 	const full = useIdxCompanyFull(upperKode);
 	const summary = useIdxFinancialSummary(upperKode);

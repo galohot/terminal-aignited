@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router";
+import { ErrorBoundary } from "./components/error-boundary";
 import { AppShell } from "./components/layout/app-shell";
 import type { ApiError } from "./lib/api";
 import { ChartsPage } from "./pages/charts";
@@ -10,6 +11,7 @@ import { IdxEntitiesPage } from "./pages/idx-entities";
 import { IdxExplorerPage } from "./pages/idx-explorer";
 import { IdxInsidersPage } from "./pages/idx-insiders";
 import { IdxScreenerPage } from "./pages/idx-screener";
+import { NotFoundPage } from "./pages/not-found";
 import { StockPage } from "./pages/stock";
 import { WatchlistPage } from "./pages/watchlist";
 
@@ -33,23 +35,26 @@ const queryClient = new QueryClient({
 
 export function App() {
 	return (
-		<QueryClientProvider client={queryClient}>
-			<BrowserRouter>
-				<AppShell>
-					<Routes>
-						<Route path="/" element={<DashboardPage />} />
-						<Route path="/stock/:symbol" element={<StockPage />} />
-						<Route path="/stock/:symbol/financials" element={<FinancialsPage />} />
-						<Route path="/idx" element={<IdxExplorerPage />} />
-						<Route path="/idx/insiders" element={<IdxInsidersPage />} />
-						<Route path="/idx/screener" element={<IdxScreenerPage />} />
-						<Route path="/idx/entities" element={<IdxEntitiesPage />} />
-						<Route path="/idx/:kode" element={<IdxCompanyPage />} />
-						<Route path="/watchlist" element={<WatchlistPage />} />
-						<Route path="/charts" element={<ChartsPage />} />
-					</Routes>
-				</AppShell>
-			</BrowserRouter>
-		</QueryClientProvider>
+		<ErrorBoundary>
+			<QueryClientProvider client={queryClient}>
+				<BrowserRouter>
+					<AppShell>
+						<Routes>
+							<Route path="/" element={<DashboardPage />} />
+							<Route path="/stock/:symbol" element={<StockPage />} />
+							<Route path="/stock/:symbol/financials" element={<FinancialsPage />} />
+							<Route path="/idx" element={<IdxExplorerPage />} />
+							<Route path="/idx/insiders" element={<IdxInsidersPage />} />
+							<Route path="/idx/screener" element={<IdxScreenerPage />} />
+							<Route path="/idx/entities" element={<IdxEntitiesPage />} />
+							<Route path="/idx/:kode" element={<IdxCompanyPage />} />
+							<Route path="/watchlist" element={<WatchlistPage />} />
+							<Route path="/charts" element={<ChartsPage />} />
+							<Route path="*" element={<NotFoundPage />} />
+						</Routes>
+					</AppShell>
+				</BrowserRouter>
+			</QueryClientProvider>
+		</ErrorBoundary>
 	);
 }

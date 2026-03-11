@@ -3,9 +3,11 @@ import { type ReactNode, useState } from "react";
 import { useNavigate } from "react-router";
 import { WatchlistPanel } from "../components/watchlist/watchlist-panel";
 import { useKeyboardShortcut } from "../hooks/use-keyboard";
+import { usePageTitle } from "../hooks/use-page-title";
 import { useWatchlistStore } from "../stores/watchlist-store";
 
 export function WatchlistPage() {
+	usePageTitle("Watchlist");
 	const navigate = useNavigate();
 	const symbols = useWatchlistStore((state) => state.symbols);
 	const removeSymbol = useWatchlistStore((state) => state.removeSymbol);

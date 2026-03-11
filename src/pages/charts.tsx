@@ -14,6 +14,7 @@ import { useSearchParams } from "react-router";
 import { ChartSlot } from "../components/charts/chart-slot";
 import { ComparisonChart } from "../components/charts/comparison-chart";
 import { useKeyboardShortcut } from "../hooks/use-keyboard";
+import { usePageTitle } from "../hooks/use-page-title";
 import { api } from "../lib/api";
 import { type LayoutMode, slotCount, useChartLayoutStore } from "../stores/chart-layout-store";
 import { useWatchlistStore } from "../stores/watchlist-store";
@@ -33,6 +34,7 @@ const LAYOUT_LABELS: Record<LayoutMode, string> = {
 };
 
 export function ChartsPage() {
+	usePageTitle("Charts");
 	const [searchParams] = useSearchParams();
 	const layout = useChartLayoutStore((s) => s.layout);
 	const setLayout = useChartLayoutStore((s) => s.setLayout);

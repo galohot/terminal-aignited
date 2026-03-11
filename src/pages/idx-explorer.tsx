@@ -9,11 +9,13 @@ import { Skeleton } from "../components/ui/loading";
 import { useIdxCompanies } from "../hooks/use-idx-companies";
 import { useIdxSectors } from "../hooks/use-idx-screener";
 import { useKeyboardShortcut } from "../hooks/use-keyboard";
+import { usePageTitle } from "../hooks/use-page-title";
 
 type Tab = "companies" | "brokers" | "sectors";
 const PAGE_SIZE = 50;
 
 export function IdxExplorerPage() {
+	usePageTitle("IDX Explorer");
 	const [tab, setTab] = useState<Tab>("companies");
 	const [search, setSearch] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");

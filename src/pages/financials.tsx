@@ -9,6 +9,7 @@ import {
 import { Skeleton } from "../components/ui/loading";
 import { useFinancials } from "../hooks/use-financials";
 import { useKeyboardShortcut } from "../hooks/use-keyboard";
+import { usePageTitle } from "../hooks/use-page-title";
 import { useQuote } from "../hooks/use-quote";
 import { useRealtimeSubscription } from "../hooks/use-realtime";
 import { formatPercent, formatPrice } from "../lib/format";
@@ -16,6 +17,7 @@ import { useRealtimeStore } from "../stores/realtime-store";
 
 export function FinancialsPage() {
 	const { symbol = "" } = useParams<{ symbol: string }>();
+	usePageTitle(symbol ? `${symbol} Financials` : "Financials");
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	const [type, setType] = useState<StatementType>(

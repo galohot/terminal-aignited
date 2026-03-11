@@ -4,6 +4,7 @@ import { Link, useSearchParams } from "react-router";
 import { IdxNav } from "../components/idx/idx-nav";
 import { Skeleton } from "../components/ui/loading";
 import { useIdxScreener, useIdxSectors } from "../hooks/use-idx-screener";
+import { usePageTitle } from "../hooks/use-page-title";
 import type { IdxScreenerParams } from "../types/market";
 
 const PAGE_SIZE = 50;
@@ -78,6 +79,7 @@ function buildParamsFromURL(sp: URLSearchParams): IdxScreenerParams {
 }
 
 export function IdxScreenerPage() {
+	usePageTitle("Stock Screener");
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	const params = useMemo(() => buildParamsFromURL(searchParams), [searchParams]);

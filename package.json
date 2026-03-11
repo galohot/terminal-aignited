@@ -1,7 +1,7 @@
 {
 	"name": "aignited-terminal",
 	"version": "1.0.0",
-	"description": "",
+	"description": "Real-time IDX & global market intelligence terminal with stock screener, insider networks, and financial analysis.",
 	"type": "module",
 	"private": true,
 	"scripts": {

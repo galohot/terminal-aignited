@@ -146,6 +146,12 @@ export default {
 		}
 
 		// Everything else: static assets
-		return env.ASSETS.fetch(request);
+		const assetResponse = await env.ASSETS.fetch(request);
+		const response = new Response(assetResponse.body, assetResponse);
+		response.headers.set("X-Content-Type-Options", "nosniff");
+		response.headers.set("X-Frame-Options", "DENY");
+		response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+		response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+		return response;
 	},
 };
