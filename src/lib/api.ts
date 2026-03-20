@@ -3,6 +3,7 @@ import type {
 	DashboardResponse,
 	FinancialsResponse,
 	Fundamentals,
+	HeatmapResponse,
 	HistoryParams,
 	HistoryResponse,
 	IdxBrokersResponse,
@@ -21,7 +22,10 @@ import type {
 	IdxScreenerResponse,
 	IdxSectorsResponse,
 	IdxTopConnectorsResponse,
+	MarketBreadthResponse,
 	MarketOverview,
+	MoversParams,
+	MoversResponse,
 	NewsCategoriesResponse,
 	NewsParams,
 	NewsResponse,
@@ -157,4 +161,25 @@ export const api = {
 			`/idx/broker-flow/${code}/history`,
 			days ? { days: String(days) } : undefined,
 		),
+	idxMovers: (params: MoversParams) =>
+		fetchAPI<MoversResponse>(
+			"/idx/screener/movers",
+			Object.fromEntries(
+				Object.entries(params)
+					.filter(([, v]) => v != null && v !== "")
+					.map(([k, v]) => [k, String(v)]),
+			) as Record<string, string>,
+		),
+	idxMarketBreadth: (params?: { days?: number }) =>
+		fetchAPI<MarketBreadthResponse>(
+			"/idx/market-breadth",
+			params
+				? (Object.fromEntries(
+						Object.entries(params)
+							.filter(([, v]) => v != null)
+							.map(([k, v]) => [k, String(v)]),
+					) as Record<string, string>)
+				: undefined,
+		),
+	idxHeatmap: () => fetchAPI<HeatmapResponse>("/idx/heatmap"),
 };

@@ -433,3 +433,64 @@ export interface IdxInsiderSearchResponse {
 	results: IdxInsiderSearchResult[];
 	total: number;
 }
+
+export interface MoversParams {
+	change_min?: number;
+	change_max?: number;
+	volume_min?: number;
+	relative_volume_min?: number;
+	sector?: string;
+	sort?: string;
+	order?: string;
+	preset?: string;
+	limit?: number;
+}
+
+export interface MoverStock {
+	symbol: string;
+	name: string;
+	sector: string;
+	price: number;
+	change_percent: number;
+	volume: number;
+	avg_volume_20d: number | null;
+	relative_volume: number | null;
+	open: number;
+	previous_close: number;
+	gap_percent: number;
+	market_cap: number | null;
+}
+
+export interface MoversResponse {
+	movers: MoverStock[];
+	total: number;
+}
+
+export interface MarketBreadthEntry {
+	date: string;
+	advances: number;
+	declines: number;
+	unchanged: number;
+	total_volume: number;
+	tracked_stocks: number;
+	advance_decline_ratio: number;
+}
+
+export interface MarketBreadthResponse {
+	breadth: MarketBreadthEntry[];
+}
+
+export interface HeatmapStock {
+	symbol: string;
+	name: string;
+	sector: string;
+	sub_sector: string;
+	price: number;
+	change_percent: number;
+	volume: number;
+	market_cap: number | null;
+}
+
+export interface HeatmapResponse {
+	stocks: HeatmapStock[];
+}

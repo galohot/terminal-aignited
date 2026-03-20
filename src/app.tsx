@@ -11,6 +11,7 @@ import { IdxEntitiesPage } from "./pages/idx-entities";
 import { IdxExplorerPage } from "./pages/idx-explorer";
 import { IdxFlowPage } from "./pages/idx-flow";
 import { IdxInsidersPage } from "./pages/idx-insiders";
+import { IdxMoversPage } from "./pages/idx-movers";
 import { IdxScreenerPage } from "./pages/idx-screener";
 import { NotFoundPage } from "./pages/not-found";
 import { StockPage } from "./pages/stock";
@@ -47,6 +48,7 @@ export function App() {
 							<Route path="/idx" element={<IdxExplorerPage />} />
 							<Route path="/idx/insiders" element={<IdxInsidersPage />} />
 							<Route path="/idx/screener" element={<IdxScreenerPage />} />
+							<Route path="/idx/movers" element={<IdxMoversPage />} />
 							<Route path="/idx/flow" element={<IdxFlowPage />} />
 							<Route path="/idx/entities" element={<IdxEntitiesPage />} />
 							<Route path="/idx/:kode" element={<IdxCompanyPage />} />
