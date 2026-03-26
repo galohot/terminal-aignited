@@ -12,6 +12,7 @@ const NAV_LINKS = [
 	{ to: "/idx/entities", label: "Power Map" },
 	{ to: "/watchlist", label: "Watchlist" },
 	{ to: "/charts", label: "Charts" },
+	{ to: "/signals", label: "Signals" },
 ] as const;
 
 function isActive(pathname: string, to: string): boolean {

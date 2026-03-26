@@ -16,6 +16,7 @@ import { IdxScreenerPage } from "./pages/idx-screener";
 import { NotFoundPage } from "./pages/not-found";
 import { StockPage } from "./pages/stock";
 import { WatchlistPage } from "./pages/watchlist";
+import { SignalsPage } from "./pages/signals";
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -54,6 +55,7 @@ export function App() {
 							<Route path="/idx/:kode" element={<IdxCompanyPage />} />
 							<Route path="/watchlist" element={<WatchlistPage />} />
 							<Route path="/charts" element={<ChartsPage />} />
+							<Route path="/signals" element={<SignalsPage />} />
 							<Route path="*" element={<NotFoundPage />} />
 						</Routes>
 					</AppShell>
