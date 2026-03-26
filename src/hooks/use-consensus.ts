@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchApi } from "../lib/api";
 
 // Uses Fiskal API for consensus data (same CORS, public)
 const CONSENSUS_API = "https://fiskal-api.aignited.id/api/v1";
