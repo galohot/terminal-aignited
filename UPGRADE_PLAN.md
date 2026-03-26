@@ -35,27 +35,7 @@ Build Indonesia's Bloomberg Terminal. One product. Everything integrated.
 - `/signals` page: summary cards, buy/sell tables, ticker detail
 - Daily cron: 16:15 WIB Mon-Fri
 
-### Phase 2 — IDX City Integration (In Progress)
-**Goal:** Embed the 3D city (`idx-city.aignited.id`) as a view inside the Terminal
-
-**What to build:**
-- New route: `/city` → iframe or React Three Fiber embedded
-- Signal overlay: buildings pulse/glow based on consensus score
-  - Green glow = strong buy, Red = sell, White = neutral
-- Click building → opens stock detail panel (right sidebar)
-- City becomes a visual screener: "show me all strong buys in the Banking sector"
-- WS bridge: Market API WebSocket → IDX City real-time price updates
-
-**Files to touch:**
-- `src/pages/city.tsx` (new)
-- `src/app.tsx` — add `/city` route + nav link
-- IDX City repo (`galohot/idx-city`) — add signal overlay consumer
-
-**Effort:** 1 week
-
----
-
-### Phase 3 — Macro Intelligence (Fiskal Integration)
+### Phase 2 — Macro Intelligence (Fiskal Integration)
 **Goal:** Add Indonesia fiscal/macro data as a tab
 
 **What to build:**
@@ -171,12 +151,11 @@ Terminal /signals page (live updates, no polling)
 ## Priority Order (what to build next)
 
 1. ✅ **Signals tab** — DONE
-2. 🔲 **IDX City tab** — Phase 2, highest visual impact
-3. 🔲 **Macro tab** — Phase 3, quick win
-4. 🔲 **More strategies** — Phase 4, ongoing
-5. 🔲 **Real-time signals** — Phase 5
-6. 🔲 **Paper Trading** — Phase 6
-7. 🔲 **Paywall** — Phase 7, last (need users first)
+2. 🔲 **Macro tab** — Phase 2, quick win (3-4 days)
+3. 🔲 **More strategies** — Phase 3, ongoing
+4. 🔲 **Real-time signals** — Phase 4
+5. 🔲 **Paper Trading** — Phase 5
+6. 🔲 **Paywall** — Phase 6, last (need users first)
 
 ---
 
