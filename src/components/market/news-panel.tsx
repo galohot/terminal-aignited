@@ -27,6 +27,9 @@ export function NewsPanel() {
 		return `${items.length}/${data.total}`;
 	}, [data, isLoading, items.length]);
 
+	// Hide entire panel if no news and not loading
+	if (!isLoading && items.length === 0) return null;
+
 	return (
 		<div className="rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(16,22,22,0.96),rgba(9,12,12,0.98))] p-4 shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
 			<div className="flex flex-col gap-3 border-b border-white/8 pb-4 sm:flex-row sm:items-end sm:justify-between">

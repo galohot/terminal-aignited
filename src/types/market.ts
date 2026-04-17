@@ -494,3 +494,226 @@ export interface HeatmapStock {
 export interface HeatmapResponse {
 	stocks: HeatmapStock[];
 }
+
+// Broker Summary (per-stock)
+export interface IdxBrokerSummaryEntry {
+	broker_code: string;
+	broker_name: string;
+	date: string;
+	frequency: number;
+	kode_emiten: string;
+	value: number;
+	volume: number;
+}
+
+export interface IdxBrokerSummaryTotals {
+	broker_count: number;
+	total_frequency: number;
+	total_value: number;
+	total_volume: number;
+}
+
+export interface IdxBrokerSummaryResponse {
+	kode_emiten: string;
+	date: string;
+	brokers: IdxBrokerSummaryEntry[];
+	totals: IdxBrokerSummaryTotals;
+}
+
+// Insider Positions (per-stock)
+export interface IdxInsiderPosition {
+	insider_name: string;
+	insider_type: string;
+	is_independent: boolean | null;
+	percentage: number | null;
+	position: string | null;
+	shares_owned: number | null;
+}
+
+export interface IdxInsiderTransactionsResponse {
+	kode_emiten: string;
+	insiders: IdxInsiderPosition[];
+	total: number;
+}
+
+// Index Price History
+export interface IdxIndexHistoryPoint {
+	date: string;
+	open: number;
+	high: number;
+	low: number;
+	close: number;
+	volume: number;
+	change_percent: number;
+}
+
+export interface IdxIndexHistoryResponse {
+	index_code: string;
+	data: IdxIndexHistoryPoint[];
+	total: number;
+}
+
+// Foreign Flow (per-stock)
+export interface IdxForeignFlowEntry {
+	date: string;
+	foreign_buy: number;
+	foreign_sell: number;
+	foreign_net: number;
+}
+
+export interface IdxForeignFlowResponse {
+	kode_emiten: string;
+	history: IdxForeignFlowEntry[];
+	days: number;
+	cumulative_net_foreign: number;
+}
+
+// Corporate Disclosures
+export interface IdxDisclosure {
+	kode: string;
+	headline: string;
+	attachment_url: string;
+	submitted_date: string;
+	source: string;
+}
+
+export interface IdxDisclosuresResponse {
+	disclosures: IdxDisclosure[];
+	total: number;
+}
+
+// ── KSEI Ownership Types ──
+
+export interface KseiStats {
+	total_records: number;
+	total_companies: number;
+	total_investors: number;
+	multi_company_investors: number;
+	avg_per_company: number;
+	top_connectors: { name: string; companies: number; investor_type: string }[];
+}
+
+export interface KseiShareholderRecord {
+	kode_emiten: string;
+	issuer_name: string;
+	investor_name: string;
+	investor_type: string;
+	local_foreign: string;
+	nationality: string;
+	domicile: string;
+	holdings_scripless: number;
+	holdings_scrip: number;
+	total_shares: number;
+	percentage: number;
+}
+
+export interface KseiRecordsResponse {
+	records: KseiShareholderRecord[];
+	total: number;
+	page: number;
+	per_page: number;
+}
+
+export interface KseiCompanyResponse {
+	kode_emiten: string;
+	issuer_name: string;
+	total_insider_pct: number;
+	shareholders: KseiShareholderRecord[];
+}
+
+export interface KseiInvestorResponse {
+	investor_name: string;
+	investor_type: string;
+	local_foreign: string;
+	domicile: string;
+	companies: KseiShareholderRecord[];
+}
+
+export interface KseiTypeDistItem {
+	investor_type: string;
+	count: number;
+	total_pct: number;
+	avg_pct: number;
+}
+
+export interface KseiLfSplit {
+	local: { count: number; total_pct: number };
+	foreign: { count: number; total_pct: number };
+}
+
+export interface KseiConcentrationBucket {
+	bucket: string;
+	count: number;
+}
+
+// ── Macro Types ──
+
+export interface MacroHeadline {
+	value: number | null;
+	unit: string;
+	period: string | null;
+}
+
+export interface MacroSeriesPoint {
+	period: string | null;
+	value: number | null;
+	name?: string | null;
+}
+
+export interface MacroTradePoint {
+	period: string | null;
+	value: number | null;
+}
+
+export interface MacroOverview {
+	headlines: {
+		bi_rate: MacroHeadline;
+		inflation_yoy: MacroHeadline;
+		gdp_growth: MacroHeadline;
+	};
+	apbn: {
+		revenue_target: number | null;
+		spending_target: number | null;
+		deficit_target: number | null;
+		year: string;
+	};
+	bi_rate: MacroSeriesPoint[];
+	inflation: MacroSeriesPoint[];
+	gdp: MacroSeriesPoint[];
+	trade: {
+		exports: MacroTradePoint[];
+		imports: MacroTradePoint[];
+		balance: MacroTradePoint[];
+	};
+	debt: MacroSeriesPoint[];
+}
+
+export interface KseiCompanyListItem {
+	kode_emiten: string;
+	issuer_name: string;
+	investor_count: number;
+	total_insider_pct: number;
+}
+
+export interface KseiCompanyListResponse {
+	companies: KseiCompanyListItem[];
+	total: number;
+	page: number;
+	per_page: number;
+}
+
+export interface KseiInvestorListItem {
+	investor_name: string;
+	investor_type: string;
+	local_foreign: string;
+	domicile: string;
+	company_count: number;
+	total_pct: number;
+}
+
+export interface KseiInvestorListResponse {
+	investors: KseiInvestorListItem[];
+	total: number;
+	page: number;
+	per_page: number;
+}

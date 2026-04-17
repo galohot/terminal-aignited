@@ -9,3 +9,12 @@ export function useIdxIndices() {
 		refetchInterval: 300_000,
 	});
 }
+
+export function useIdxIndexHistory(name: string, days = 30) {
+	return useQuery({
+		queryKey: ["idx-index-history", name, days],
+		queryFn: () => api.idxIndexHistory(name, days),
+		enabled: name.length > 0,
+		staleTime: 300_000,
+	});
+}

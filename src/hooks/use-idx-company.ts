@@ -18,3 +18,38 @@ export function useIdxFinancialSummary(kode: string) {
 		staleTime: 300_000,
 	});
 }
+
+export function useIdxBrokerSummary(kode: string) {
+	return useQuery({
+		queryKey: ["idx-broker-summary", kode],
+		queryFn: () => api.idxBrokerSummary(kode),
+		enabled: kode.length > 0,
+		staleTime: 300_000,
+	});
+}
+
+export function useIdxInsiderTransactions(kode: string) {
+	return useQuery({
+		queryKey: ["idx-insider-transactions", kode],
+		queryFn: () => api.idxInsiderTransactions(kode),
+		enabled: kode.length > 0,
+		staleTime: 300_000,
+	});
+}
+
+export function useIdxForeignFlow(kode: string, days = 30) {
+	return useQuery({
+		queryKey: ["idx-foreign-flow", kode, days],
+		queryFn: () => api.idxForeignFlow(kode, days),
+		enabled: kode.length > 0,
+		staleTime: 300_000,
+	});
+}
+
+export function useIdxDisclosures(kode?: string, limit = 20) {
+	return useQuery({
+		queryKey: ["idx-disclosures", kode, limit],
+		queryFn: () => api.idxDisclosures({ kode, limit }),
+		staleTime: 300_000,
+	});
+}

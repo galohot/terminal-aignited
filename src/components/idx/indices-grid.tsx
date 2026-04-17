@@ -1,8 +1,9 @@
 import { useMemo } from "react";
-import { useIdxIndices } from "../../hooks/use-idx-indices";
+import { useIdxIndexHistory, useIdxIndices } from "../../hooks/use-idx-indices";
 import { formatPercent, formatPrice } from "../../lib/format";
 import type { IdxIndex } from "../../types/market";
 import { Skeleton } from "../ui/loading";
+import { IndexSparkline } from "./index-sparkline";
 
 const MAJOR_CODES = new Set(["COMPOSITE", "LQ45", "IDX30", "IDX80", "IDXQ30"]);
 
@@ -107,6 +108,7 @@ function deriveChangePercent(idx: IdxIndex): number {
 function IndexTile({ index }: { index: IdxIndex }) {
 	const pct = deriveChangePercent(index);
 	const tone = changeTone(pct);
+	const { data } = useIdxIndexHistory(index.index_code, 14);
 
 	return (
 		<div className={`rounded-xl border p-3 transition-colors ${tone}`}>
@@ -115,6 +117,11 @@ function IndexTile({ index }: { index: IdxIndex }) {
 			</div>
 			<div className="mt-1 font-mono text-sm text-white">{formatPrice(index.close)}</div>
 			<div className="mt-0.5 font-mono text-xs font-medium">{formatPercent(pct)}</div>
+			{data?.data && data.data.length >= 2 && (
+				<div className="mt-1.5">
+					<IndexSparkline data={data.data} />
+				</div>
+			)}
 		</div>
 	);
 }

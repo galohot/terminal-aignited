@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import type { IdxCommissioner, IdxDirector, IdxPeer, IdxShareholder } from "../../types/market";
 
@@ -52,7 +52,10 @@ export function InsiderNetworkGraph({
 		color: string;
 	} | null>(null);
 
-	const peersWithNames = peers.filter((p) => p.names && p.names.length > 0);
+	const peersWithNames = useMemo(
+		() => peers.filter((p) => p.names && p.names.length > 0),
+		[peers],
+	);
 
 	useEffect(() => {
 		const svg = svgRef.current;

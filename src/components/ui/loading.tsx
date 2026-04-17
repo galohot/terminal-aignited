@@ -2,6 +2,23 @@ export function Skeleton({ className = "" }: { className?: string }) {
 	return <div className={`animate-pulse rounded bg-t-surface ${className}`} />;
 }
 
+export function PageLoading() {
+	return (
+		<div className="mx-auto max-w-[1600px] p-4">
+			<Skeleton className="mb-4 h-8 w-48" />
+			<Skeleton className="mb-6 h-4 w-80" />
+			<div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+				<Skeleton className="h-20 rounded-lg" />
+				<Skeleton className="h-20 rounded-lg" />
+				<Skeleton className="h-20 rounded-lg" />
+				<Skeleton className="h-20 rounded-lg" />
+			</div>
+			<Skeleton className="mb-4 h-[300px] w-full rounded-lg" />
+			<Skeleton className="h-[200px] w-full rounded-lg" />
+		</div>
+	);
+}
+
 const PANEL_KEYS = ["p0", "p1", "p2", "p3", "p4", "p5"];
 const ROW_KEYS = ["r0", "r1", "r2", "r3", "r4"];
 

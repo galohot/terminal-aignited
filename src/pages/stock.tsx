@@ -111,11 +111,13 @@ export function StockPage() {
 					) : history.data ? (
 						<PriceChart data={history.data.data} realtimePrice={realtimePrice} />
 					) : null}
-					{fundamentals.data && (
-						<div className="mt-4">
+					<div className="mt-4">
+						{fundamentals.isLoading ? (
+							<Skeleton className="h-[200px] w-full rounded-lg" />
+						) : fundamentals.data ? (
 							<FundamentalsPanel data={fundamentals.data} />
-						</div>
-					)}
+						) : null}
+					</div>
 					<div className="mt-4">
 						<StockNewsSection ticker={symbol} />
 					</div>
@@ -123,12 +125,14 @@ export function StockPage() {
 				<div className="flex flex-col gap-4">
 					<KeyStats quote={liveQuote} fundamentals={fundamentals.data} />
 					<div className="flex flex-wrap gap-2">
-						<Link
-							to={`/stock/${symbol}/financials`}
-							className="flex-1 rounded border border-t-border bg-t-surface px-3 py-1.5 text-center font-mono text-xs text-t-text-secondary transition-colors hover:bg-t-hover"
-						>
-							Financials →
-						</Link>
+						{!symbol.startsWith("^") && (
+							<Link
+								to={`/stock/${symbol}/financials`}
+								className="flex-1 rounded border border-t-border bg-t-surface px-3 py-1.5 text-center font-mono text-xs text-t-text-secondary transition-colors hover:bg-t-hover"
+							>
+								Financials →
+							</Link>
+						)}
 						{isJK && (
 							<Link
 								to={`/idx/${idxKode}`}

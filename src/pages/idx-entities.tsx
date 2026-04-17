@@ -1,18 +1,22 @@
 import { clsx } from "clsx";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { ConnectorsBar } from "../components/idx/connectors-bar";
 import { HoldingsLollipop } from "../components/idx/holdings-lollipop";
 import { IdxNav } from "../components/idx/idx-nav";
+import { BubblePack } from "../components/ownership/bubble-pack";
+import { ChartContainer } from "../components/ownership/chart-container";
+import { SankeyDiagram } from "../components/ownership/sankey-diagram";
 import { Skeleton } from "../components/ui/loading";
 import {
 	useIdxEntityGroupHoldings,
 	useIdxEntityGroups,
 	useIdxTopConnectors,
 } from "../hooks/use-idx-entities";
+import { useKseiClusters, useKseiSankey } from "../hooks/use-ksei";
 import { usePageTitle } from "../hooks/use-page-title";
 
-type Tab = "groups" | "connectors";
+type Tab = "groups" | "connectors" | "flow" | "clusters";
 type ConnectorType = "" | "director" | "commissioner" | "shareholder";
 
 const GROUP_LABELS: Record<string, string> = {
@@ -42,16 +46,25 @@ export function IdxEntitiesPage() {
 				</p>
 			</div>
 
-			<div className="mb-4 flex gap-2">
+			<div className="mb-4 flex flex-wrap gap-2">
 				<TabButton active={tab === "groups"} onClick={() => setTab("groups")}>
 					Entity Groups
 				</TabButton>
 				<TabButton active={tab === "connectors"} onClick={() => setTab("connectors")}>
 					Connectors
 				</TabButton>
+				<TabButton active={tab === "flow"} onClick={() => setTab("flow")}>
+					Ownership Flow
+				</TabButton>
+				<TabButton active={tab === "clusters"} onClick={() => setTab("clusters")}>
+					Clusters
+				</TabButton>
 			</div>
 
-			{tab === "groups" ? <EntityGroupsTab /> : <ConnectorsTab />}
+			{tab === "groups" && <EntityGroupsTab />}
+			{tab === "connectors" && <ConnectorsTab />}
+			{tab === "flow" && <OwnershipFlowTab />}
+			{tab === "clusters" && <OwnershipClustersTab />}
 		</div>
 	);
 }
@@ -62,9 +75,11 @@ function EntityGroupsTab() {
 	const holdings = useIdxEntityGroupHoldings(selectedGroup);
 
 	// Auto-select first group when data loads
-	if (groups.data?.entity_groups.length && !selectedGroup) {
-		setSelectedGroup(groups.data.entity_groups[0].entity_group);
-	}
+	useEffect(() => {
+		if (groups.data?.entity_groups.length && !selectedGroup) {
+			setSelectedGroup(groups.data.entity_groups[0].entity_group);
+		}
+	}, [groups.data, selectedGroup]);
 
 	return (
 		<div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_1fr]">
@@ -183,6 +198,50 @@ function ConnectorsTab() {
 			) : (
 				<ConnectorsBar connectors={connectors.data.connectors} />
 			)}
+		</div>
+	);
+}
+
+function OwnershipFlowTab() {
+	const sankey = useKseiSankey();
+	return (
+		<div>
+			{sankey.isLoading ? (
+				<Skeleton className="h-[400px] w-full rounded-xl" />
+			) : sankey.error ? (
+				<div className="rounded-2xl border border-dashed border-t-border p-8 text-center text-sm text-t-text-muted">
+					Failed to load ownership flow.
+				</div>
+			) : sankey.data ? (
+				<ChartContainer
+					title="Ownership Flow"
+					subtitle="How investor types flow into ownership concentration levels"
+				>
+					<SankeyDiagram data={sankey.data} />
+				</ChartContainer>
+			) : null}
+		</div>
+	);
+}
+
+function OwnershipClustersTab() {
+	const clusters = useKseiClusters();
+	return (
+		<div>
+			{clusters.isLoading ? (
+				<Skeleton className="h-[400px] w-full rounded-xl" />
+			) : clusters.error ? (
+				<div className="rounded-2xl border border-dashed border-t-border p-8 text-center text-sm text-t-text-muted">
+					Failed to load clusters.
+				</div>
+			) : clusters.data ? (
+				<ChartContainer
+					title="Company Clusters"
+					subtitle="Grouped by shared institutional investors (3+ shared)"
+				>
+					<BubblePack data={clusters.data} />
+				</ChartContainer>
+			) : null}
 		</div>
 	);
 }

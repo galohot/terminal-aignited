@@ -1,7 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Suspense, lazy } from "react";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { ErrorBoundary } from "./components/error-boundary";
 import { AppShell } from "./components/layout/app-shell";
+import { PageLoading } from "./components/ui/loading";
 import type { ApiError } from "./lib/api";
 import { ChartsPage } from "./pages/charts";
 import { DashboardPage } from "./pages/dashboard";
@@ -17,6 +19,25 @@ import { NotFoundPage } from "./pages/not-found";
 import { StockPage } from "./pages/stock";
 import { WatchlistPage } from "./pages/watchlist";
 import { SignalsPage } from "./pages/signals";
+
+const IdxOwnershipPage = lazy(() =>
+	import("./pages/idx-ownership").then((m) => ({ default: m.IdxOwnershipPage })),
+);
+const IdxOwnershipNetworkPage = lazy(() =>
+	import("./pages/idx-ownership-network").then((m) => ({ default: m.IdxOwnershipNetworkPage })),
+);
+const IdxOwnershipCompaniesPage = lazy(() =>
+	import("./pages/idx-ownership-companies").then((m) => ({ default: m.IdxOwnershipCompaniesPage })),
+);
+const IdxOwnershipInvestorsPage = lazy(() =>
+	import("./pages/idx-ownership-investors").then((m) => ({ default: m.IdxOwnershipInvestorsPage })),
+);
+const IdxOwnershipInvestorPage = lazy(() =>
+	import("./pages/idx-ownership-investor").then((m) => ({ default: m.IdxOwnershipInvestorPage })),
+);
+const IdxMacroPage = lazy(() =>
+	import("./pages/idx-macro").then((m) => ({ default: m.IdxMacroPage })),
+);
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -51,6 +72,12 @@ export function App() {
 							<Route path="/idx/screener" element={<IdxScreenerPage />} />
 							<Route path="/idx/movers" element={<IdxMoversPage />} />
 							<Route path="/idx/flow" element={<IdxFlowPage />} />
+							<Route path="/idx/ownership" element={<Suspense fallback={<PageLoading />}><IdxOwnershipPage /></Suspense>} />
+							<Route path="/idx/ownership/network" element={<Suspense fallback={<PageLoading />}><IdxOwnershipNetworkPage /></Suspense>} />
+							<Route path="/idx/ownership/companies" element={<Suspense fallback={<PageLoading />}><IdxOwnershipCompaniesPage /></Suspense>} />
+							<Route path="/idx/ownership/investors" element={<Suspense fallback={<PageLoading />}><IdxOwnershipInvestorsPage /></Suspense>} />
+							<Route path="/idx/ownership/investor/:name" element={<Suspense fallback={<PageLoading />}><IdxOwnershipInvestorPage /></Suspense>} />
+							<Route path="/idx/macro" element={<Suspense fallback={<PageLoading />}><IdxMacroPage /></Suspense>} />
 							<Route path="/idx/entities" element={<IdxEntitiesPage />} />
 							<Route path="/idx/:kode" element={<IdxCompanyPage />} />
 							<Route path="/watchlist" element={<WatchlistPage />} />

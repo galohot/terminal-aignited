@@ -10,6 +10,6 @@ export function useFinancials(
 		queryKey: ["financials", symbol, type, period],
 		queryFn: () => api.financials(symbol, type, period),
 		staleTime: 5 * 60_000,
-		enabled: !!symbol,
+		enabled: !!symbol && !symbol.startsWith("^"),
 	});
 }

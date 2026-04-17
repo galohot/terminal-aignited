@@ -1,5 +1,5 @@
 import { clsx } from "clsx";
-import { Activity, Building2, Filter, Network, Search, TrendingUp } from "lucide-react";
+import { Activity, BarChart3, Building2, Filter, Network, PieChart, Search, TrendingUp } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
 const IDX_LINKS = [
@@ -8,7 +8,9 @@ const IDX_LINKS = [
 	{ to: "/idx/screener", label: "Screener", icon: Filter, exact: false },
 	{ to: "/idx/flow", label: "Flow", icon: Activity, exact: false },
 	{ to: "/idx/insiders", label: "Insiders", icon: Network, exact: false },
+	{ to: "/idx/ownership", label: "Ownership", icon: PieChart, exact: false },
 	{ to: "/idx/entities", label: "Power Map", icon: Building2, exact: false },
+	{ to: "/idx/macro", label: "Macro", icon: BarChart3, exact: false },
 ] as const;
 
 export function IdxNav() {
