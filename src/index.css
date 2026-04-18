@@ -1,32 +1,105 @@
 @import "tailwindcss";
 
 @theme {
-	--color-t-bg: #071111;
-	--color-t-surface: #101918;
-	--color-t-hover: #172322;
-	--color-t-border: #233534;
-	--color-t-border-active: #33514d;
-	--color-t-text: #edf2ef;
-	--color-t-text-secondary: #b8c3be;
-	--color-t-text-muted: #72857e;
-	--color-t-green: #3ddc91;
-	--color-t-green-dim: #3ddc9133;
-	--color-t-red: #ff6b6b;
-	--color-t-red-dim: #ff6b6b33;
-	--color-t-blue: #6ea8ff;
-	--color-t-amber: #ffbf47;
+	/* ---------------------------------------------------------------- */
+	/* Aignited brand palette — navy surfaces, ember primary, cyan cool, */
+	/* spark gold tertiary. Semantic pos/neg stays green/red.            */
+	/* ---------------------------------------------------------------- */
+
+	/* Navy surfaces (0 darkest → 5 lightest) */
+	--color-aig-navy-0: #060a18;
+	--color-aig-navy-1: #0a1024;
+	--color-aig-navy-2: #0f1830;
+	--color-aig-navy-3: #16214a;
+	--color-aig-navy-4: #1f2d63;
+	--color-aig-navy-5: #2a3d85;
+	--color-aig-ink: #0b1024;
+
+	/* Ember — primary brand accent */
+	--color-aig-ember-50: #fff5eb;
+	--color-aig-ember-100: #ffd9a8;
+	--color-aig-ember-300: #ffa04a;
+	--color-aig-ember-500: #ff7a1a;
+	--color-aig-ember-600: #ef5d07;
+	--color-aig-ember-700: #c0410a;
+
+	/* Cyan — secondary accent */
+	--color-aig-cyan-300: #4fb6ff;
+	--color-aig-cyan-500: #1d7fe0;
+	--color-aig-cyan-600: #0f5bb0;
+
+	/* Spark — tertiary highlight (sun flourish) */
+	--color-aig-spark: #ffc24a;
+
+	/* Semantic (finance) */
+	--color-aig-pos: #2fd39a;
+	--color-aig-neg: #ff5d6c;
+
+	/* Text */
+	--color-aig-text: #eef2ff;
+	--color-aig-text-2: #c0c9e6;
+	--color-aig-text-3: #8390b6;
+	--color-aig-text-4: #5a668a;
+
+	/* ---------------------------------------------------------------- */
+	/* Legacy `t-*` tokens — remapped to aignited palette so every page   */
+	/* that still references them picks up the new skin automatically.   */
+	/* ---------------------------------------------------------------- */
+	--color-t-bg: #060a18;
+	--color-t-surface: #0f1830;
+	--color-t-hover: #16214a;
+	--color-t-border: #1c2a5c;
+	--color-t-border-active: #2a3d85;
+	--color-t-text: #eef2ff;
+	--color-t-text-secondary: #c0c9e6;
+	--color-t-text-muted: #8390b6;
+	--color-t-green: #2fd39a;
+	--color-t-green-dim: #2fd39a1f;
+	--color-t-red: #ff5d6c;
+	--color-t-red-dim: #ff5d6c22;
+	--color-t-blue: #4fb6ff;
+	--color-t-amber: #ff7a1a;
 	--color-t-purple: #8b7bff;
-	--font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
-	--font-mono: "IBM Plex Mono", "JetBrains Mono", "Consolas", monospace;
+
+	--font-sans: "Nunito", "SF Pro Rounded", system-ui, sans-serif;
+	--font-mono: "JetBrains Mono", ui-monospace, "Consolas", monospace;
+}
+
+/* ====================================================================
+   Non-tokenized aignited variables (gradients, strokes, etc.)
+   ==================================================================== */
+:root {
+	--aig-stroke-1: rgba(146, 170, 255, 0.1);
+	--aig-stroke-2: rgba(146, 170, 255, 0.18);
+	--aig-stroke-ember: rgba(255, 122, 26, 0.35);
+
+	--aig-grad-flame: linear-gradient(135deg, #1c3a8a 0%, #2a62c6 22%, #ff8a2a 58%, #ff5a07 100%);
+	--aig-grad-ember: linear-gradient(135deg, #ff9a42 0%, #ff5a07 100%);
+	--aig-grad-navy: linear-gradient(160deg, #0e1530 0%, #0a1024 100%);
+	--aig-grad-panel: linear-gradient(180deg, rgba(22, 33, 74, 0.55) 0%, rgba(10, 16, 36, 0.85) 100%);
+	--aig-grad-hero:
+		radial-gradient(1200px 500px at 12% -10%, rgba(41, 98, 198, 0.35), transparent 55%),
+		radial-gradient(900px 480px at 95% -20%, rgba(255, 122, 26, 0.32), transparent 55%),
+		linear-gradient(180deg, #0b1230 0%, #07091a 100%);
+}
+
+/* Accent skin override — ember (default) / blue / spark */
+body[data-accent="blue"] {
+	--aig-stroke-ember: rgba(42, 123, 239, 0.35);
+	--aig-grad-ember: linear-gradient(135deg, #7fb6ff 0%, #1a5cc0 100%);
+}
+body[data-accent="spark"] {
+	--aig-stroke-ember: rgba(255, 176, 32, 0.35);
+	--aig-grad-ember: linear-gradient(135deg, #ffd577 0%, #ff8a1f 100%);
 }
 
 body {
 	min-height: 100vh;
 	background:
-		radial-gradient(circle at top left, rgba(255, 191, 71, 0.08), transparent 24%),
-		radial-gradient(circle at top right, rgba(61, 220, 145, 0.08), transparent 28%),
-		linear-gradient(180deg, #091312 0%, #050909 100%);
-	color: var(--color-t-text);
+		radial-gradient(900px 600px at 90% -10%, rgba(255, 122, 26, 0.09), transparent 60%),
+		radial-gradient(1100px 700px at -10% 0%, rgba(41, 98, 198, 0.1), transparent 60%),
+		linear-gradient(180deg, #070a18 0%, #05070f 100%);
+	color: var(--color-aig-text);
 	font-family: var(--font-sans);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
@@ -36,6 +109,9 @@ body {
 	min-height: 100vh;
 }
 
+/* ====================================================================
+   Price-flash pulses (live affordance on quote rows)
+   ==================================================================== */
 @keyframes price-flash-green {
 	0% {
 		background-color: var(--color-t-green-dim);
@@ -44,7 +120,6 @@ body {
 		background-color: transparent;
 	}
 }
-
 @keyframes price-flash-red {
 	0% {
 		background-color: var(--color-t-red-dim);
@@ -53,13 +128,11 @@ body {
 		background-color: transparent;
 	}
 }
-
 .flash-green {
-	animation: price-flash-green 400ms ease-out;
+	animation: price-flash-green 600ms ease-out;
 }
-
 .flash-red {
-	animation: price-flash-red 400ms ease-out;
+	animation: price-flash-red 600ms ease-out;
 }
 
 /* Mobile menu animation */
@@ -71,11 +144,9 @@ body {
 		transform: translateX(0);
 	}
 }
-
 .animate-slide-in-left {
 	animation: slide-in-left 200ms ease-out;
 }
-
 @keyframes fade-in {
 	from {
 		opacity: 0;
@@ -84,37 +155,388 @@ body {
 		opacity: 1;
 	}
 }
-
 .animate-fade-in {
 	animation: fade-in 150ms ease-out;
 }
 
-/* Focus ring for keyboard navigation */
+/* ====================================================================
+   Ticker rail — horizontal marquee (fixed above header)
+   ==================================================================== */
+.aig-ticker-rail {
+	position: relative;
+	height: 32px;
+	overflow: hidden;
+	border-bottom: 1px solid var(--aig-stroke-1);
+	background: linear-gradient(180deg, rgba(12, 18, 40, 0.9), rgba(8, 12, 28, 0.9));
+}
+.aig-ticker-rail::before,
+.aig-ticker-rail::after {
+	content: "";
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 80px;
+	z-index: 2;
+	pointer-events: none;
+}
+.aig-ticker-rail::before {
+	left: 0;
+	background: linear-gradient(90deg, #060a18, transparent);
+}
+.aig-ticker-rail::after {
+	right: 0;
+	background: linear-gradient(-90deg, #060a18, transparent);
+}
+.aig-ticker-track {
+	display: flex;
+	gap: 34px;
+	white-space: nowrap;
+	padding: 7px 0;
+	animation: aig-tick-scroll 70s linear infinite;
+	will-change: transform;
+}
+.aig-ticker-track:hover {
+	animation-play-state: paused;
+}
+@keyframes aig-tick-scroll {
+	0% {
+		transform: translateX(0);
+	}
+	100% {
+		transform: translateX(-50%);
+	}
+}
+
+/* ====================================================================
+   Chip / pill primitives
+   ==================================================================== */
+.aig-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 10px;
+	border-radius: 999px;
+	border: 1px solid var(--aig-stroke-2);
+	background: rgba(11, 16, 36, 0.6);
+	color: var(--color-aig-text-2);
+	font-family: var(--font-mono);
+	font-size: 10px;
+	letter-spacing: 0.22em;
+	text-transform: uppercase;
+}
+.aig-chip-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 999px;
+	background: currentColor;
+	box-shadow: 0 0 10px currentColor;
+}
+.aig-chip-ember {
+	color: var(--color-aig-ember-300);
+	border-color: var(--aig-stroke-ember);
+	background: rgba(255, 122, 26, 0.08);
+}
+.aig-chip-spark {
+	color: var(--color-aig-spark);
+	border-color: rgba(255, 194, 74, 0.35);
+	background: rgba(255, 194, 74, 0.08);
+}
+.aig-chip-pos {
+	color: var(--color-aig-pos);
+	border-color: rgba(47, 211, 154, 0.3);
+	background: rgba(47, 211, 154, 0.08);
+}
+.aig-chip-neg {
+	color: var(--color-aig-neg);
+	border-color: rgba(255, 93, 108, 0.3);
+	background: rgba(255, 93, 108, 0.08);
+}
+.aig-chip-cy {
+	color: var(--color-aig-cyan-300);
+	border-color: rgba(79, 182, 255, 0.3);
+	background: rgba(79, 182, 255, 0.08);
+}
+
+/* ====================================================================
+   Section panel — the primary surface container
+   ==================================================================== */
+.aig-section {
+	border-radius: 20px;
+	border: 1px solid var(--aig-stroke-1);
+	background: var(--aig-grad-panel);
+	padding: 18px;
+	position: relative;
+}
+body[data-density="compact"] .aig-section {
+	padding: 14px;
+}
+
+/* ====================================================================
+   Hero surface
+   ==================================================================== */
+.aig-hero {
+	position: relative;
+	border-radius: 24px;
+	overflow: hidden;
+	background: var(--aig-grad-hero);
+	border: 1px solid var(--aig-stroke-2);
+	padding: 22px 24px 20px;
+	isolation: isolate;
+}
+.aig-hero::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
+	background:
+		radial-gradient(600px 240px at 85% 15%, rgba(255, 122, 26, 0.35), transparent 60%),
+		radial-gradient(500px 220px at 10% 100%, rgba(41, 98, 198, 0.22), transparent 60%);
+}
+.aig-hero::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	opacity: 0.35;
+	background-image:
+		linear-gradient(rgba(146, 170, 255, 0.06) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(146, 170, 255, 0.06) 1px, transparent 1px);
+	background-size: 32px 32px;
+	mask-image: radial-gradient(ellipse at 50% 0%, #000 40%, transparent 80%);
+}
+body[data-skin="minimal"] .aig-hero::before {
+	opacity: 0.6;
+}
+body[data-skin="minimal"] .aig-hero::after {
+	opacity: 0;
+}
+
+.aig-headline {
+	font-family: var(--font-sans);
+	font-weight: 800;
+	font-size: 40px;
+	line-height: 1.08;
+	letter-spacing: -0.015em;
+	margin: 4px 0 10px;
+	text-wrap: balance;
+}
+.aig-headline em {
+	font-style: normal;
+	background: var(--aig-grad-ember);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+body[data-density="compact"] .aig-headline {
+	font-size: 34px;
+}
+
+/* ====================================================================
+   Quote card — the primary list row
+   ==================================================================== */
+.aig-quote-card {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	gap: 14px;
+	align-items: center;
+	padding: 12px 14px;
+	border-radius: 14px;
+	border: 1px solid var(--aig-stroke-1);
+	background: linear-gradient(90deg, rgba(22, 33, 74, 0.35), rgba(11, 16, 36, 0.1));
+	text-decoration: none;
+	color: inherit;
+	transition:
+		transform 0.15s ease,
+		border-color 0.2s ease,
+		background 0.2s ease;
+	cursor: pointer;
+}
+.aig-quote-card:hover {
+	transform: translateY(-1px);
+	border-color: var(--aig-stroke-2);
+	background: linear-gradient(90deg, rgba(22, 33, 74, 0.55), rgba(255, 122, 26, 0.04));
+}
+body[data-density="compact"] .aig-quote-card {
+	padding: 10px 12px;
+}
+.aig-qc-accent {
+	width: 4px;
+	align-self: stretch;
+	border-radius: 4px;
+	background: var(--color-aig-cyan-500);
+}
+.aig-quote-card.tone-local .aig-qc-accent {
+	background: linear-gradient(180deg, var(--color-aig-ember-500), var(--color-aig-ember-700));
+}
+.aig-quote-card.tone-apac .aig-qc-accent {
+	background: linear-gradient(180deg, var(--color-aig-cyan-300), var(--color-aig-cyan-600));
+}
+.aig-quote-card.tone-macro .aig-qc-accent {
+	background: linear-gradient(180deg, var(--color-aig-spark), var(--color-aig-ember-600));
+}
+.aig-quote-card.tone-global .aig-qc-accent {
+	background: linear-gradient(180deg, #8ea7ff, var(--color-aig-navy-5));
+}
+
+/* ====================================================================
+   IDX index cell — directional tint
+   ==================================================================== */
+.aig-idxcell {
+	border-radius: 12px;
+	border: 1px solid var(--aig-stroke-1);
+	padding: 10px 12px;
+	background: rgba(11, 16, 36, 0.55);
+	position: relative;
+	overflow: hidden;
+	min-height: 70px;
+}
+.aig-idxcell.up {
+	background: linear-gradient(135deg, rgba(47, 211, 154, 0.18), rgba(11, 16, 36, 0.55));
+	border-color: rgba(47, 211, 154, 0.25);
+}
+.aig-idxcell.dn {
+	background: linear-gradient(135deg, rgba(255, 93, 108, 0.18), rgba(11, 16, 36, 0.55));
+	border-color: rgba(255, 93, 108, 0.25);
+}
+body[data-skin="minimal"] .aig-idxcell.up,
+body[data-skin="minimal"] .aig-idxcell.dn {
+	background: rgba(11, 16, 36, 0.55);
+}
+
+/* ====================================================================
+   Buttons
+   ==================================================================== */
+.aig-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 9px 14px;
+	border-radius: 999px;
+	font-family: var(--font-mono);
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.2em;
+	border: 1px solid transparent;
+	cursor: pointer;
+	transition:
+		transform 0.15s ease,
+		background 0.2s ease;
+	text-decoration: none;
+}
+.aig-btn:hover {
+	transform: translateY(-1px);
+}
+.aig-btn-primary {
+	background: var(--aig-grad-ember);
+	color: #1a0b00;
+	border-color: rgba(255, 122, 26, 0.55);
+	box-shadow:
+		0 8px 22px rgba(255, 122, 26, 0.28),
+		inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+	font-weight: 700;
+}
+.aig-btn-ghost {
+	background: rgba(146, 170, 255, 0.06);
+	color: var(--color-aig-text-2);
+	border-color: var(--aig-stroke-1);
+}
+.aig-btn-ghost:hover {
+	background: rgba(146, 170, 255, 0.12);
+	color: var(--color-aig-text);
+}
+
+/* ====================================================================
+   Tool pill (section toolbars)
+   ==================================================================== */
+.aig-tool {
+	font-family: var(--font-mono);
+	font-size: 11px;
+	padding: 6px 10px;
+	border-radius: 999px;
+	color: var(--color-aig-text-3);
+	background: rgba(146, 170, 255, 0.04);
+	border: 1px solid var(--aig-stroke-1);
+	cursor: pointer;
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+}
+.aig-tool:hover {
+	color: var(--color-aig-text);
+}
+.aig-tool-active {
+	color: var(--color-aig-ink);
+	background: var(--color-aig-text);
+	border-color: var(--color-aig-text);
+}
+
+/* ====================================================================
+   Flame divider
+   ==================================================================== */
+.aig-flame-rule {
+	height: 2px;
+	border: 0;
+	background: linear-gradient(
+		90deg,
+		transparent,
+		rgba(255, 122, 26, 0.55),
+		rgba(41, 98, 198, 0.55),
+		transparent
+	);
+	margin: 4px 0;
+}
+
+/* ====================================================================
+   Pulsing dot utility (status indicators)
+   ==================================================================== */
+.aig-dot {
+	display: inline-block;
+	width: 7px;
+	height: 7px;
+	border-radius: 999px;
+	background: currentColor;
+	box-shadow: 0 0 10px currentColor;
+}
+@keyframes aig-pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+.aig-dot-pulse {
+	animation: aig-pulse 1.8s ease-in-out infinite;
+}
+
+/* ====================================================================
+   Focus ring for keyboard navigation
+   ==================================================================== */
 *:focus-visible {
-	outline: 2px solid var(--color-t-green);
+	outline: 2px solid var(--color-aig-ember-500);
 	outline-offset: 1px;
 }
 
 ::selection {
-	background: rgba(255, 191, 71, 0.28);
+	background: rgba(255, 122, 26, 0.28);
 	color: white;
 }
 
-/* Scrollbar styling */
+/* ====================================================================
+   Scrollbar styling
+   ==================================================================== */
 ::-webkit-scrollbar {
 	width: 6px;
 	height: 6px;
 }
-
 ::-webkit-scrollbar-track {
 	background: var(--color-t-bg);
 }
-
 ::-webkit-scrollbar-thumb {
-	background: var(--color-t-border);
+	background: var(--color-aig-navy-4);
 	border-radius: 3px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-	background: var(--color-t-border-active);
+	background: var(--color-aig-navy-5);
 }

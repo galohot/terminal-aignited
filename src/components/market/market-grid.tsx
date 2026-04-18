@@ -26,7 +26,7 @@ import { NewsPanel } from "./news-panel";
 
 const JAKARTA_TIME_ZONE = "Asia/Jakarta";
 
-type BadgeTone = "amber" | "green" | "neutral" | "red";
+type ChipTone = "ember" | "spark" | "pos" | "neg" | "cy" | "neutral";
 type InsightTone = "neutral" | "positive" | "warning";
 type QuoteTone = "apac" | "global" | "local" | "macro";
 
@@ -42,7 +42,7 @@ interface FreshnessState {
 	detail: string;
 	label: string;
 	stale: boolean;
-	tone: BadgeTone;
+	tone: ChipTone;
 }
 
 interface BreadthSummary {
@@ -96,17 +96,13 @@ export function MarketGrid() {
 		const is503 = error.message.includes("503");
 		return (
 			<div className="flex min-h-full flex-col items-center justify-center gap-3 p-12 text-center">
-				<p className="font-mono text-sm text-t-text-secondary">
+				<p className="font-mono text-aig-text-2 text-sm">
 					{is503
 						? "Market data is warming up. Try again in a moment."
 						: "Markets are unavailable right now."}
 				</p>
 				{!is503 && (
-					<button
-						type="button"
-						onClick={() => refetch()}
-						className="rounded-xl border border-t-border bg-t-surface px-3 py-1.5 font-mono text-xs text-t-text-secondary transition-colors hover:bg-t-hover"
-					>
+					<button type="button" onClick={() => refetch()} className="aig-btn aig-btn-ghost">
 						Retry
 					</button>
 				)}
@@ -197,287 +193,395 @@ export function MarketGrid() {
 	});
 
 	return (
-		<div className="min-h-full bg-[radial-gradient(circle_at_top_left,rgba(255,191,71,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(61,220,145,0.11),transparent_28%),linear-gradient(180deg,rgba(5,10,10,0.35),rgba(5,9,9,0))]">
-			<div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 p-4 pb-6">
-				<section className="grid gap-4 xl:grid-cols-[1.35fr_0.95fr]">
-					<div className="overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(135deg,rgba(10,24,20,0.98),rgba(7,11,11,0.96))] shadow-[0_24px_90px_rgba(0,0,0,0.35)]">
-						<div className="flex flex-col gap-5 p-5 sm:p-6">
-							<div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-								<div className="min-w-0 max-w-3xl">
-									<div className="mb-3 flex flex-wrap items-center gap-2">
-										<Badge tone="amber">Jakarta First</Badge>
-										<Badge tone={session.tone}>{session.label}</Badge>
-										<Badge tone={freshness.tone}>{freshness.label}</Badge>
-										<Badge tone="neutral">Updated {formatTime(data.updated_at)} UTC</Badge>
-									</div>
-									<h2 className="max-w-3xl break-words text-3xl font-semibold tracking-tight text-white sm:text-[2.65rem]">
-										{heroNarrative.headline}
-									</h2>
-									<p className="mt-3 max-w-3xl break-words text-sm leading-6 text-t-text-secondary sm:text-[15px]">
-										{heroNarrative.summary}
-									</p>
-								</div>
-								<div className="grid max-w-full min-w-0 gap-2 rounded-[24px] border border-white/10 bg-black/20 p-3 text-sm text-t-text-secondary">
-									<SignalLine label="Jakarta" value={`${jakarta.time} WIB`} />
-									<SignalLine label="Date" value={jakarta.date} />
-									<SignalLine label="Feed" value={freshness.detail} />
-								</div>
+		<div className="min-h-full">
+			<div className="mx-auto flex w-full max-w-[1440px] flex-col gap-[14px] px-5 py-4 pb-7">
+				{/* ===================== HERO ===================== */}
+				<section className="aig-hero">
+					<div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+						<div className="min-w-0 max-w-3xl">
+							<div className="mb-3.5 flex flex-wrap items-center gap-2">
+								<Chip tone="ember">
+									<ChipDot /> Jakarta-First
+								</Chip>
+								<Chip tone={session.tone}>
+									<ChipDot /> {session.label}
+								</Chip>
+								<Chip tone={freshness.tone}>
+									<ChipDot /> {freshness.label}
+								</Chip>
+								<Chip tone="neutral">Updated {formatTime(data.updated_at)} UTC</Chip>
 							</div>
+							<h1 className="aig-headline max-w-[880px] break-words text-aig-text">
+								{heroNarrative.headline}
+							</h1>
+							<p className="max-w-[820px] break-words font-sans text-[15px] text-aig-text-2 leading-[1.55]">
+								{heroNarrative.summary}
+							</p>
+						</div>
 
-							{freshness.stale && (
-								<div className="rounded-[24px] border border-t-amber/25 bg-t-amber/10 p-4">
-									<div className="flex items-start gap-3">
-										<TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-t-amber" />
-										<div>
-											<div className="font-mono text-[11px] uppercase tracking-[0.24em] text-t-amber">
-												Feed notice
-											</div>
-											<p className="mt-1 text-sm leading-6 text-t-text-secondary">
-												Quotes are delayed. Check feed freshness before using this overview as a
-												live board.
-											</p>
-										</div>
-									</div>
-								</div>
-							)}
-
-							<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-								{heroMetrics.map((metric) => (
-									<HeroMetric
-										key={metric.label}
-										icon={metric.icon}
-										label={metric.label}
-										secondary={metric.secondary}
-										value={metric.value}
-									/>
-								))}
-							</div>
-
-							<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-								{heroSpotlights.map((item) => (
-									<FocusCard
-										key={`${item.kicker}-${item.quote.symbol}`}
-										kicker={item.kicker}
-										note={item.note}
-										quote={item.quote}
-										tone={item.tone}
-									/>
-								))}
-							</div>
-
-							<div className="flex flex-wrap items-center gap-3">
-								<Link
-									to="/watchlist"
-									className="inline-flex items-center gap-2 rounded-full border border-t-border bg-white px-4 py-2 font-mono text-xs font-medium text-black transition-transform hover:-translate-y-0.5"
-								>
-									Open Watchlist <ArrowRight className="h-3.5 w-3.5" />
-								</Link>
-								<Link
-									to="/charts"
-									className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 font-mono text-xs text-t-text-secondary transition-colors hover:bg-white/10 hover:text-white"
-								>
-									Open Charts <CandlestickChart className="h-3.5 w-3.5" />
-								</Link>
-							</div>
+						<div className="min-w-0 rounded-[18px] border border-aig-navy-4/70 bg-[rgba(11,16,36,0.55)] p-4 md:min-w-[280px]">
+							<h4 className="mb-2 font-mono font-semibold text-[10px] text-aig-spark tracking-[0.26em] uppercase">
+								Desk Signals
+							</h4>
+							<SignalLine label="Jakarta" value={`${jakarta.time} WIB`} />
+							<SignalLine label="Date" value={jakarta.date} />
+							<SignalLine label="Feed" value={freshness.detail} />
+							<SignalLine
+								label="Connector"
+								value={formatConnectionStatus(connectionStatus)}
+								valueClass={connectionColor(connectionStatus)}
+							/>
+							<HeroSparkBar />
 						</div>
 					</div>
 
-					<div className="grid gap-4">
-						<SectionPanel
-							icon={<ShieldCheck className="h-4 w-4" />}
-							title="Market State"
-							description="Session, freshness, coverage, and connection status."
-						>
-							<div className="grid gap-2 md:grid-cols-2">
-								<SignalTile label="Session" value={session.detail} note={session.subtext} />
-								<SignalTile label="Freshness" value={freshness.label} note={freshness.detail} />
-								<SignalTile
-									label="Tracked Board"
-									value={`${countQuotes([
-										...indonesiaBoard,
-										...apacBoard,
-										...westernBoard,
-										...commoditiesBoard,
-										...forexBoard,
-										...cryptoBoard,
-									])} instruments`}
-									note="Overview cards show coverage currently available from the shared markets payload"
-								/>
-								<SignalTile
-									label="Realtime Overlay"
-									value={formatConnectionStatus(connectionStatus)}
-									note="Homepage prices update in place when the websocket is connected"
-								/>
+					{freshness.stale && (
+						<div className="mt-4 rounded-[18px] border border-aig-ember-500/25 bg-aig-ember-500/10 p-4">
+							<div className="flex items-start gap-3">
+								<TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-aig-ember-300" />
+								<div>
+									<div className="font-mono text-[11px] text-aig-ember-300 tracking-[0.24em] uppercase">
+										Feed notice
+									</div>
+									<p className="mt-1 text-aig-text-2 text-sm leading-6">
+										Quotes are delayed. Check feed freshness before using this overview as a live
+										board.
+									</p>
+								</div>
 							</div>
-						</SectionPanel>
+						</div>
+					)}
 
-						<SectionPanel
-							icon={<Activity className="h-4 w-4" />}
-							title="Desk Read"
-							description="Key moves across local, regional, and cross-asset boards."
-						>
-							<div className="space-y-2">
-								{deskInsights.map((item) => (
-									<InsightCard
-										key={item.title}
-										body={item.body}
-										title={item.title}
-										tone={item.tone}
-									/>
-								))}
-							</div>
-						</SectionPanel>
+					{/* Metric row */}
+					<div className="mt-[18px] grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
+						{heroMetrics.map((metric) => (
+							<MetricCard
+								key={metric.label}
+								icon={metric.icon}
+								label={metric.label}
+								secondary={metric.secondary}
+								value={metric.value}
+								direction={metric.direction}
+							/>
+						))}
+					</div>
+
+					{/* Spotlights */}
+					<div className="mt-3 grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
+						{heroSpotlights.map((item) => (
+							<FocusCard
+								key={`${item.kicker}-${item.quote.symbol}`}
+								kicker={item.kicker}
+								note={item.note}
+								quote={item.quote}
+								tone={item.tone}
+							/>
+						))}
+					</div>
+
+					{/* CTA row */}
+					<div className="mt-3.5 flex flex-wrap items-center gap-2.5">
+						<Link to="/watchlist" className="aig-btn aig-btn-primary">
+							Open Watchlist <ArrowRight className="h-3.5 w-3.5" />
+						</Link>
+						<Link to="/charts" className="aig-btn aig-btn-ghost">
+							Launch Charts
+						</Link>
+						<Link to="/idx/entities" className="aig-btn aig-btn-ghost">
+							Power Map
+						</Link>
+						<Link to="/idx/screener" className="aig-btn aig-btn-ghost">
+							Run Screener
+						</Link>
 					</div>
 				</section>
 
+				{/* ===================== DESK STATE + READ ===================== */}
+				<section className="grid gap-[14px] xl:grid-cols-[1.3fr_1fr]">
+					<AigSection
+						icon={<ShieldCheck className="h-3.5 w-3.5" />}
+						title="Market State"
+						description="Session, freshness, coverage, and connection status."
+					>
+						<div className="grid gap-2 md:grid-cols-2">
+							<SignalTile label="Session" value={session.detail} note={session.subtext} />
+							<SignalTile label="Freshness" value={freshness.label} note={freshness.detail} />
+							<SignalTile
+								label="Tracked Board"
+								value={`${countQuotes([
+									...indonesiaBoard,
+									...apacBoard,
+									...westernBoard,
+									...commoditiesBoard,
+									...forexBoard,
+									...cryptoBoard,
+								])} instruments`}
+								note="Overview covers IDX, APAC, US/EU, commodities, FX, crypto"
+							/>
+							<SignalTile
+								label="Realtime Overlay"
+								value={formatConnectionStatus(connectionStatus)}
+								note="Websocket drives in-place price updates when connected"
+							/>
+						</div>
+					</AigSection>
+
+					<AigSection
+						icon={<Activity className="h-3.5 w-3.5" />}
+						title="Desk Read"
+						description="Key moves across local, regional, and cross-asset boards."
+					>
+						<div className="flex flex-col gap-2.5">
+							{deskInsights.map((item) => (
+								<InsightCard
+									key={item.title}
+									body={item.body}
+									title={item.title}
+									tone={item.tone}
+								/>
+							))}
+						</div>
+					</AigSection>
+				</section>
+
+				{/* ===================== NEWS ===================== */}
 				<section>
 					<NewsPanel />
 				</section>
 
+				{/* ===================== IDX INDICES ===================== */}
 				<section>
-					<SectionPanel
-						icon={<Landmark className="h-4 w-4" />}
+					<AigSection
+						icon={<Landmark className="h-3.5 w-3.5" />}
 						title="IDX Indices"
 						description="All IDX indices with daily performance. Color intensity reflects magnitude of change."
+						tools={["1D", "1W", "1M", "YTD"]}
 					>
 						<IdxIndicesGrid />
-					</SectionPanel>
+					</AigSection>
 				</section>
 
+				{/* ===================== APAC SESSIONS ===================== */}
 				<section>
-					<SectionPanel
-						icon={<Globe2 className="h-4 w-4" />}
+					<AigSection
+						icon={<Globe2 className="h-3.5 w-3.5" />}
 						title="APAC Sessions"
 						description="Regional market session status and sentiment overview."
 					>
 						<ApacSessionBar apacQuotes={apacBoard} />
-					</SectionPanel>
+					</AigSection>
 				</section>
 
-				<section className="grid gap-4 xl:grid-cols-[1.05fr_1fr_0.9fr_0.9fr]">
-					<SectionPanel
-						icon={<Landmark className="h-4 w-4" />}
+				{/* ===================== BOARDS ROW ===================== */}
+				<section className="grid gap-[14px] xl:grid-cols-[1.1fr_1fr_0.95fr_0.95fr]">
+					<AigSection
+						icon={<Landmark className="h-3.5 w-3.5" />}
 						title="Indonesia"
 						description="Local benchmarks."
 					>
 						<QuoteList quotes={indonesiaBoard} maxItems={8} tone="local" />
-					</SectionPanel>
-					<SectionPanel
-						icon={<Globe2 className="h-4 w-4" />}
+					</AigSection>
+					<AigSection
+						icon={<Globe2 className="h-3.5 w-3.5" />}
 						title="APAC Pulse"
 						description="Regional indices."
 					>
 						<QuoteList quotes={sortByMagnitude(apacBoard)} maxItems={6} tone="apac" />
-					</SectionPanel>
-					<SectionPanel
-						icon={<CandlestickChart className="h-4 w-4" />}
+					</AigSection>
+					<AigSection
+						icon={<CandlestickChart className="h-3.5 w-3.5" />}
 						title="Commodity Drivers"
 						description="Commodities."
 					>
 						<QuoteList quotes={sortByMagnitude(commoditiesBoard)} maxItems={6} tone="macro" />
-					</SectionPanel>
-					<SectionPanel
-						icon={<TrendingUp className="h-4 w-4" />}
+					</AigSection>
+					<AigSection
+						icon={<TrendingUp className="h-3.5 w-3.5" />}
 						title="Currency Watch"
 						description="Foreign exchange."
 					>
 						<QuoteList quotes={sortByMagnitude(forexBoard)} maxItems={6} tone="macro" />
-					</SectionPanel>
+					</AigSection>
 				</section>
 
-				<section className="grid gap-4 xl:grid-cols-[1fr_1fr_0.92fr]">
-					<SectionPanel
-						icon={<ChartColumnIncreasing className="h-4 w-4" />}
+				{/* ===================== BREADTH + CROSS + COVERAGE ===================== */}
+				<section className="grid gap-[14px] xl:grid-cols-3">
+					<AigSection
+						icon={<ChartColumnIncreasing className="h-3.5 w-3.5" />}
 						title="Breadth Snapshot"
 						description="Advancers, decliners, and average move."
 					>
-						<div className="grid gap-2">
+						<div className="flex flex-col gap-2.5">
 							{breadthCards.map((card) => (
 								<BreadthCard key={card.label} summary={card} />
 							))}
 						</div>
-					</SectionPanel>
+					</AigSection>
 
-					<SectionPanel
-						icon={<RefreshCw className="h-4 w-4" />}
+					<AigSection
+						icon={<RefreshCw className="h-3.5 w-3.5" />}
 						title="Cross-Asset Board"
 						description="FX, commodities, volatility, and crypto."
 					>
-						<div className="grid gap-2">
+						<div className="flex flex-col gap-2.5">
 							{macroCards.map((card) => (
-								<div
+								<CoverageCard
 									key={card.label}
-									className="rounded-2xl border border-white/6 bg-white/[0.04] p-3"
-								>
-									<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-t-text-muted">
-										{card.label}
-									</div>
-									<div className="mt-1 text-lg font-semibold text-white">{card.value}</div>
-									<div className="mt-1 text-xs leading-5 text-t-text-secondary">{card.note}</div>
-								</div>
+									label={card.label}
+									value={card.value}
+									note={card.note}
+								/>
 							))}
 						</div>
-					</SectionPanel>
+					</AigSection>
 
-					<SectionPanel
-						icon={<Clock3 className="h-4 w-4" />}
+					<AigSection
+						icon={<Clock3 className="h-3.5 w-3.5" />}
 						title="Coverage & Feed Health"
 						description="Coverage, freshness, and realtime status."
 					>
-						<div className="grid gap-2">
+						<div className="flex flex-col gap-2.5">
 							{coverageCards.map((card) => (
 								<CoverageCard key={card.label} {...card} />
 							))}
 						</div>
-					</SectionPanel>
+					</AigSection>
 				</section>
 
-				<section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-					<SectionPanel
-						icon={<Globe2 className="h-4 w-4" />}
+				{/* ===================== US/EU + CRYPTO ===================== */}
+				<section className="grid gap-[14px] xl:grid-cols-[1.1fr_0.9fr]">
+					<AigSection
+						icon={<Globe2 className="h-3.5 w-3.5" />}
 						title="US / Europe Handoff"
 						description="US and Europe."
 					>
 						<QuoteList quotes={sortByMagnitude(westernBoard)} maxItems={8} tone="global" />
-					</SectionPanel>
-					<SectionPanel
-						icon={<CandlestickChart className="h-4 w-4" />}
+					</AigSection>
+					<AigSection
+						icon={<CandlestickChart className="h-3.5 w-3.5" />}
 						title="Crypto Risk Board"
 						description="Crypto."
 					>
 						<QuoteList quotes={sortByMagnitude(cryptoBoard)} maxItems={8} tone="macro" />
-					</SectionPanel>
+					</AigSection>
 				</section>
 			</div>
 		</div>
 	);
 }
 
-function SectionPanel({
+// =====================================================================
+// Shared components
+// =====================================================================
+
+function AigSection({
 	children,
 	description,
 	icon,
 	title,
+	tools,
 }: {
 	children: ReactNode;
 	description: string;
 	icon: ReactNode;
 	title: string;
+	tools?: string[];
 }) {
 	return (
-		<div className="rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(17,23,22,0.96),rgba(9,13,13,0.98))] p-4 shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
-			<div className="mb-4 flex items-start justify-between gap-4">
+		<div className="aig-section">
+			<div className="mb-3.5 flex items-start justify-between gap-4">
 				<div className="min-w-0">
-					<div className="mb-2 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.24em] text-t-amber">
-						<span className="text-t-green">{icon}</span>
-						{title}
+					<div className="flex items-center gap-2.5">
+						<span className="grid h-[22px] w-[22px] place-items-center rounded-[7px] border border-aig-ember-500/35 bg-aig-ember-500/10 text-aig-ember-300">
+							{icon}
+						</span>
+						<span className="font-mono font-semibold text-[11px] text-aig-ember-300 tracking-[0.24em] uppercase">
+							{title}
+						</span>
 					</div>
-					<p className="max-w-2xl break-words text-sm leading-6 text-t-text-secondary">
+					<p className="mt-2 max-w-[560px] break-words text-[13px] text-aig-text-3 leading-[1.5]">
 						{description}
 					</p>
 				</div>
+				{tools && tools.length > 0 && (
+					<div className="flex shrink-0 gap-1.5">
+						{tools.map((t, i) => (
+							<button
+								type="button"
+								// biome-ignore lint/suspicious/noArrayIndexKey: static preset list
+								key={`${t}-${i}`}
+								className={i === 0 ? "aig-tool aig-tool-active" : "aig-tool"}
+							>
+								{t}
+							</button>
+						))}
+					</div>
+				)}
 			</div>
 			{children}
+		</div>
+	);
+}
+
+function Chip({ children, tone }: { children: ReactNode; tone: ChipTone }) {
+	const cls =
+		tone === "ember"
+			? "aig-chip aig-chip-ember"
+			: tone === "spark"
+				? "aig-chip aig-chip-spark"
+				: tone === "pos"
+					? "aig-chip aig-chip-pos"
+					: tone === "neg"
+						? "aig-chip aig-chip-neg"
+						: tone === "cy"
+							? "aig-chip aig-chip-cy"
+							: "aig-chip";
+	return <span className={cls}>{children}</span>;
+}
+
+function ChipDot() {
+	return <span className="aig-chip-dot" />;
+}
+
+function SignalLine({
+	label,
+	value,
+	valueClass = "text-aig-text",
+}: {
+	label: string;
+	value: string;
+	valueClass?: string;
+}) {
+	return (
+		<div className="flex items-center justify-between gap-4 border-aig-navy-4/40 border-t py-2 font-mono first:border-t-0 first:pt-1 last:pb-1">
+			<span className="font-mono text-[10px] text-aig-text-4 tracking-[0.2em] uppercase">
+				{label}
+			</span>
+			<span className={`break-words text-right text-[12px] ${valueClass}`}>{value}</span>
+		</div>
+	);
+}
+
+function HeroSparkBar() {
+	const bars = useMemo(() => {
+		return Array.from({ length: 22 }, (_, i) =>
+			Math.round(10 + Math.abs(Math.sin(i * 0.6)) * 28 + (i % 3) * 3),
+		);
+	}, []);
+	return (
+		<div className="mt-2.5 flex h-[38px] items-end gap-[3px]">
+			{bars.map((h, i) => (
+				<span
+					// biome-ignore lint/suspicious/noArrayIndexKey: decorative bar index is stable
+					key={i}
+					className="block w-[6px] rounded-[2px]"
+					style={{
+						height: `${h}px`,
+						background:
+							"linear-gradient(180deg, var(--color-aig-ember-500), var(--color-aig-ember-700))",
+					}}
+				/>
+			))}
 		</div>
 	);
 }
@@ -493,14 +597,13 @@ function QuoteList({
 }) {
 	if (!quotes.length) {
 		return (
-			<div className="rounded-2xl border border-dashed border-t-border p-4 text-sm text-t-text-muted">
+			<div className="rounded-2xl border border-aig-navy-3/60 border-dashed p-4 text-aig-text-4 text-sm">
 				Awaiting market feed.
 			</div>
 		);
 	}
-
 	return (
-		<div className="space-y-2">
+		<div className="flex flex-col gap-2">
 			{quotes.slice(0, maxItems).map((quote) => (
 				<QuoteRow key={quote.symbol} quote={quote} tone={tone} />
 			))}
@@ -511,45 +614,78 @@ function QuoteList({
 function QuoteRow({ quote, tone }: { quote: Quote; tone: QuoteTone }) {
 	const changePercent = getChangePercent(quote);
 	const isPositive = changePercent >= 0;
-	const changeColor = isPositive ? "text-t-green" : "text-t-red";
-	const accentTone =
-		tone === "local"
-			? "from-t-amber/20 to-transparent"
-			: tone === "apac"
-				? "from-cyan-400/20 to-transparent"
-				: tone === "macro"
-					? "from-t-green/20 to-transparent"
-					: "from-t-blue/20 to-transparent";
 
 	return (
-		<Link
-			to={`/stock/${quote.symbol}`}
-			className="group grid grid-cols-[minmax(0,1fr)_auto] gap-4 overflow-hidden rounded-2xl border border-white/6 bg-[linear-gradient(90deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] p-3 transition-transform hover:-translate-y-0.5 hover:border-white/12"
-		>
-			<div className={`min-w-0 rounded-xl bg-gradient-to-r ${accentTone} p-2`}>
-				<div className="flex min-w-0 items-center gap-2">
-					<span className="font-mono text-sm font-semibold tracking-wide text-white">
-						{quote.symbol}
-					</span>
-					<span className="truncate text-sm text-t-text-secondary">{quote.name}</span>
-				</div>
-				<div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] uppercase tracking-[0.18em] text-t-text-muted">
-					{quote.exchange && <span>{quote.exchange}</span>}
-					{quote.volume != null && quote.volume > 0 && (
-						<span>Vol {formatVolume(quote.volume)}</span>
-					)}
-					{quote.currency && <span>{quote.currency}</span>}
+		<Link to={`/stock/${quote.symbol}`} className={`aig-quote-card group tone-${tone}`}>
+			<div className="flex min-w-0 items-center gap-2.5">
+				<div className="aig-qc-accent" />
+				<div className="min-w-0">
+					<div className="flex min-w-0 items-baseline gap-2">
+						<span className="font-mono font-bold text-[13px] tracking-[0.04em] text-aig-text">
+							{quote.symbol}
+						</span>
+						<span className="truncate text-[12px] text-aig-text-3">{quote.name}</span>
+					</div>
+					<div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] text-aig-text-4 tracking-[0.2em] uppercase">
+						{quote.exchange && <span>{quote.exchange}</span>}
+						{quote.volume != null && quote.volume > 0 && (
+							<span>Vol {formatVolume(quote.volume)}</span>
+						)}
+						{quote.currency && <span>{quote.currency}</span>}
+					</div>
 				</div>
 			</div>
-			<div className="flex min-w-[96px] max-w-[120px] flex-col items-end justify-center font-mono">
-				<div className="break-words text-right text-sm text-white">
+			<div className="flex min-w-[96px] max-w-[140px] flex-col items-end justify-center gap-[2px] font-mono">
+				<div className="text-right font-semibold text-[13px] text-aig-text">
 					{formatPrice(quote.price, quote.currency)}
 				</div>
-				<div className={`break-words text-right text-sm ${changeColor}`}>
+				<div className={`text-right text-[12px] ${isPositive ? "text-aig-pos" : "text-aig-neg"}`}>
 					{formatPercent(changePercent)}
 				</div>
+				<MiniSpark up={isPositive} />
 			</div>
 		</Link>
+	);
+}
+
+function MiniSpark({ up }: { up: boolean }) {
+	// Stable zigzag based on a fixed seed so the SVG doesn't jitter on every render.
+	const points = useMemo(() => {
+		const w = 70;
+		const h = 18;
+		const pts: Array<[number, number]> = [];
+		const n = 10;
+		let v = 50;
+		for (let i = 0; i < n; i++) {
+			v += Math.sin(i * 1.3 + (up ? 1 : 0)) * 4 + (up ? 1.5 : -1.5);
+			pts.push([i, v]);
+		}
+		const min = Math.min(...pts.map((p) => p[1]));
+		const max = Math.max(...pts.map((p) => p[1]));
+		return pts
+			.map(([i, v2], idx) => {
+				const x = (i / (n - 1)) * w;
+				const y = h - ((v2 - min) / (max - min || 1)) * h;
+				return `${idx ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`;
+			})
+			.join(" ");
+	}, [up]);
+	return (
+		<svg
+			className="mt-0.5"
+			width="70"
+			height="18"
+			viewBox="0 0 70 18"
+			preserveAspectRatio="none"
+			aria-hidden="true"
+		>
+			<path
+				d={points}
+				fill="none"
+				stroke={up ? "var(--color-aig-pos)" : "var(--color-aig-neg)"}
+				strokeWidth="1.4"
+			/>
+		</svg>
 	);
 }
 
@@ -568,144 +704,168 @@ function FocusCard({
 	const isPositive = changePercent >= 0;
 	const accent =
 		tone === "local"
-			? "border-t-amber/25 bg-t-amber/10"
+			? "border-aig-ember-500/25"
 			: tone === "apac"
-				? "border-cyan-400/20 bg-cyan-400/10"
+				? "border-aig-cyan-300/25"
 				: tone === "global"
-					? "border-t-blue/25 bg-t-blue/10"
+					? "border-aig-navy-5/60"
 					: isPositive
-						? "border-t-green/25 bg-t-green/10"
-						: "border-t-red/25 bg-t-red/10";
+						? "border-aig-pos/25"
+						: "border-aig-neg/25";
 
 	return (
 		<Link
 			to={`/stock/${quote.symbol}`}
-			className={`min-w-0 rounded-[24px] border ${accent} p-4 transition-transform hover:-translate-y-0.5`}
+			className={`relative min-w-0 overflow-hidden rounded-[18px] border ${accent} bg-[linear-gradient(180deg,rgba(20,32,72,0.6),rgba(8,12,28,0.7))] p-3.5 transition-transform hover:-translate-y-0.5`}
 		>
-			<div className="flex items-start justify-between gap-3">
-				<div className="min-w-0">
-					<div className="font-mono text-[11px] uppercase tracking-[0.24em] text-t-text-muted">
-						{kicker}
+			<span
+				className="-inset-x-0 pointer-events-none absolute inset-y-0"
+				style={{
+					background: "linear-gradient(180deg, transparent 50%, rgba(255,122,26,0.05) 100%)",
+				}}
+			/>
+			<div className="relative">
+				<div className="font-mono text-[10px] text-aig-ember-300 tracking-[0.24em] uppercase">
+					{kicker}
+				</div>
+				<div className="mt-2.5 break-words font-mono font-bold text-[22px] text-aig-text tracking-[0.03em]">
+					{quote.symbol}
+				</div>
+				<div className="mt-0.5 break-words text-[12px] text-aig-text-3">{quote.name}</div>
+
+				<div className="mt-3 flex items-end justify-between gap-2">
+					<div className="break-words font-mono font-semibold text-[20px] text-aig-text">
+						{formatPrice(quote.price, quote.currency)}
 					</div>
-					<div className="mt-2 break-words font-mono text-xl font-semibold text-white">
-						{quote.symbol}
+					<div
+						className={`rounded-full border px-2 py-1 font-mono text-[11px] ${
+							isPositive
+								? "border-aig-pos/25 bg-[rgba(47,211,154,0.12)] text-aig-pos"
+								: "border-aig-neg/25 bg-[rgba(255,93,108,0.13)] text-aig-neg"
+						}`}
+					>
+						{formatPercent(changePercent)}
 					</div>
-					<div className="mt-1 break-words text-sm text-t-text-secondary">{quote.name}</div>
 				</div>
-				<div className="rounded-full border border-white/10 bg-black/20 px-2 py-1 font-mono text-[11px] text-t-text-secondary">
-					{formatPercent(changePercent)}
-				</div>
+				<div className="mt-2 break-words text-[12px] text-aig-text-3 leading-5">{note}</div>
 			</div>
-			<div className="mt-5 flex items-end justify-between gap-4">
-				<div className="break-words font-mono text-2xl font-semibold text-white">
-					{formatPrice(quote.price, quote.currency)}
-				</div>
-			</div>
-			<div className="mt-3 break-words text-xs leading-5 text-t-text-secondary">{note}</div>
 		</Link>
 	);
 }
 
-function HeroMetric({
+function MetricCard({
 	icon,
 	label,
 	secondary,
 	value,
+	direction,
 }: {
 	icon: ReactNode;
 	label: string;
 	secondary: string;
 	value: string;
+	direction: "up" | "down" | "flat";
 }) {
 	return (
-		<div className="min-w-0 rounded-[24px] border border-white/8 bg-white/[0.04] p-4">
-			<div className="mb-3 flex min-w-0 items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-t-text-muted">
-				<span className="text-t-amber">{icon}</span>
+		<div className="relative overflow-hidden rounded-[16px] border border-aig-navy-4/60 bg-[linear-gradient(180deg,rgba(22,33,74,0.5),rgba(11,16,36,0.55))] p-3.5">
+			<div className="flex items-center gap-2 font-mono text-[10px] text-aig-text-3 tracking-[0.24em] uppercase">
+				<span className="text-aig-ember-300">{icon}</span>
 				{label}
 			</div>
-			<div className="break-words text-sm font-medium leading-6 text-white">{value}</div>
-			<div className="mt-2 break-words text-sm leading-6 text-t-text-secondary">{secondary}</div>
-		</div>
-	);
-}
-
-function SignalTile({ label, note, value }: { label: string; note: string; value: string }) {
-	return (
-		<div className="min-w-0 rounded-2xl border border-white/6 bg-white/[0.04] p-3">
-			<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-t-text-muted">
-				{label}
+			<div className="mt-2.5 break-words font-mono font-semibold text-[18px] text-aig-text leading-[1.2] tracking-[0.02em]">
+				{value}
 			</div>
-			<div className="mt-1 break-words text-sm font-semibold text-white">{value}</div>
-			<div className="mt-1 break-words text-xs leading-5 text-t-text-secondary">{note}</div>
+			<div className="mt-1.5 break-words text-[12px] text-aig-text-3 leading-[1.4]">
+				{secondary}
+			</div>
+			<svg
+				className="absolute top-3 right-3 h-7 w-20 opacity-95"
+				viewBox="0 0 80 28"
+				preserveAspectRatio="none"
+				aria-hidden="true"
+			>
+				<polyline
+					fill="none"
+					stroke={
+						direction === "up"
+							? "var(--color-aig-pos)"
+							: direction === "down"
+								? "var(--color-aig-neg)"
+								: "var(--color-aig-ember-500)"
+					}
+					strokeWidth="1.6"
+					points={
+						direction === "up"
+							? "0,22 8,20 16,21 24,18 32,17 40,14 48,13 56,10 64,12 72,7 80,6"
+							: direction === "down"
+								? "0,8 8,9 16,7 24,10 32,12 40,14 48,13 56,16 64,17 72,18 80,20"
+								: "0,18 10,16 20,18 30,14 40,12 50,10 60,12 70,8 80,6"
+					}
+				/>
+			</svg>
 		</div>
-	);
-}
-
-function SignalLine({ label, value }: { label: string; value: string }) {
-	return (
-		<div className="flex flex-col items-start gap-1 font-mono text-xs sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-			<span className="uppercase tracking-[0.22em] text-t-text-muted">{label}</span>
-			<span className="break-words text-white sm:text-right">{value}</span>
-		</div>
-	);
-}
-
-function Badge({ children, tone }: { children: ReactNode; tone: BadgeTone }) {
-	const classes =
-		tone === "amber"
-			? "border-t-amber/30 bg-t-amber/10 text-t-amber"
-			: tone === "green"
-				? "border-t-green/30 bg-t-green/10 text-t-green"
-				: tone === "red"
-					? "border-t-red/30 bg-t-red/10 text-t-red"
-					: "border-white/10 bg-white/[0.05] text-t-text-secondary";
-
-	return (
-		<span
-			className={`max-w-full break-words rounded-full border px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.22em] ${classes}`}
-		>
-			{children}
-		</span>
 	);
 }
 
 function BreadthCard({ summary }: { summary: BreadthSummary }) {
+	const tot = Math.max(summary.advancers + summary.decliners + summary.unchanged, 1);
+	const upP = (summary.advancers / tot) * 100;
+	const flP = (summary.unchanged / tot) * 100;
+	const dnP = (summary.decliners / tot) * 100;
+
 	const balance =
 		summary.advancers === summary.decliners
 			? "Balanced"
 			: summary.advancers > summary.decliners
 				? "Positive breadth"
 				: "Negative breadth";
-	const balanceTone =
+	const balanceClass =
 		summary.advancers === summary.decliners
-			? "text-t-text-secondary"
+			? "text-aig-text-2"
 			: summary.advancers > summary.decliners
-				? "text-t-green"
-				: "text-t-red";
+				? "text-aig-pos"
+				: "text-aig-neg";
 
 	return (
-		<div className="min-w-0 rounded-2xl border border-white/6 bg-white/[0.04] p-3">
+		<div className="min-w-0 rounded-[14px] border border-aig-navy-3/60 bg-[rgba(22,33,74,0.35)] p-3.5">
 			<div className="flex items-start justify-between gap-3">
 				<div>
-					<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-t-text-muted">
+					<div className="font-mono text-[10px] text-aig-text-3 tracking-[0.24em] uppercase">
 						{summary.label}
 					</div>
-					<div className={`mt-1 break-words text-sm font-semibold ${balanceTone}`}>{balance}</div>
+					<div className={`mt-0.5 break-words font-bold text-sm ${balanceClass}`}>{balance}</div>
 				</div>
-				<div className="font-mono text-xs text-t-text-secondary">
+				<div className="font-mono text-[11px] text-aig-text-4">
 					{summary.quotes.length} instrument{summary.quotes.length === 1 ? "" : "s"}
 				</div>
 			</div>
-			<div className="mt-3 grid grid-cols-3 gap-2 text-center font-mono text-xs">
-				<MiniStat label="Up" value={summary.advancers.toString()} valueClass="text-t-green" />
-				<MiniStat label="Down" value={summary.decliners.toString()} valueClass="text-t-red" />
+			<div className="mt-2.5 flex h-2.5 overflow-hidden rounded-full border border-aig-navy-3/60 bg-[rgba(146,170,255,0.06)]">
+				<div
+					className="h-full"
+					style={{
+						flex: upP,
+						background: "linear-gradient(90deg, var(--color-aig-pos), #64e5b6)",
+					}}
+				/>
+				<div className="h-full bg-[rgba(146,170,255,0.18)]" style={{ flex: flP }} />
+				<div
+					className="h-full"
+					style={{
+						flex: dnP,
+						background: "linear-gradient(90deg, var(--color-aig-neg), #ff9aa3)",
+					}}
+				/>
+			</div>
+			<div className="mt-2.5 grid grid-cols-3 gap-2 text-center font-mono text-xs">
+				<MiniStat label="Up" value={summary.advancers.toString()} valueClass="text-aig-pos" />
+				<MiniStat label="Down" value={summary.decliners.toString()} valueClass="text-aig-neg" />
 				<MiniStat label="Flat" value={summary.unchanged.toString()} />
 			</div>
-			<div className="mt-3 break-words text-xs text-t-text-secondary">
-				Average move {formatPercent(summary.avgMove)}.
+			<div className="mt-2.5 break-words text-[12px] text-aig-text-3 leading-[1.5]">
+				Average move <b className="text-aig-text-2">{formatPercent(summary.avgMove)}</b>.{" "}
 				{summary.leader
-					? ` Lead: ${summary.leader.symbol} ${formatPercent(getChangePercent(summary.leader))}.`
-					: " Lead: awaiting quotes."}
+					? `Lead: ${summary.leader.symbol} ${formatPercent(getChangePercent(summary.leader))}.`
+					: "Lead: awaiting quotes."}
 			</div>
 		</div>
 	);
@@ -714,16 +874,18 @@ function BreadthCard({ summary }: { summary: BreadthSummary }) {
 function MiniStat({
 	label,
 	value,
-	valueClass = "text-white",
+	valueClass = "text-aig-text",
 }: {
 	label: string;
 	value: string;
 	valueClass?: string;
 }) {
 	return (
-		<div className="rounded-xl border border-white/6 bg-black/15 px-2 py-2">
-			<div className="text-[10px] uppercase tracking-[0.18em] text-t-text-muted">{label}</div>
-			<div className={`mt-1 text-sm font-semibold ${valueClass}`}>{value}</div>
+		<div className="rounded-[10px] border border-aig-navy-3/60 bg-[rgba(11,16,36,0.6)] px-2 py-2">
+			<div className="font-mono text-[10px] text-aig-text-4 tracking-[0.2em] uppercase">
+				{label}
+			</div>
+			<div className={`mt-1 font-bold text-sm ${valueClass}`}>{value}</div>
 		</div>
 	);
 }
@@ -731,32 +893,57 @@ function MiniStat({
 function InsightCard({ body, title, tone }: InsightItem) {
 	const toneClass =
 		tone === "positive"
-			? "border-t-green/20 bg-t-green/10"
+			? "border-aig-pos/25"
 			: tone === "warning"
-				? "border-t-amber/20 bg-t-amber/10"
-				: "border-white/6 bg-white/[0.04]";
+				? "border-aig-ember-500/25"
+				: "border-aig-navy-3/60";
+	const borderLeft =
+		tone === "positive"
+			? "var(--color-aig-pos)"
+			: tone === "warning"
+				? "var(--color-aig-ember-500)"
+				: "var(--color-aig-cyan-500)";
 
 	return (
-		<div className={`min-w-0 rounded-2xl border p-3 ${toneClass}`}>
-			<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-t-text-muted">
+		<div
+			className={`min-w-0 rounded-[14px] border ${toneClass} bg-[rgba(22,33,74,0.35)] p-3`}
+			style={{ borderLeft: `3px solid ${borderLeft}` }}
+		>
+			<div className="font-mono text-[10px] text-aig-text-4 tracking-[0.22em] uppercase">
 				{title}
 			</div>
-			<p className="mt-1 break-words text-sm leading-6 text-t-text-secondary">{body}</p>
+			<p className="mt-1.5 break-words text-[13px] text-aig-text-2 leading-6">{body}</p>
+		</div>
+	);
+}
+
+function SignalTile({ label, note, value }: { label: string; note: string; value: string }) {
+	return (
+		<div className="min-w-0 rounded-[14px] border border-aig-navy-3/60 bg-[rgba(22,33,74,0.35)] p-3">
+			<div className="font-mono text-[10px] text-aig-text-4 tracking-[0.22em] uppercase">
+				{label}
+			</div>
+			<div className="mt-1 break-words font-semibold text-aig-text text-sm">{value}</div>
+			<div className="mt-1 break-words text-[12px] text-aig-text-3 leading-5">{note}</div>
 		</div>
 	);
 }
 
 function CoverageCard({ label, note, value }: CoverageCardData) {
 	return (
-		<div className="min-w-0 rounded-2xl border border-white/6 bg-white/[0.04] p-3">
-			<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-t-text-muted">
+		<div className="min-w-0 rounded-[14px] border border-aig-navy-3/60 bg-[rgba(22,33,74,0.35)] p-3">
+			<div className="font-mono text-[10px] text-aig-text-4 tracking-[0.22em] uppercase">
 				{label}
 			</div>
-			<div className="mt-1 break-words text-lg font-semibold text-white">{value}</div>
-			<div className="mt-1 break-words text-xs leading-5 text-t-text-secondary">{note}</div>
+			<div className="mt-1 break-words font-mono font-bold text-[18px] text-aig-text">{value}</div>
+			<div className="mt-1 break-words text-[12px] text-aig-text-3 leading-5">{note}</div>
 		</div>
 	);
 }
+
+// =====================================================================
+// Builders (pure logic)
+// =====================================================================
 
 function buildHeroNarrative({
 	apacBoard,
@@ -791,8 +978,15 @@ function buildHeroNarrative({
 		? `${macroLead.symbol} ${formatPercent(getChangePercent(macroLead))}`
 		: "macro drivers are pending";
 
+	// Ember-gradient the mid-clause for brand-moment emphasis.
 	return {
-		headline: `${session.headline}: ${localText}, ${apacText}, ${macroText}.`,
+		headline: (
+			<>
+				{`${session.headline}: ${localText}, `}
+				<em>{apacText}</em>
+				{`, ${macroText}.`}
+			</>
+		),
 		summary: usLead
 			? `${local?.name ?? "Indonesia"}, ${apacLead?.name ?? "APAC"}, and ${usLead.name} are in view. Feed status: ${freshness.detail.toLowerCase()}.`
 			: `${local?.name ?? "Indonesia"}, APAC, and macro signals are in view. Feed status: ${freshness.detail.toLowerCase()}.`,
@@ -810,14 +1004,20 @@ function buildHeroMetrics({
 	forexBoard: Quote[];
 	indonesiaBoard: Quote[];
 	session: ReturnType<typeof getJakartaSession>;
-}) {
+}): Array<{
+	icon: ReactNode;
+	label: string;
+	value: string;
+	secondary: string;
+	direction: "up" | "down" | "flat";
+}> {
 	const local = indonesiaBoard[0];
 	const rupiah = findQuote(forexBoard, ["usd/idr", "usdidr", "idr"]) ?? forexBoard[0] ?? null;
 	const apacLead = sortByMagnitude(apacBoard)[0] ?? null;
 
 	return [
 		{
-			icon: <Landmark className="h-4 w-4" />,
+			icon: <Landmark className="h-[13px] w-[13px]" />,
 			label: "Local Lead",
 			value: local
 				? `${local.symbol} ${formatPercent(getChangePercent(local))}`
@@ -825,9 +1025,10 @@ function buildHeroMetrics({
 			secondary: local
 				? `${local.name} at ${formatPrice(local.price, local.currency)}`
 				: "Domestic benchmark loads here first",
+			direction: local ? direction(getChangePercent(local)) : "flat",
 		},
 		{
-			icon: <TrendingUp className="h-4 w-4" />,
+			icon: <TrendingUp className="h-[13px] w-[13px]" />,
 			label: "Rupiah Watch",
 			value: rupiah
 				? `${rupiah.symbol} ${formatPrice(rupiah.price, rupiah.currency)}`
@@ -835,9 +1036,10 @@ function buildHeroMetrics({
 			secondary: rupiah
 				? `${formatPercent(getChangePercent(rupiah))} on the currency board`
 				: "USD/IDR becomes the primary FX proxy here",
+			direction: rupiah ? direction(getChangePercent(rupiah)) : "flat",
 		},
 		{
-			icon: <Globe2 className="h-4 w-4" />,
+			icon: <Globe2 className="h-[13px] w-[13px]" />,
 			label: "APAC Lead",
 			value: apacLead
 				? `${apacLead.symbol} ${formatPercent(getChangePercent(apacLead))}`
@@ -845,12 +1047,14 @@ function buildHeroMetrics({
 			secondary: apacLead
 				? `${apacLead.name} is the strongest regional move`
 				: "Regional breadth will populate this slot",
+			direction: apacLead ? direction(getChangePercent(apacLead)) : "flat",
 		},
 		{
-			icon: <Activity className="h-4 w-4" />,
+			icon: <Activity className="h-[13px] w-[13px]" />,
 			label: "Session Mode",
 			value: session.detail,
 			secondary: session.subtext,
+			direction: "flat",
 		},
 	];
 }
@@ -873,7 +1077,7 @@ function buildHeroSpotlights({
 	const local = indonesiaBoard[0];
 	if (local) {
 		items.push({
-			kicker: "Indonesia",
+			kicker: "Indonesia · Primary",
 			note: "Primary local benchmark.",
 			quote: local,
 			tone: "local",
@@ -883,7 +1087,7 @@ function buildHeroSpotlights({
 	const rupiah = findQuote(forexBoard, ["usd/idr", "usdidr", "idr"]) ?? forexBoard[0];
 	if (rupiah) {
 		items.push({
-			kicker: "Currency",
+			kicker: "Currency · FX Proxy",
 			note: "Primary FX proxy.",
 			quote: rupiah,
 			tone: "macro",
@@ -893,7 +1097,7 @@ function buildHeroSpotlights({
 	const apacLead = sortByMagnitude(apacBoard)[0];
 	if (apacLead) {
 		items.push({
-			kicker: "Asia-Pacific",
+			kicker: "APAC · Biggest Move",
 			note: "Largest regional move.",
 			quote: apacLead,
 			tone: "apac",
@@ -903,7 +1107,7 @@ function buildHeroSpotlights({
 	const macroLead = sortByMagnitude(commoditiesBoard)[0] ?? sortByMagnitude(usBoard)[0];
 	if (macroLead) {
 		items.push({
-			kicker: "Macro",
+			kicker: "Macro · Driver",
 			note: "Largest cross-asset move.",
 			quote: macroLead,
 			tone: "global",
@@ -1117,12 +1321,24 @@ function countQuotes(quotes: Quote[]) {
 	return quotes.length;
 }
 
+function direction(pct: number): "up" | "down" | "flat" {
+	if (pct > 0.05) return "up";
+	if (pct < -0.05) return "down";
+	return "flat";
+}
+
 function formatConnectionStatus(status: ConnectionStatus) {
 	return status === "connected"
-		? "Connected"
+		? "● WS Connected"
 		: status === "connecting"
-			? "Connecting"
-			: "Disconnected";
+			? "● Connecting"
+			: "● Disconnected";
+}
+
+function connectionColor(status: ConnectionStatus) {
+	if (status === "connected") return "text-aig-pos";
+	if (status === "connecting") return "text-aig-spark";
+	return "text-aig-neg";
 }
 
 function getFeedFreshness(updatedAt: string): FreshnessState {
@@ -1136,7 +1352,7 @@ function getFeedFreshness(updatedAt: string): FreshnessState {
 			detail: "Update time unavailable",
 			label: "Unknown freshness",
 			stale: true,
-			tone: "red",
+			tone: "neg",
 		};
 	}
 
@@ -1146,7 +1362,7 @@ function getFeedFreshness(updatedAt: string): FreshnessState {
 			detail: ageMinutes === 0 ? "Updated within the last minute" : `Updated ${ageMinutes} min ago`,
 			label: "Live feed",
 			stale: false,
-			tone: "green",
+			tone: "pos",
 		};
 	}
 
@@ -1156,7 +1372,7 @@ function getFeedFreshness(updatedAt: string): FreshnessState {
 			detail: `Updated ${ageMinutes} min ago`,
 			label: "Slight delay",
 			stale: false,
-			tone: "amber",
+			tone: "spark",
 		};
 	}
 
@@ -1165,7 +1381,7 @@ function getFeedFreshness(updatedAt: string): FreshnessState {
 		detail: `Updated ${ageMinutes} min ago`,
 		label: "Stale feed",
 		stale: true,
-		tone: "red",
+		tone: "neg",
 	};
 }
 
@@ -1207,7 +1423,7 @@ function getJakartaSession() {
 			label: "Weekend",
 			detail: "Market closed",
 			subtext: "Use the board for recap, watchlists, and next-week setup",
-			tone: "red" as const,
+			tone: "neg" as ChipTone,
 		};
 	}
 
@@ -1217,17 +1433,17 @@ function getJakartaSession() {
 			label: "Pre-open",
 			detail: "Preparing for Jakarta open",
 			subtext: "Overnight handoff, watchlist review, and macro context matter most here",
-			tone: "amber" as const,
+			tone: "spark" as ChipTone,
 		};
 	}
 
 	if (totalMinutes < 690) {
 		return {
 			headline: "Live Jakarta session",
-			label: "Session I",
+			label: "Session I · Live",
 			detail: "Indonesia cash market is live",
 			subtext: "Local board, rupiah, and commodity drivers should dominate the first screen",
-			tone: "green" as const,
+			tone: "pos" as ChipTone,
 		};
 	}
 
@@ -1237,7 +1453,7 @@ function getJakartaSession() {
 			label: "Lunch break",
 			detail: "Midday reset",
 			subtext: "Breadth, macro, and regional follow-through should be easiest to scan now",
-			tone: "amber" as const,
+			tone: "spark" as ChipTone,
 		};
 	}
 
@@ -1247,7 +1463,7 @@ function getJakartaSession() {
 			label: "Session II",
 			detail: "Back into the afternoon session",
 			subtext: "The homepage should hold up as a live desk, not just a morning landing page",
-			tone: "green" as const,
+			tone: "pos" as ChipTone,
 		};
 	}
 
@@ -1257,7 +1473,7 @@ function getJakartaSession() {
 			label: "Closing auction",
 			detail: "Into the close",
 			subtext: "Closing context, leaders, and laggards need to be obvious during the final stretch",
-			tone: "amber" as const,
+			tone: "spark" as ChipTone,
 		};
 	}
 
@@ -1266,6 +1482,6 @@ function getJakartaSession() {
 		label: "After close",
 		detail: "Market closed for the day",
 		subtext: "The board shifts toward recap, standout moves, and tomorrow's setup",
-		tone: "red" as const,
+		tone: "neg" as ChipTone,
 	};
 }

@@ -7,10 +7,14 @@ import { Disclaimer, useDisclaimer } from "../ui/disclaimer";
 import { KeyboardHelp } from "../ui/keyboard-help";
 import { Header } from "./header";
 import { StatusBar } from "./status-bar";
+import { TickerRail } from "./ticker-rail";
+import { TweaksPanel, useTweaks } from "./tweaks-panel";
 
 export function AppShell({ children }: { children: ReactNode }) {
 	const navigate = useNavigate();
 	const [showHelp, setShowHelp] = useState(false);
+	const [showTweaks, setShowTweaks] = useState(false);
+	const [tweaks, setTweaks] = useTweaks();
 	const { accepted: disclaimerAccepted, accept: acceptDisclaimer } = useDisclaimer();
 
 	useGlobalKeyboard();
@@ -22,10 +26,17 @@ export function AppShell({ children }: { children: ReactNode }) {
 	useKeyboardShortcut("shift+?", () => setShowHelp((v) => !v), []);
 
 	return (
-		<div className="flex h-screen flex-col bg-t-bg text-t-text">
+		<div className="flex h-screen flex-col bg-aig-navy-0 text-aig-text">
+			<TickerRail />
 			<Header />
 			<main className="flex-1 overflow-auto">{children}</main>
-			<StatusBar />
+			<StatusBar onOpenTweaks={() => setShowTweaks((v) => !v)} />
+			<TweaksPanel
+				open={showTweaks}
+				onClose={() => setShowTweaks(false)}
+				tweaks={tweaks}
+				onChange={setTweaks}
+			/>
 			{showHelp && <KeyboardHelp onClose={() => setShowHelp(false)} />}
 			{!disclaimerAccepted && <Disclaimer onAccept={acceptDisclaimer} />}
 		</div>
