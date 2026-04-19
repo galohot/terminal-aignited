@@ -2,11 +2,18 @@
 // Schemas use Anthropic tool-use format (Kimi's native); converted to OpenAI function
 // schemas at the GLM adapter layer in worker/llm.ts.
 
+import {
+	createEntry as journalCreate,
+	type JournalKind,
+	searchEntries as journalSearch,
+} from "./journal";
+
 export interface ToolCtx {
 	userId: string | null;
 	tier: "starter" | "pro" | "institutional" | null;
 	apiBase: string;
 	apiKey: string;
+	authDbUrl: string;
 }
 
 export type ToolResult =
@@ -31,6 +38,8 @@ const TRADE_TOOLS = new Set([
 	"cancel_order",
 	"get_pnl",
 	"get_trade_history",
+	"journal_entry_add",
+	"journal_search",
 ]);
 
 // --- Helpers --------------------------------------------------------------
@@ -400,9 +409,91 @@ const tradeTools: Tool[] = [
 	},
 ];
 
+// --- Journal tools --------------------------------------------------------
+
+const journalTools: Tool[] = [
+	{
+		name: "journal_entry_add",
+		description:
+			"Log a trade thesis, post-mortem, or free-form note into the user's paper-trading journal. Use `entry` kind when logging reasoning for an open/new position, `exit` for a close/post-mortem, or `note` for general market thoughts. Optionally tie to an order_id (numeric paper order) or a ticker.",
+		input_schema: {
+			type: "object",
+			properties: {
+				kind: {
+					type: "string",
+					enum: ["entry", "exit", "note"],
+					description: "entry = thesis for a new position; exit = post-mortem; note = general.",
+				},
+				body_md: { type: "string", description: "Journal body in markdown." },
+				ticker: { type: "string", description: "Optional IDX ticker (no .JK suffix)." },
+				order_id: { type: "integer", description: "Optional paper order id." },
+				tags: {
+					type: "array",
+					items: { type: "string" },
+					description: "Optional lowercase tags.",
+				},
+			},
+			required: ["kind", "body_md"],
+		},
+		dispatch: async (args, ctx) => {
+			if (!ctx.userId) {
+				return { ok: false, error: "AUTH_REQUIRED", message: "Sign-in required." };
+			}
+			const kind = requireString(args, "kind") as JournalKind;
+			if (!["entry", "exit", "note"].includes(kind)) {
+				return { ok: false, error: "INVALID_KIND", message: "kind must be entry|exit|note" };
+			}
+			const body_md = requireString(args, "body_md");
+			const tagsRaw = Array.isArray(args.tags) ? (args.tags as unknown[]) : [];
+			const tags = tagsRaw.filter((t): t is string => typeof t === "string");
+			const entry = await journalCreate(ctx.authDbUrl, ctx.userId, {
+				kind,
+				body_md,
+				ticker: optionalString(args, "ticker") ?? null,
+				order_id: optionalNumber(args, "order_id") ?? null,
+				tags,
+			});
+			return { ok: true, data: { id: entry.id, created_at: entry.created_at } };
+		},
+	},
+	{
+		name: "journal_search",
+		description:
+			"Search the user's paper-trading journal for past entries by keyword, tag, or ticker. Use when asked about prior trades, theses, or mistakes.",
+		input_schema: {
+			type: "object",
+			properties: {
+				query: { type: "string", description: "Keyword, tag, or ticker to search for." },
+				limit: { type: "integer", description: "Max results (default 10, max 30)." },
+			},
+			required: ["query"],
+		},
+		dispatch: async (args, ctx) => {
+			if (!ctx.userId) {
+				return { ok: false, error: "AUTH_REQUIRED", message: "Sign-in required." };
+			}
+			const query = requireString(args, "query");
+			const limit = optionalNumber(args, "limit") ?? 10;
+			const results = await journalSearch(ctx.authDbUrl, ctx.userId, query, limit);
+			return {
+				ok: true,
+				data: results.map((r) => ({
+					id: r.id,
+					kind: r.kind,
+					ticker: r.ticker,
+					order_id: r.order_id,
+					tags: r.tags,
+					body_md: r.body_md,
+					created_at: r.created_at,
+				})),
+			};
+		},
+	},
+];
+
 // --- Registry + dispatcher ------------------------------------------------
 
-export const ALL_TOOLS: Tool[] = [...researchTools, ...tradeTools];
+export const ALL_TOOLS: Tool[] = [...researchTools, ...tradeTools, ...journalTools];
 export const RESEARCH_TOOLS: Tool[] = researchTools;
 
 const BY_NAME: Record<string, Tool> = Object.fromEntries(ALL_TOOLS.map((t) => [t.name, t]));

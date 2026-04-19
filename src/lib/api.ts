@@ -466,3 +466,73 @@ export const research = {
 // Public handle for the Telegram research channel. Update when a username is set.
 // TODO: wire via env var from the worker once the channel has a public @ handle.
 export const TELEGRAM_CHANNEL_URL: string | null = null;
+
+// --- Journal ---
+export type JournalKind = "entry" | "exit" | "note";
+
+export interface JournalEntry {
+	id: string;
+	user_id: string;
+	order_id: number | null;
+	ticker: string | null;
+	kind: JournalKind;
+	body_md: string;
+	tags: string[];
+	research_article_id: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
+async function deleteWorker<T>(path: string): Promise<T> {
+	const res = await fetch(path, { method: "DELETE", credentials: "include" });
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({ error: "unknown" }));
+		const error = new Error((err as { message?: string }).message || `API error ${res.status}`);
+		(error as ApiError).status = res.status;
+		throw error;
+	}
+	return res.json() as Promise<T>;
+}
+
+async function patchWorker<T>(path: string, body: unknown): Promise<T> {
+	const res = await fetch(path, {
+		method: "PATCH",
+		credentials: "include",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(body),
+	});
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({ error: "unknown" }));
+		const error = new Error((err as { message?: string }).message || `API error ${res.status}`);
+		(error as ApiError).status = res.status;
+		throw error;
+	}
+	return res.json() as Promise<T>;
+}
+
+export const journal = {
+	list: (params?: { order_id?: number; ticker?: string; kind?: JournalKind; limit?: number }) =>
+		fetchWorker<{ items: JournalEntry[]; total: number }>(
+			"/api/journal/entries",
+			params
+				? Object.fromEntries(
+						Object.entries(params)
+							.filter(([, v]) => v != null && v !== "")
+							.map(([k, v]) => [k, String(v)]),
+					)
+				: undefined,
+		),
+	create: (input: {
+		kind: JournalKind;
+		body_md: string;
+		order_id?: number | null;
+		ticker?: string | null;
+		tags?: string[];
+		research_article_id?: string | null;
+	}) => postWorker<{ entry: JournalEntry }>("/api/journal/entries", input),
+	update: (
+		id: string,
+		patch: { body_md?: string; kind?: JournalKind; tags?: string[]; research_article_id?: string | null },
+	) => patchWorker<{ entry: JournalEntry }>(`/api/journal/entries/${id}`, patch),
+	remove: (id: string) => deleteWorker<{ ok: boolean }>(`/api/journal/entries/${id}`),
+};

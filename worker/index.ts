@@ -2,6 +2,15 @@ import { neon } from "@neondatabase/serverless";
 import { runAgent } from "./agent";
 import { autoPublishStaleAmBriefs, generateAmBrief } from "./am-brief";
 import {
+	type CreateInput as JournalCreate,
+	type JournalKind,
+	type UpdateInput as JournalUpdate,
+	createEntry as journalCreate,
+	deleteEntry as journalDelete,
+	listEntries as journalList,
+	updateEntry as journalUpdate,
+} from "./journal";
+import {
 	clearSessionCookie,
 	parseCookie,
 	randomState,
@@ -50,7 +59,7 @@ interface Env {
 
 const CORS_HEADERS = {
 	"Access-Control-Allow-Origin": "*",
-	"Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+	"Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
 	"Access-Control-Allow-Headers": "Content-Type",
 };
 
@@ -382,6 +391,7 @@ async function handleAgentChat(request: Request, env: Env): Promise<Response> {
 			? env.API_BASE_URL
 			: `${env.API_BASE_URL.replace(/\/$/, "")}/api/v1`,
 		apiKey: env.TERMINAL_API_KEY || env.API_KEY,
+		authDbUrl: env.AUTH_DATABASE_URL,
 	};
 
 	return runAgent({
@@ -630,6 +640,74 @@ async function handleAdminResearchPublish(
 	return jsonResponse({ ok: true });
 }
 
+// --- Journal ---
+
+async function handleJournalList(request: Request, env: Env): Promise<Response> {
+	const session = await getSession(request, env);
+	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
+
+	const url = new URL(request.url);
+	const orderIdRaw = url.searchParams.get("order_id");
+	const ticker = url.searchParams.get("ticker") || undefined;
+	const kind = (url.searchParams.get("kind") || undefined) as JournalKind | undefined;
+	const limit = parseInt(url.searchParams.get("limit") || "50", 10);
+	const offset = parseInt(url.searchParams.get("offset") || "0", 10);
+	const orderId = orderIdRaw ? parseInt(orderIdRaw, 10) : undefined;
+
+	const result = await journalList(env.AUTH_DATABASE_URL, session.userId, {
+		orderId: Number.isFinite(orderId) ? orderId : undefined,
+		ticker,
+		kind,
+		limit,
+		offset,
+	});
+	return jsonResponse(result);
+}
+
+async function handleJournalCreate(request: Request, env: Env): Promise<Response> {
+	if (request.method === "OPTIONS") return corsResponse();
+	const session = await getSession(request, env);
+	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
+
+	let body: JournalCreate;
+	try {
+		body = (await request.json()) as JournalCreate;
+	} catch {
+		return jsonResponse({ error: "INVALID_JSON" }, { status: 400 });
+	}
+	if (!body.kind || !body.body_md || !["entry", "exit", "note"].includes(body.kind)) {
+		return jsonResponse({ error: "INVALID_INPUT" }, { status: 400 });
+	}
+	const entry = await journalCreate(env.AUTH_DATABASE_URL, session.userId, body);
+	return jsonResponse({ entry }, { status: 201 });
+}
+
+async function handleJournalUpdate(request: Request, env: Env, id: string): Promise<Response> {
+	if (request.method === "OPTIONS") return corsResponse();
+	const session = await getSession(request, env);
+	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
+
+	let body: JournalUpdate;
+	try {
+		body = (await request.json()) as JournalUpdate;
+	} catch {
+		return jsonResponse({ error: "INVALID_JSON" }, { status: 400 });
+	}
+	const entry = await journalUpdate(env.AUTH_DATABASE_URL, session.userId, id, body);
+	if (!entry) return jsonResponse({ error: "NOT_FOUND" }, { status: 404 });
+	return jsonResponse({ entry });
+}
+
+async function handleJournalDelete(request: Request, env: Env, id: string): Promise<Response> {
+	if (request.method === "OPTIONS") return corsResponse();
+	const session = await getSession(request, env);
+	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
+
+	const ok = await journalDelete(env.AUTH_DATABASE_URL, session.userId, id);
+	if (!ok) return jsonResponse({ error: "NOT_FOUND" }, { status: 404 });
+	return jsonResponse({ ok: true });
+}
+
 async function handleResearchSubscriptions(request: Request, env: Env): Promise<Response> {
 	if (request.method === "OPTIONS") return corsResponse();
 	const session = await getSession(request, env);
@@ -689,6 +767,23 @@ export default {
 		// Billing
 		if (path === "/api/billing/checkout") return handleBillingCheckout(request, env);
 		if (path === "/api/billing/webhook") return handleBillingWebhook(request, env);
+
+		// Journal
+		if (path === "/api/journal/entries") {
+			if (request.method === "GET") return handleJournalList(request, env);
+			if (request.method === "POST") return handleJournalCreate(request, env);
+			if (request.method === "OPTIONS") return corsResponse();
+			return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
+		}
+		if (path.startsWith("/api/journal/entries/")) {
+			const id = path.replace("/api/journal/entries/", "");
+			if (request.method === "PATCH" || request.method === "PUT") {
+				return handleJournalUpdate(request, env, id);
+			}
+			if (request.method === "DELETE") return handleJournalDelete(request, env, id);
+			if (request.method === "OPTIONS") return corsResponse();
+			return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
+		}
 
 		// Research
 		if (path === "/api/research/list") return handleResearchList(request, env);

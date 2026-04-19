@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, X } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { BookOpen, NotebookPen, RefreshCw, Trash2, X } from "lucide-react";
+import { type FormEvent, forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { TierGate } from "../components/auth/tier-gate";
-import { type ApiError, api } from "../lib/api";
+import { type ApiError, api, journal, type JournalEntry, type JournalKind } from "../lib/api";
 import type { OrderSide, OrderType, PaperOrder, PaperPortfolio } from "../types/paper";
 
 export function PortfolioPage() {
@@ -28,6 +28,7 @@ function fmtPct(n: number): string {
 
 function Portfolio() {
 	const qc = useQueryClient();
+	const journalFormRef = useRef<JournalFormHandle>(null);
 
 	const portfolioQ = useQuery<PaperPortfolio, ApiError>({
 		queryKey: ["paper", "portfolio"],
@@ -136,9 +137,261 @@ function Portfolio() {
 				{!fillsQ.data || fillsQ.data.length === 0 ? (
 					<EmptyRow>No fills yet.</EmptyRow>
 				) : (
-					<FillsTable fills={fillsQ.data} />
+					<FillsTable
+						fills={fillsQ.data}
+						onJournal={(fill) => {
+							journalFormRef.current?.prefill({
+								kind: fill.side === "buy" ? "entry" : "exit",
+								order_id: fill.order_id,
+								ticker: fill.ticker,
+							});
+						}}
+					/>
 				)}
 			</Section>
+
+			<JournalSection formRef={journalFormRef} />
+		</div>
+	);
+}
+
+// --- Journal ---
+
+interface JournalFormHandle {
+	prefill: (p: { kind: JournalKind; order_id?: number | null; ticker?: string | null }) => void;
+}
+
+function JournalSection({ formRef }: { formRef: React.RefObject<JournalFormHandle | null> }) {
+	const qc = useQueryClient();
+	const entriesQ = useQuery({
+		queryKey: ["journal", "entries"],
+		queryFn: () => journal.list({ limit: 50 }),
+		retry: false,
+	});
+
+	const createMut = useMutation({
+		mutationFn: (input: Parameters<typeof journal.create>[0]) => journal.create(input),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["journal"] });
+		},
+	});
+
+	const deleteMut = useMutation({
+		mutationFn: (id: string) => journal.remove(id),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["journal"] });
+		},
+	});
+
+	return (
+		<Section title="Journal" count={entriesQ.data?.total}>
+			<div className="space-y-4 p-4">
+				<JournalForm
+					ref={formRef}
+					onSubmit={(input) => createMut.mutate(input)}
+					pending={createMut.isPending}
+					error={createMut.isError ? (createMut.error as Error)?.message : null}
+				/>
+				{entriesQ.isLoading && (
+					<div className="font-mono text-xs text-ink-4">Loading entries…</div>
+				)}
+				{entriesQ.data && entriesQ.data.items.length === 0 && (
+					<EmptyRow>
+						No journal entries yet. Log a thesis, post-mortem, or note to build your track record.
+					</EmptyRow>
+				)}
+				<div className="space-y-2">
+					{entriesQ.data?.items.map((e) => (
+						<JournalRow
+							key={e.id}
+							entry={e}
+							onDelete={() => {
+								if (confirm("Delete this entry?")) deleteMut.mutate(e.id);
+							}}
+							deleting={deleteMut.isPending && deleteMut.variables === e.id}
+						/>
+					))}
+				</div>
+			</div>
+		</Section>
+	);
+}
+
+interface JournalFormProps {
+	onSubmit: (input: Parameters<typeof journal.create>[0]) => void;
+	pending: boolean;
+	error: string | null;
+}
+
+const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(function JournalForm(
+	{ onSubmit, pending, error },
+	ref,
+) {
+	const [kind, setKind] = useState<JournalKind>("note");
+	const [ticker, setTicker] = useState("");
+	const [orderId, setOrderId] = useState("");
+	const [body, setBody] = useState("");
+	const [tags, setTags] = useState("");
+	const formEl = useRef<HTMLFormElement | null>(null);
+
+	useImperativeHandle(ref, () => ({
+		prefill: (p) => {
+			setKind(p.kind);
+			setTicker(p.ticker ?? "");
+			setOrderId(p.order_id != null ? String(p.order_id) : "");
+			formEl.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+		},
+	}));
+
+	const handle = (e: FormEvent) => {
+		e.preventDefault();
+		if (!body.trim()) return;
+		const parsedOrderId = orderId.trim() ? parseInt(orderId, 10) : null;
+		const tagArr = tags
+			.split(",")
+			.map((t) => t.trim().toLowerCase())
+			.filter(Boolean);
+		onSubmit({
+			kind,
+			body_md: body.trim(),
+			ticker: ticker.trim() || null,
+			order_id: Number.isFinite(parsedOrderId) ? parsedOrderId : null,
+			tags: tagArr.length > 0 ? tagArr : undefined,
+		});
+		setBody("");
+		setTags("");
+	};
+
+	return (
+		<form
+			ref={formEl}
+			onSubmit={handle}
+			className="rounded-xl border border-rule bg-paper-2 p-4"
+		>
+			<div className="mb-3 flex items-center gap-2">
+				<NotebookPen className="h-4 w-4 text-ember-600" />
+				<span className="font-mono text-[11px] uppercase tracking-[0.22em] text-ember-600">
+					New entry
+				</span>
+			</div>
+			<div className="grid grid-cols-1 gap-2 sm:grid-cols-[120px_120px_120px_1fr]">
+				<select
+					value={kind}
+					onChange={(e) => setKind(e.target.value as JournalKind)}
+					className="rounded-md border border-rule bg-card px-2 py-1.5 font-mono text-xs text-ink"
+				>
+					<option value="note">Note</option>
+					<option value="entry">Entry</option>
+					<option value="exit">Exit</option>
+				</select>
+				<input
+					value={ticker}
+					onChange={(e) => setTicker(e.target.value)}
+					placeholder="Ticker (opt)"
+					className="rounded-md border border-rule bg-card px-2 py-1.5 font-mono text-xs text-ink uppercase placeholder:text-ink-4"
+					maxLength={8}
+				/>
+				<input
+					value={orderId}
+					onChange={(e) => setOrderId(e.target.value)}
+					placeholder="Order # (opt)"
+					inputMode="numeric"
+					className="rounded-md border border-rule bg-card px-2 py-1.5 font-mono text-xs text-ink placeholder:text-ink-4"
+				/>
+				<input
+					value={tags}
+					onChange={(e) => setTags(e.target.value)}
+					placeholder="tags (comma-sep)"
+					className="rounded-md border border-rule bg-card px-2 py-1.5 font-mono text-xs text-ink placeholder:text-ink-4"
+				/>
+			</div>
+			<textarea
+				value={body}
+				onChange={(e) => setBody(e.target.value)}
+				placeholder="Thesis, reasoning, or post-mortem in markdown…"
+				rows={4}
+				className="mt-2 w-full resize-y rounded-md border border-rule bg-card px-3 py-2 font-mono text-[13px] text-ink leading-relaxed placeholder:text-ink-4"
+			/>
+			<div className="mt-2 flex items-center justify-between gap-3">
+				<span className="font-mono text-[10px] text-ink-4">
+					Markdown OK. Entry/Exit should reference an order; notes are free-form.
+				</span>
+				<button
+					type="submit"
+					disabled={pending || !body.trim()}
+					className="rounded-full border border-ember-500 bg-ember-500 px-4 py-1 font-mono text-xs text-paper transition-colors hover:border-ember-600 hover:bg-ember-600 disabled:opacity-40"
+				>
+					{pending ? "Saving…" : "Log"}
+				</button>
+			</div>
+			{error && <p className="mt-2 font-mono text-[11px] text-neg">{error}</p>}
+		</form>
+	);
+});
+
+function JournalRow({
+	entry,
+	onDelete,
+	deleting,
+}: {
+	entry: JournalEntry;
+	onDelete: () => void;
+	deleting: boolean;
+}) {
+	const kindColor =
+		entry.kind === "entry" ? "text-pos" : entry.kind === "exit" ? "text-neg" : "text-ink-3";
+	return (
+		<div className="rounded-lg border border-rule bg-card p-3">
+			<div className="flex items-start justify-between gap-2">
+				<div className="flex items-center gap-2">
+					<BookOpen className="h-3.5 w-3.5 text-ink-4" />
+					<span
+						className={`font-mono text-[10px] uppercase tracking-[0.18em] ${kindColor}`}
+					>
+						{entry.kind}
+					</span>
+					{entry.ticker && (
+						<span className="rounded bg-paper-2 px-1.5 py-0.5 font-mono text-[10px] text-ink-2">
+							{entry.ticker}
+						</span>
+					)}
+					{entry.order_id != null && (
+						<span className="font-mono text-[10px] text-ink-4">#{entry.order_id}</span>
+					)}
+					<span className="font-mono text-[10px] text-ink-4">
+						{new Date(entry.created_at).toLocaleString("en-GB", {
+							day: "2-digit",
+							month: "short",
+							hour: "2-digit",
+							minute: "2-digit",
+						})}
+					</span>
+				</div>
+				<button
+					type="button"
+					onClick={onDelete}
+					disabled={deleting}
+					className="text-ink-4 transition-colors hover:text-neg disabled:opacity-40"
+					aria-label="Delete entry"
+				>
+					<Trash2 className="h-3.5 w-3.5" />
+				</button>
+			</div>
+			<div className="mt-2 whitespace-pre-wrap font-mono text-[12px] text-ink-2 leading-relaxed">
+				{entry.body_md}
+			</div>
+			{entry.tags.length > 0 && (
+				<div className="mt-2 flex flex-wrap gap-1">
+					{entry.tags.map((t) => (
+						<span
+							key={t}
+							className="rounded bg-paper-2 px-1.5 py-0.5 font-mono text-[9px] text-ink-3"
+						>
+							#{t}
+						</span>
+					))}
+				</div>
+			)}
 		</div>
 	);
 }
@@ -395,19 +648,23 @@ function OrdersTable({
 	);
 }
 
+interface FillRow {
+	id: number;
+	order_id: number;
+	ticker: string;
+	side: string;
+	qty_lots: number;
+	price_idr: number;
+	fee_idr: number;
+	filled_at: string;
+}
+
 function FillsTable({
 	fills,
+	onJournal,
 }: {
-	fills: Array<{
-		id: number;
-		order_id: number;
-		ticker: string;
-		side: string;
-		qty_lots: number;
-		price_idr: number;
-		fee_idr: number;
-		filled_at: string;
-	}>;
+	fills: FillRow[];
+	onJournal?: (fill: FillRow) => void;
 }) {
 	return (
 		<div className="overflow-x-auto">
@@ -420,6 +677,7 @@ function FillsTable({
 						<Th>Lots</Th>
 						<Th>Price</Th>
 						<Th>Fee</Th>
+						{onJournal && <Th>Journal</Th>}
 					</tr>
 				</thead>
 				<tbody>
@@ -438,6 +696,18 @@ function FillsTable({
 							<Td>{f.qty_lots}</Td>
 							<Td>{f.price_idr.toLocaleString()}</Td>
 							<Td>{f.fee_idr.toLocaleString()}</Td>
+							{onJournal && (
+								<Td>
+									<button
+										type="button"
+										onClick={() => onJournal(f)}
+										className="inline-flex items-center gap-1 rounded-full border border-rule px-2 py-0.5 text-[10px] text-ink-3 transition-colors hover:border-ember-500 hover:text-ember-600"
+									>
+										<NotebookPen className="h-3 w-3" />
+										Log
+									</button>
+								</Td>
+							)}
 						</tr>
 					))}
 				</tbody>
