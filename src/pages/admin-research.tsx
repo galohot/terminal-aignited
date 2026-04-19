@@ -149,7 +149,6 @@ export function AdminResearchPage() {
 					onStart={markPending}
 					onDone={() => draftsQ.refetch()}
 					onServerError={clearPendingMarker}
-					disabled={pending !== null}
 				/>
 			</header>
 
@@ -377,10 +376,9 @@ interface GeneratorPanelProps {
 	onStart: (kind: PendingMarker["kind"], ticker: string | null) => void;
 	onDone: () => void;
 	onServerError: () => void;
-	disabled: boolean;
 }
 
-function GeneratorPanel({ onStart, onDone, onServerError, disabled }: GeneratorPanelProps) {
+function GeneratorPanel({ onStart, onDone, onServerError }: GeneratorPanelProps) {
 	const [ticker, setTicker] = useState("");
 	const [err, setErr] = useState<string | null>(null);
 
@@ -448,10 +446,14 @@ function GeneratorPanel({ onStart, onDone, onServerError, disabled }: GeneratorP
 			<button
 				type="button"
 				onClick={runAmBrief}
-				disabled={disabled}
+				disabled={amBrief.isPending}
 				className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-ember-500/40 bg-ember-50 px-3.5 py-2 font-mono text-[11px] text-ember-700 tracking-[0.18em] uppercase transition-colors hover:bg-ember-100 disabled:opacity-50 sm:w-auto"
 			>
-				<Zap className="h-3.5 w-3.5" />
+				{amBrief.isPending ? (
+					<Loader2 className="h-3.5 w-3.5 animate-spin" />
+				) : (
+					<Zap className="h-3.5 w-3.5" />
+				)}
 				AM Brief
 			</button>
 			<div className="flex w-full items-stretch gap-1.5 sm:w-auto">
@@ -460,25 +462,32 @@ function GeneratorPanel({ onStart, onDone, onServerError, disabled }: GeneratorP
 					onChange={(e) => setTicker(e.target.value.toUpperCase())}
 					placeholder="TICKER"
 					maxLength={5}
-					disabled={disabled}
-					className="flex-1 rounded-md border border-rule bg-card px-2 py-1.5 font-mono text-[12px] uppercase tracking-[0.12em] text-ink focus:border-ember-500 focus:outline-none disabled:opacity-50 sm:w-24 sm:flex-none"
+					className="flex-1 rounded-md border border-rule bg-card px-2 py-1.5 font-mono text-[12px] uppercase tracking-[0.12em] text-ink focus:border-ember-500 focus:outline-none sm:w-24 sm:flex-none"
 				/>
 				<button
 					type="button"
 					onClick={runDeepDive}
-					disabled={disabled || !tickerReady}
+					disabled={deepDive.isPending || !tickerReady}
 					className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-rule bg-paper-2 px-2.5 py-1.5 font-mono text-[10px] text-ink-2 tracking-[0.12em] uppercase transition-colors hover:bg-card disabled:opacity-50 sm:flex-none"
 				>
-					<Zap className="h-3 w-3" />
+					{deepDive.isPending ? (
+						<Loader2 className="h-3 w-3 animate-spin" />
+					) : (
+						<Zap className="h-3 w-3" />
+					)}
 					Deep Dive
 				</button>
 				<button
 					type="button"
 					onClick={runEarnings}
-					disabled={disabled || !tickerReady}
+					disabled={earnings.isPending || !tickerReady}
 					className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-rule bg-paper-2 px-2.5 py-1.5 font-mono text-[10px] text-ink-2 tracking-[0.12em] uppercase transition-colors hover:bg-card disabled:opacity-50 sm:flex-none"
 				>
-					<Zap className="h-3 w-3" />
+					{earnings.isPending ? (
+						<Loader2 className="h-3 w-3 animate-spin" />
+					) : (
+						<Zap className="h-3 w-3" />
+					)}
 					Earnings
 				</button>
 			</div>
