@@ -28,6 +28,52 @@ export type AssistantBlock =
 			errorMessage?: string;
 	  };
 
+export interface Citation {
+	slug: string;
+	title: string;
+	type: string;
+	summary: string;
+	tickers: string[];
+	sectors: string[];
+	required_tier: "starter" | "pro" | "institutional";
+	published_at: string | null;
+	gated: boolean;
+}
+
+// Walk turns and collect unique research_search hits in order of first mention.
+export function extractCitations(turns: ChatTurn[]): Citation[] {
+	const seen = new Map<string, Citation>();
+	for (const turn of turns) {
+		if (turn.role !== "assistant") continue;
+		for (const block of turn.blocks) {
+			if (block.type !== "tool" || block.name !== "research_search" || block.status !== "ok")
+				continue;
+			const out = block.output as { data?: { hits?: unknown } } | undefined;
+			const hits = out?.data?.hits;
+			if (!Array.isArray(hits)) continue;
+			for (const raw of hits) {
+				if (!raw || typeof raw !== "object") continue;
+				const h = raw as Record<string, unknown>;
+				const slug = typeof h.slug === "string" ? h.slug : null;
+				if (!slug || seen.has(slug)) continue;
+				seen.set(slug, {
+					slug,
+					title: typeof h.title === "string" ? h.title : slug,
+					type: typeof h.type === "string" ? h.type : "",
+					summary: typeof h.summary === "string" ? h.summary : "",
+					tickers: Array.isArray(h.tickers) ? (h.tickers as string[]) : [],
+					sectors: Array.isArray(h.sectors) ? (h.sectors as string[]) : [],
+					required_tier:
+						(h.required_tier as Citation["required_tier"]) ?? "starter",
+					published_at: typeof h.published_at === "string" ? h.published_at : null,
+					gated: h.gated === true,
+				});
+			}
+		}
+	}
+	return [...seen.values()];
+}
+
 type ChatError = { message: string };
 
 interface SSEEvent {

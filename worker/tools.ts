@@ -7,6 +7,7 @@ import {
 	type JournalKind,
 	searchEntries as journalSearch,
 } from "./journal";
+import { type ArticleType, searchArticles } from "./research";
 
 export interface ToolCtx {
 	userId: string | null;
@@ -298,6 +299,71 @@ const researchTools: Tool[] = [
 				ctx,
 				{ query: { range: requireString(args, "range") } },
 			),
+	},
+	{
+		name: "research_search",
+		description:
+			"Search AIgnited Research articles (AM briefs, deep dives, sector notes, earnings previews). Use BEFORE making fundamental claims so your answer can cite recent in-house research. Returns the hits with slugs the user can open at /research/<slug>. Filter by `query` (free text across title/summary/body), `tickers` (e.g. [\"BBCA\",\"BBRI\"]), `sectors`, or `type`. Each hit has a `gated` flag — gated=true means the user's current tier can't read the full body.",
+		input_schema: {
+			type: "object",
+			properties: {
+				query: {
+					type: "string",
+					description:
+						"Free-text search across title, summary, and body. Short keywords work best (e.g. 'foreign flow banks').",
+				},
+				tickers: {
+					type: "array",
+					items: { type: "string" },
+					description: "Ticker symbols to filter on (match ANY). Bare kode like 'BBCA', not 'BBCA.JK'.",
+				},
+				sectors: {
+					type: "array",
+					items: { type: "string" },
+					description: "Sector names to filter on (match ANY).",
+				},
+				type: {
+					type: "string",
+					enum: [
+						"am_brief",
+						"deep_dive",
+						"sector",
+						"earnings_preview",
+						"earnings_recap",
+						"power_map",
+						"macro",
+					],
+					description: "Restrict to a single article type.",
+				},
+				limit: {
+					type: "integer",
+					minimum: 1,
+					maximum: 25,
+					description: "Max hits to return. Default 10.",
+				},
+			},
+		},
+		dispatch: async (args, ctx) => {
+			const q = typeof args.query === "string" ? args.query : undefined;
+			const tickers = Array.isArray(args.tickers)
+				? args.tickers.filter((v): v is string => typeof v === "string" && v.length > 0)
+				: undefined;
+			const sectors = Array.isArray(args.sectors)
+				? args.sectors.filter((v): v is string => typeof v === "string" && v.length > 0)
+				: undefined;
+			const type = typeof args.type === "string" ? (args.type as ArticleType) : undefined;
+			const limit = typeof args.limit === "number" ? args.limit : undefined;
+
+			const hits = await searchArticles(ctx.authDbUrl, {
+				query: q,
+				tickers,
+				sectors,
+				type,
+				limit,
+				viewerTier: ctx.tier,
+			});
+			return { ok: true, data: { hits, count: hits.length } };
+		},
 	},
 ];
 

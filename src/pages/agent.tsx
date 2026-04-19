@@ -1,10 +1,21 @@
-import { MessageSquarePlus, Pencil, Send, Square, Trash2 } from "lucide-react";
-import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BookOpen, Lock, MessageSquarePlus, Pencil, Send, Square, Trash2 } from "lucide-react";
+import {
+	type FormEvent,
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+import { Link } from "react-router";
 import { TierGate } from "../components/auth/tier-gate";
 import { useHasTier } from "../contexts/auth";
 import {
 	type AssistantBlock,
 	type ChatTurn,
+	type Citation,
+	extractCitations,
 	storedMessagesToTurns,
 	useAgentChat,
 } from "../hooks/use-agent-chat";
@@ -326,6 +337,7 @@ function ChatPane({
 		() => personas.find((p) => p.id === personaId) ?? null,
 		[personas, personaId],
 	);
+	const citations = useMemo(() => extractCitations(turns), [turns]);
 
 	async function onSubmit(e: FormEvent<HTMLFormElement>) {
 		e.preventDefault();
@@ -372,25 +384,30 @@ function ChatPane({
 				/>
 			</div>
 
-			<div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-6">
-				{turns.length === 0 && <Welcome onPick={(s) => setInput(s)} />}
-				{turns.map((turn) => (
-					<Turn key={turn.id} turn={turn} />
-				))}
-				{error && (
-					<div className="rounded-[12px] border border-neg/30 bg-neg/10 p-3 font-mono text-xs text-neg">
-						{error.message}
+			<div className="flex min-h-0 flex-1">
+				<div className="flex min-w-0 flex-1 flex-col">
+					<div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-6">
+						{turns.length === 0 && <Welcome onPick={(s) => setInput(s)} />}
+						{turns.map((turn) => (
+							<Turn key={turn.id} turn={turn} />
+						))}
+						{error && (
+							<div className="rounded-[12px] border border-neg/30 bg-neg/10 p-3 font-mono text-xs text-neg">
+								{error.message}
+							</div>
+						)}
 					</div>
-				)}
-			</div>
 
-			<Composer
-				value={input}
-				onChange={setInput}
-				onSubmit={onSubmit}
-				streaming={streaming}
-				onStop={stop}
-			/>
+					<Composer
+						value={input}
+						onChange={setInput}
+						onSubmit={onSubmit}
+						streaming={streaming}
+						onStop={stop}
+					/>
+				</div>
+				<CitationsSidebar citations={citations} />
+			</div>
 		</div>
 	);
 }
@@ -438,6 +455,7 @@ function EphemeralAgent() {
 	const { turns, streaming, error, sendMessage, stop, reset } = useAgentChat();
 	const [input, setInput] = useState("");
 	const scrollRef = useRef<HTMLDivElement>(null);
+	const citations = useMemo(() => extractCitations(turns), [turns]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: scroll on new turns
 	useEffect(() => {
@@ -485,25 +503,30 @@ function EphemeralAgent() {
 				)}
 			</div>
 
-			<div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-6">
-				{turns.length === 0 && <Welcome onPick={(s) => setInput(s)} />}
-				{turns.map((turn) => (
-					<Turn key={turn.id} turn={turn} />
-				))}
-				{error && (
-					<div className="rounded-[12px] border border-neg/30 bg-neg/10 p-3 font-mono text-xs text-neg">
-						{error.message}
+			<div className="flex min-h-0 flex-1">
+				<div className="flex min-w-0 flex-1 flex-col">
+					<div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-6">
+						{turns.length === 0 && <Welcome onPick={(s) => setInput(s)} />}
+						{turns.map((turn) => (
+							<Turn key={turn.id} turn={turn} />
+						))}
+						{error && (
+							<div className="rounded-[12px] border border-neg/30 bg-neg/10 p-3 font-mono text-xs text-neg">
+								{error.message}
+							</div>
+						)}
 					</div>
-				)}
-			</div>
 
-			<Composer
-				value={input}
-				onChange={setInput}
-				onSubmit={onSubmit}
-				streaming={streaming}
-				onStop={stop}
-			/>
+					<Composer
+						value={input}
+						onChange={setInput}
+						onSubmit={onSubmit}
+						streaming={streaming}
+						onStop={stop}
+					/>
+				</div>
+				<CitationsSidebar citations={citations} />
+			</div>
 		</div>
 	);
 }
@@ -630,7 +653,11 @@ function Turn({ turn }: { turn: ChatTurn }) {
 
 function Block({ block }: { block: AssistantBlock }) {
 	if (block.type === "text") {
-		return <div className="whitespace-pre-wrap text-sm leading-relaxed text-ink">{block.text}</div>;
+		return (
+			<div className="whitespace-pre-wrap text-sm leading-relaxed text-ink">
+				{renderWithResearchLinks(block.text)}
+			</div>
+		);
 	}
 
 	const dotClass =
@@ -678,4 +705,120 @@ function Block({ block }: { block: AssistantBlock }) {
 			</div>
 		</details>
 	);
+}
+
+// ----- Citations sidebar --------------------------------------------------
+
+const TYPE_LABEL: Record<string, string> = {
+	am_brief: "AM Brief",
+	deep_dive: "Deep Dive",
+	sector: "Sector",
+	earnings_preview: "Earnings Preview",
+	earnings_recap: "Earnings Recap",
+	power_map: "Power Map",
+	macro: "Macro",
+};
+
+function CitationsSidebar({ citations }: { citations: Citation[] }) {
+	return (
+		<aside className="hidden w-72 shrink-0 flex-col border-l border-rule bg-paper-2/40 lg:flex">
+			<div className="flex items-center gap-2 border-b border-rule px-4 py-3">
+				<BookOpen className="h-3.5 w-3.5 text-ember-600" />
+				<span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-ember-600">
+					Citations
+				</span>
+				{citations.length > 0 && (
+					<span className="ml-auto font-mono text-[10px] text-ink-4">{citations.length}</span>
+				)}
+			</div>
+			<div className="flex-1 space-y-3 overflow-y-auto p-3">
+				{citations.length === 0 ? (
+					<p className="font-mono text-[11px] leading-relaxed text-ink-4">
+						AIgnited Research articles the agent pulls will appear here. Ask about a ticker, sector,
+						or macro view to trigger a search.
+					</p>
+				) : (
+					citations.map((c) => <CitationCard key={c.slug} citation={c} />)
+				)}
+			</div>
+		</aside>
+	);
+}
+
+function CitationCard({ citation }: { citation: Citation }) {
+	const label = TYPE_LABEL[citation.type] ?? citation.type;
+	return (
+		<Link
+			to={`/research/${citation.slug}`}
+			className="block rounded-[10px] border border-rule bg-card p-3 transition-colors hover:border-ember-400/40 hover:bg-ember-50/60"
+		>
+			<div className="flex items-center gap-2">
+				<span className="font-mono text-[9px] uppercase tracking-[0.18em] text-ember-600">
+					{label}
+				</span>
+				{citation.gated && (
+					<span
+						className="inline-flex items-center gap-0.5 rounded-full border border-rule bg-paper-2 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] text-ink-4"
+						title={`Requires ${citation.required_tier}`}
+					>
+						<Lock className="h-2.5 w-2.5" />
+						{citation.required_tier}
+					</span>
+				)}
+			</div>
+			<div className="mt-1 line-clamp-2 text-sm leading-snug text-ink">{citation.title}</div>
+			{citation.summary && (
+				<div className="mt-1 line-clamp-2 font-mono text-[10px] leading-relaxed text-ink-3">
+					{citation.summary}
+				</div>
+			)}
+			{(citation.tickers.length > 0 || citation.sectors.length > 0) && (
+				<div className="mt-2 flex flex-wrap gap-1">
+					{citation.tickers.slice(0, 4).map((t) => (
+						<span
+							key={`t-${t}`}
+							className="rounded-full bg-ember-50 px-1.5 py-0.5 font-mono text-[9px] text-ember-700"
+						>
+							{t}
+						</span>
+					))}
+					{citation.sectors.slice(0, 2).map((s) => (
+						<span
+							key={`s-${s}`}
+							className="rounded-full bg-paper-2 px-1.5 py-0.5 font-mono text-[9px] text-ink-3"
+						>
+							{s}
+						</span>
+					))}
+				</div>
+			)}
+		</Link>
+	);
+}
+
+const RESEARCH_LINK_RE = /\/research\/([a-z0-9][a-z0-9-]*)/gi;
+
+function renderWithResearchLinks(text: string): ReactNode[] {
+	const out: ReactNode[] = [];
+	let lastIdx = 0;
+	let match: RegExpExecArray | null;
+	RESEARCH_LINK_RE.lastIndex = 0;
+	match = RESEARCH_LINK_RE.exec(text);
+	while (match !== null) {
+		if (match.index > lastIdx) out.push(text.slice(lastIdx, match.index));
+		const slug = match[1];
+		out.push(
+			<Link
+				key={`${slug}-${match.index}`}
+				to={`/research/${slug}`}
+				className="font-mono text-ember-600 underline decoration-ember-400/40 underline-offset-2 hover:decoration-ember-600"
+			>
+				/research/{slug}
+			</Link>,
+		);
+		lastIdx = match.index + match[0].length;
+		match = RESEARCH_LINK_RE.exec(text);
+	}
+	if (lastIdx < text.length) out.push(text.slice(lastIdx));
+	return out.length > 0 ? out : [text];
 }

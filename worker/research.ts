@@ -240,6 +240,77 @@ export async function getArticleBySlug(
 	return { article: { ...article, body_md: previewBody(article.body_md) }, gated: true };
 }
 
+// ---- Agent-facing search -----------------------------------------------
+
+export interface SearchHit {
+	id: string;
+	slug: string;
+	type: ArticleType;
+	title: string;
+	summary: string;
+	tickers: string[];
+	sectors: string[];
+	tags: string[];
+	required_tier: Tier;
+	published_at: string | null;
+	gated: boolean;
+}
+
+export interface SearchParams {
+	query?: string;
+	tickers?: string[];
+	sectors?: string[];
+	type?: ArticleType;
+	limit?: number;
+	viewerTier?: Tier | null;
+}
+
+export async function searchArticles(
+	dbUrl: string,
+	params: SearchParams,
+): Promise<SearchHit[]> {
+	const sql = neon(dbUrl);
+	await ensureSchema(sql);
+
+	const limit = Math.min(Math.max(params.limit ?? 10, 1), 25);
+	// Postgres tagged templates don't support dynamic arrays-of-strings cleanly alongside
+	// conditional filters, so wrap each optional predicate in a `(null arg OR match)` form.
+	const query = params.query?.trim() || null;
+	const likeTerm = query ? `%${query.replace(/[%_\\]/g, (c) => `\\${c}`)}%` : null;
+	const tickers = params.tickers && params.tickers.length > 0 ? params.tickers : null;
+	const sectors = params.sectors && params.sectors.length > 0 ? params.sectors : null;
+	const type = params.type ?? null;
+
+	const rows = (await sql`
+		SELECT id, slug, type, title, summary, tickers, sectors, tags, required_tier, published_at
+		FROM terminal_research_articles
+		WHERE status = 'published'
+		  AND (${likeTerm}::text IS NULL OR title ILIKE ${likeTerm} OR summary ILIKE ${likeTerm} OR body_md ILIKE ${likeTerm})
+		  AND (${tickers}::text[] IS NULL OR tickers && ${tickers}::text[])
+		  AND (${sectors}::text[] IS NULL OR sectors && ${sectors}::text[])
+		  AND (${type}::text IS NULL OR type = ${type})
+		ORDER BY published_at DESC NULLS LAST
+		LIMIT ${limit}
+	`) as Array<{
+		id: string;
+		slug: string;
+		type: ArticleType;
+		title: string;
+		summary: string;
+		tickers: string[];
+		sectors: string[];
+		tags: string[];
+		required_tier: Tier;
+		published_at: string | null;
+	}>;
+
+	const viewer = params.viewerTier ?? null;
+	return rows.map((r) => ({
+		...r,
+		gated: !tierMeets(viewer, r.required_tier),
+	}));
+}
+
 export async function markRead(dbUrl: string, userId: string, articleId: string): Promise<void> {
 	const sql = neon(dbUrl);
 	await ensureSchema(sql);
