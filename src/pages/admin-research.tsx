@@ -1,8 +1,44 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Loader2, Pencil, Send, Zap } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../contexts/auth";
 import { research, type ResearchArticle, type ResearchType } from "../lib/api";
+
+// Persisted "generation in flight" marker — survives page refresh for ~5 min.
+const PENDING_KEY = "admin-research-pending";
+const PENDING_TTL_MS = 5 * 60 * 1000;
+
+interface PendingMarker {
+	kind: "am_brief" | "deep_dive" | "earnings_preview";
+	ticker: string | null;
+	startedAt: number;
+}
+
+function readPending(): PendingMarker | null {
+	try {
+		const raw = localStorage.getItem(PENDING_KEY);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw) as PendingMarker;
+		if (Date.now() - parsed.startedAt > PENDING_TTL_MS) {
+			localStorage.removeItem(PENDING_KEY);
+			return null;
+		}
+		return parsed;
+	} catch {
+		return null;
+	}
+}
+
+function writePending(kind: PendingMarker["kind"], ticker: string | null) {
+	localStorage.setItem(
+		PENDING_KEY,
+		JSON.stringify({ kind, ticker, startedAt: Date.now() } satisfies PendingMarker),
+	);
+}
+
+function clearPending() {
+	localStorage.removeItem(PENDING_KEY);
+}
 
 const FOUNDER_EMAILS = new Set([
 	"irwndedi@gmail.com",
@@ -25,16 +61,63 @@ export function AdminResearchPage() {
 	const isFounder =
 		state.status === "auth" && FOUNDER_EMAILS.has(state.user.email.toLowerCase());
 
+	const [pending, setPending] = useState<PendingMarker | null>(() => readPending());
+
+	// While a generation is in flight, poll drafts every 8s so the new article
+	// appears without a manual refresh.
 	const draftsQ = useQuery({
 		queryKey: ["admin", "research", "drafts"],
 		queryFn: () => research.adminDrafts(),
 		enabled: isFounder,
 		staleTime: 30_000,
+		refetchInterval: pending ? 8_000 : false,
 	});
 
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const items = draftsQ.data?.items ?? [];
 	const selected = items.find((a) => a.id === selectedId) ?? items[0] ?? null;
+
+	// Clear the pending marker when a draft matching the pending request shows up.
+	useEffect(() => {
+		if (!pending) return;
+		const match = items.find((a) => {
+			if (a.type !== pending.kind) return false;
+			if (pending.ticker && !a.tickers.map((t) => t.toUpperCase()).includes(pending.ticker))
+				return false;
+			return new Date(a.created_at).getTime() >= pending.startedAt - 5_000;
+		});
+		if (match) {
+			clearPending();
+			setPending(null);
+			setSelectedId(match.id);
+		}
+	}, [items, pending]);
+
+	// Also clear if the marker aged out (hit TTL).
+	useEffect(() => {
+		if (!pending) return;
+		const age = Date.now() - pending.startedAt;
+		if (age > PENDING_TTL_MS) {
+			clearPending();
+			setPending(null);
+			return;
+		}
+		const t = setTimeout(() => {
+			clearPending();
+			setPending(null);
+		}, PENDING_TTL_MS - age);
+		return () => clearTimeout(t);
+	}, [pending]);
+
+	const markPending = useCallback((kind: PendingMarker["kind"], ticker: string | null) => {
+		writePending(kind, ticker);
+		setPending({ kind, ticker, startedAt: Date.now() });
+	}, []);
+
+	const clearPendingMarker = useCallback(() => {
+		clearPending();
+		setPending(null);
+	}, []);
 
 	if (state.status === "loading") {
 		return <CenterMsg msg="Loading…" />;
@@ -45,7 +128,7 @@ export function AdminResearchPage() {
 
 	return (
 		<div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-			<header className="mb-6 flex items-end justify-between gap-4 border-b border-rule pb-5">
+			<header className="mb-6 flex flex-col gap-6 border-b border-rule pb-5 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
 				<div>
 					<div className="font-mono text-[11px] text-ember-600 uppercase tracking-[0.28em]">
 						Admin · Research Review
@@ -62,8 +145,15 @@ export function AdminResearchPage() {
 							: `${items.length} draft${items.length === 1 ? "" : "s"} awaiting review.`}
 					</p>
 				</div>
-				<GeneratorPanel onDone={() => draftsQ.refetch()} />
+				<GeneratorPanel
+					onStart={markPending}
+					onDone={() => draftsQ.refetch()}
+					onServerError={clearPendingMarker}
+					disabled={pending !== null}
+				/>
 			</header>
+
+			{pending && <PendingBanner pending={pending} onCancel={clearPendingMarker} />}
 
 			{draftsQ.isLoading && <CenterMsg msg="Loading drafts…" />}
 
@@ -283,91 +373,176 @@ function Editor({ draft }: { draft: ResearchArticle }) {
 	);
 }
 
-function GeneratorPanel({ onDone }: { onDone: () => void }) {
+interface GeneratorPanelProps {
+	onStart: (kind: PendingMarker["kind"], ticker: string | null) => void;
+	onDone: () => void;
+	onServerError: () => void;
+	disabled: boolean;
+}
+
+function GeneratorPanel({ onStart, onDone, onServerError, disabled }: GeneratorPanelProps) {
 	const [ticker, setTicker] = useState("");
+	const [err, setErr] = useState<string | null>(null);
+
+	const handleResult = useCallback(
+		(r: { ok: boolean; slug?: string; error?: string }) => {
+			if (r.ok) {
+				setErr(null);
+				onDone();
+			} else {
+				setErr(r.error ?? "Generation failed");
+				onServerError();
+			}
+		},
+		[onDone, onServerError],
+	);
 
 	const amBrief = useMutation({
 		mutationFn: () => research.adminGenerateAmBrief(),
-		onSuccess: () => onDone(),
+		onSuccess: handleResult,
+		onError: (e) => {
+			setErr(e instanceof Error ? e.message : "request failed");
+			onServerError();
+		},
 	});
 	const deepDive = useMutation({
 		mutationFn: (t: string) => research.adminGenerateDeepDive(t),
-		onSuccess: () => onDone(),
+		onSuccess: handleResult,
+		onError: (e) => {
+			setErr(e instanceof Error ? e.message : "request failed");
+			onServerError();
+		},
 	});
 	const earnings = useMutation({
 		mutationFn: (t: string) => research.adminGenerateEarningsPreview(t),
-		onSuccess: () => onDone(),
+		onSuccess: handleResult,
+		onError: (e) => {
+			setErr(e instanceof Error ? e.message : "request failed");
+			onServerError();
+		},
 	});
 
-	const tickerReady = /^[A-Z]{3,5}$/.test(ticker.trim().toUpperCase());
-	const lastResult = amBrief.data ?? deepDive.data ?? earnings.data ?? null;
-	const busy = amBrief.isPending || deepDive.isPending || earnings.isPending;
+	const cleanTicker = ticker.trim().toUpperCase().replace(/\.JK$/i, "");
+	const tickerReady = /^[A-Z]{3,5}$/.test(cleanTicker);
 
+	function runAmBrief() {
+		setErr(null);
+		onStart("am_brief", null);
+		amBrief.mutate();
+	}
 	function runDeepDive() {
-		const t = ticker.trim().toUpperCase().replace(/\.JK$/i, "");
-		if (/^[A-Z]{3,5}$/.test(t)) deepDive.mutate(t);
+		if (!tickerReady) return;
+		setErr(null);
+		onStart("deep_dive", cleanTicker);
+		deepDive.mutate(cleanTicker);
 	}
 	function runEarnings() {
-		const t = ticker.trim().toUpperCase().replace(/\.JK$/i, "");
-		if (/^[A-Z]{3,5}$/.test(t)) earnings.mutate(t);
+		if (!tickerReady) return;
+		setErr(null);
+		onStart("earnings_preview", cleanTicker);
+		earnings.mutate(cleanTicker);
 	}
 
 	return (
-		<div className="flex flex-col items-end gap-2">
+		<div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
 			<button
 				type="button"
-				onClick={() => amBrief.mutate()}
-				disabled={busy}
-				className="inline-flex items-center gap-1.5 rounded-md border border-ember-500/40 bg-ember-50 px-3.5 py-2 font-mono text-[11px] text-ember-700 tracking-[0.18em] uppercase hover:bg-ember-100 disabled:opacity-50"
+				onClick={runAmBrief}
+				disabled={disabled}
+				className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-ember-500/40 bg-ember-50 px-3.5 py-2 font-mono text-[11px] text-ember-700 tracking-[0.18em] uppercase transition-colors hover:bg-ember-100 disabled:opacity-50 sm:w-auto"
 			>
-				{amBrief.isPending ? (
-					<Loader2 className="h-3.5 w-3.5 animate-spin" />
-				) : (
-					<Zap className="h-3.5 w-3.5" />
-				)}
+				<Zap className="h-3.5 w-3.5" />
 				AM Brief
 			</button>
-			<div className="flex items-center gap-1.5">
+			<div className="flex w-full items-stretch gap-1.5 sm:w-auto">
 				<input
 					value={ticker}
 					onChange={(e) => setTicker(e.target.value.toUpperCase())}
 					placeholder="TICKER"
 					maxLength={5}
-					className="w-24 rounded-md border border-rule bg-card px-2 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-ink focus:border-ember-500 focus:outline-none"
+					disabled={disabled}
+					className="flex-1 rounded-md border border-rule bg-card px-2 py-1.5 font-mono text-[12px] uppercase tracking-[0.12em] text-ink focus:border-ember-500 focus:outline-none disabled:opacity-50 sm:w-24 sm:flex-none"
 				/>
 				<button
 					type="button"
 					onClick={runDeepDive}
-					disabled={busy || !tickerReady}
-					className="inline-flex items-center gap-1.5 rounded-md border border-rule bg-paper-2 px-2.5 py-1.5 font-mono text-[10px] text-ink-2 tracking-[0.12em] uppercase hover:bg-card disabled:opacity-50"
+					disabled={disabled || !tickerReady}
+					className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-rule bg-paper-2 px-2.5 py-1.5 font-mono text-[10px] text-ink-2 tracking-[0.12em] uppercase transition-colors hover:bg-card disabled:opacity-50 sm:flex-none"
 				>
-					{deepDive.isPending ? (
-						<Loader2 className="h-3 w-3 animate-spin" />
-					) : (
-						<Zap className="h-3 w-3" />
-					)}
+					<Zap className="h-3 w-3" />
 					Deep Dive
 				</button>
 				<button
 					type="button"
 					onClick={runEarnings}
-					disabled={busy || !tickerReady}
-					className="inline-flex items-center gap-1.5 rounded-md border border-rule bg-paper-2 px-2.5 py-1.5 font-mono text-[10px] text-ink-2 tracking-[0.12em] uppercase hover:bg-card disabled:opacity-50"
+					disabled={disabled || !tickerReady}
+					className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-rule bg-paper-2 px-2.5 py-1.5 font-mono text-[10px] text-ink-2 tracking-[0.12em] uppercase transition-colors hover:bg-card disabled:opacity-50 sm:flex-none"
 				>
-					{earnings.isPending ? (
-						<Loader2 className="h-3 w-3 animate-spin" />
-					) : (
-						<Zap className="h-3 w-3" />
-					)}
+					<Zap className="h-3 w-3" />
 					Earnings
 				</button>
 			</div>
-			{lastResult && !lastResult.ok && (
-				<span className="font-mono text-[10px] text-neg">{lastResult.error}</span>
-			)}
-			{lastResult?.ok && (
-				<span className="font-mono text-[10px] text-pos">Draft: {lastResult.slug}</span>
-			)}
+			{err && <span className="font-mono text-[10px] text-neg">{err}</span>}
+		</div>
+	);
+}
+
+function PendingBanner({
+	pending,
+	onCancel,
+}: {
+	pending: PendingMarker;
+	onCancel: () => void;
+}) {
+	const [elapsed, setElapsed] = useState(() => Math.floor((Date.now() - pending.startedAt) / 1000));
+	useEffect(() => {
+		const id = setInterval(() => {
+			setElapsed(Math.floor((Date.now() - pending.startedAt) / 1000));
+		}, 1000);
+		return () => clearInterval(id);
+	}, [pending.startedAt]);
+
+	const typeLabel =
+		pending.kind === "am_brief"
+			? "AM Brief"
+			: pending.kind === "deep_dive"
+				? "Deep Dive"
+				: "Earnings Preview";
+	const target = pending.ticker ? ` for ${pending.ticker}` : "";
+	const expectedMax = pending.kind === "deep_dive" ? 90 : 60;
+	const overdue = elapsed > expectedMax + 30;
+
+	return (
+		<div className="mb-6 flex flex-col gap-2 rounded-lg border border-ember-400/40 bg-ember-50/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+			<div className="flex items-center gap-3">
+				<Loader2 className="h-4 w-4 shrink-0 animate-spin text-ember-600" />
+				<div>
+					<div className="font-mono text-[12px] font-semibold text-ember-700">
+						Generating {typeLabel}
+						{target}…
+					</div>
+					<div className="mt-0.5 font-mono text-[10px] text-ink-3">
+						{overdue ? (
+							<>
+								Still working after {elapsed}s — LLM may be slow or the request died. You can
+								cancel this banner and retry.
+							</>
+						) : (
+							<>
+								{elapsed}s elapsed · usually takes 30–{expectedMax}s. Safe to leave this tab —
+								draft lands in the queue automatically.
+							</>
+						)}
+					</div>
+				</div>
+			</div>
+			<button
+				type="button"
+				onClick={onCancel}
+				className="self-start rounded-md border border-rule bg-card px-3 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3 transition-colors hover:bg-paper-2 hover:text-ink sm:self-center"
+			>
+				Dismiss
+			</button>
 		</div>
 	);
 }
