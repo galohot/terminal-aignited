@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, NotebookPen, RefreshCw, Trash2, X } from "lucide-react";
 import { type FormEvent, forwardRef, useImperativeHandle, useRef, useState } from "react";
+import { Link } from "react-router";
 import { TierGate } from "../components/auth/tier-gate";
 import { type ApiError, api, journal, type JournalEntry, type JournalKind } from "../lib/api";
 import type { OrderSide, OrderType, PaperOrder, PaperPortfolio } from "../types/paper";
@@ -414,6 +415,14 @@ function PageHeader() {
 			<p className="mt-2 font-mono text-xs text-ink-4">
 				Simulated IDX trading · 15s refresh · Market-hours matching
 			</p>
+			<div className="mt-3">
+				<Link
+					to="/portfolio/analytics"
+					className="inline-flex items-center gap-2 rounded-full border border-ember-400/40 bg-ember-50 px-3 py-1 font-mono text-[11px] text-ember-700 transition-colors hover:bg-ember-100"
+				>
+					View performance analytics →
+				</Link>
+			</div>
 		</div>
 	);
 }

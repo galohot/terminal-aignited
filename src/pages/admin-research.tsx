@@ -62,7 +62,7 @@ export function AdminResearchPage() {
 							: `${items.length} draft${items.length === 1 ? "" : "s"} awaiting review.`}
 					</p>
 				</div>
-				<GenerateNowButton onDone={() => draftsQ.refetch()} />
+				<GeneratorPanel onDone={() => draftsQ.refetch()} />
 			</header>
 
 			{draftsQ.isLoading && <CenterMsg msg="Loading drafts…" />}
@@ -283,27 +283,90 @@ function Editor({ draft }: { draft: ResearchArticle }) {
 	);
 }
 
-function GenerateNowButton({ onDone }: { onDone: () => void }) {
-	const gen = useMutation({
+function GeneratorPanel({ onDone }: { onDone: () => void }) {
+	const [ticker, setTicker] = useState("");
+
+	const amBrief = useMutation({
 		mutationFn: () => research.adminGenerateAmBrief(),
 		onSuccess: () => onDone(),
 	});
+	const deepDive = useMutation({
+		mutationFn: (t: string) => research.adminGenerateDeepDive(t),
+		onSuccess: () => onDone(),
+	});
+	const earnings = useMutation({
+		mutationFn: (t: string) => research.adminGenerateEarningsPreview(t),
+		onSuccess: () => onDone(),
+	});
+
+	const tickerReady = /^[A-Z]{3,5}$/.test(ticker.trim().toUpperCase());
+	const lastResult = amBrief.data ?? deepDive.data ?? earnings.data ?? null;
+	const busy = amBrief.isPending || deepDive.isPending || earnings.isPending;
+
+	function runDeepDive() {
+		const t = ticker.trim().toUpperCase().replace(/\.JK$/i, "");
+		if (/^[A-Z]{3,5}$/.test(t)) deepDive.mutate(t);
+	}
+	function runEarnings() {
+		const t = ticker.trim().toUpperCase().replace(/\.JK$/i, "");
+		if (/^[A-Z]{3,5}$/.test(t)) earnings.mutate(t);
+	}
+
 	return (
-		<div className="flex flex-col items-end gap-1">
+		<div className="flex flex-col items-end gap-2">
 			<button
 				type="button"
-				onClick={() => gen.mutate()}
-				disabled={gen.isPending}
+				onClick={() => amBrief.mutate()}
+				disabled={busy}
 				className="inline-flex items-center gap-1.5 rounded-md border border-ember-500/40 bg-ember-50 px-3.5 py-2 font-mono text-[11px] text-ember-700 tracking-[0.18em] uppercase hover:bg-ember-100 disabled:opacity-50"
 			>
-				{gen.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-				Generate AM Brief
+				{amBrief.isPending ? (
+					<Loader2 className="h-3.5 w-3.5 animate-spin" />
+				) : (
+					<Zap className="h-3.5 w-3.5" />
+				)}
+				AM Brief
 			</button>
-			{gen.data && !gen.data.ok && (
-				<span className="font-mono text-[10px] text-neg">{gen.data.error}</span>
+			<div className="flex items-center gap-1.5">
+				<input
+					value={ticker}
+					onChange={(e) => setTicker(e.target.value.toUpperCase())}
+					placeholder="TICKER"
+					maxLength={5}
+					className="w-24 rounded-md border border-rule bg-card px-2 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-ink focus:border-ember-500 focus:outline-none"
+				/>
+				<button
+					type="button"
+					onClick={runDeepDive}
+					disabled={busy || !tickerReady}
+					className="inline-flex items-center gap-1.5 rounded-md border border-rule bg-paper-2 px-2.5 py-1.5 font-mono text-[10px] text-ink-2 tracking-[0.12em] uppercase hover:bg-card disabled:opacity-50"
+				>
+					{deepDive.isPending ? (
+						<Loader2 className="h-3 w-3 animate-spin" />
+					) : (
+						<Zap className="h-3 w-3" />
+					)}
+					Deep Dive
+				</button>
+				<button
+					type="button"
+					onClick={runEarnings}
+					disabled={busy || !tickerReady}
+					className="inline-flex items-center gap-1.5 rounded-md border border-rule bg-paper-2 px-2.5 py-1.5 font-mono text-[10px] text-ink-2 tracking-[0.12em] uppercase hover:bg-card disabled:opacity-50"
+				>
+					{earnings.isPending ? (
+						<Loader2 className="h-3 w-3 animate-spin" />
+					) : (
+						<Zap className="h-3 w-3" />
+					)}
+					Earnings
+				</button>
+			</div>
+			{lastResult && !lastResult.ok && (
+				<span className="font-mono text-[10px] text-neg">{lastResult.error}</span>
 			)}
-			{gen.data?.ok && (
-				<span className="font-mono text-[10px] text-pos">Draft created: {gen.data.slug}</span>
+			{lastResult?.ok && (
+				<span className="font-mono text-[10px] text-pos">Draft: {lastResult.slug}</span>
 			)}
 		</div>
 	);

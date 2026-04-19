@@ -467,6 +467,16 @@ export const research = {
 		postWorker<{ ok: boolean; slug?: string; error?: string }>(
 			"/api/admin/research/generate-am-brief",
 		),
+	adminGenerateDeepDive: (ticker: string) =>
+		postWorker<{ ok: boolean; slug?: string; error?: string }>(
+			"/api/admin/research/generate-deep-dive",
+			{ ticker },
+		),
+	adminGenerateEarningsPreview: (ticker: string) =>
+		postWorker<{ ok: boolean; slug?: string; error?: string }>(
+			"/api/admin/research/generate-earnings-preview",
+			{ ticker },
+		),
 	getSubscription: () =>
 		fetchWorker<{ user_id: string; email_enabled: boolean; types: ResearchType[] }>(
 			"/api/research/subscriptions",

@@ -11,6 +11,8 @@ import {
 	updateThread as agentUpdateThread,
 } from "./agent-threads";
 import { autoPublishStaleAmBriefs, generateAmBrief } from "./am-brief";
+import { generateDeepDive } from "./deep-dive";
+import { generateEarningsPreview } from "./earnings-preview";
 import {
 	clearSessionCookie,
 	parseCookie,
@@ -885,6 +887,47 @@ async function handleAdminGenerateAmBrief(request: Request, env: Env): Promise<R
 	return jsonResponse(result, { status: result.ok ? 200 : 500 });
 }
 
+async function handleAdminGenerateDeepDive(request: Request, env: Env): Promise<Response> {
+	if (request.method === "OPTIONS") return corsResponse();
+	const session = await getSession(request, env);
+	if (!session || !isFounder(session.email)) {
+		return jsonResponse({ error: "forbidden" }, { status: 403 });
+	}
+	let body: { ticker?: string } = {};
+	try {
+		body = (await request.json()) as { ticker?: string };
+	} catch {
+		/* ignore */
+	}
+	if (!body.ticker || typeof body.ticker !== "string") {
+		return jsonResponse({ ok: false, error: "ticker required" }, { status: 400 });
+	}
+	const result = await generateDeepDive(env, body.ticker);
+	return jsonResponse(result, { status: result.ok ? 200 : 500 });
+}
+
+async function handleAdminGenerateEarningsPreview(
+	request: Request,
+	env: Env,
+): Promise<Response> {
+	if (request.method === "OPTIONS") return corsResponse();
+	const session = await getSession(request, env);
+	if (!session || !isFounder(session.email)) {
+		return jsonResponse({ error: "forbidden" }, { status: 403 });
+	}
+	let body: { ticker?: string } = {};
+	try {
+		body = (await request.json()) as { ticker?: string };
+	} catch {
+		/* ignore */
+	}
+	if (!body.ticker || typeof body.ticker !== "string") {
+		return jsonResponse({ ok: false, error: "ticker required" }, { status: 400 });
+	}
+	const result = await generateEarningsPreview(env, body.ticker);
+	return jsonResponse(result, { status: result.ok ? 200 : 500 });
+}
+
 // --- Router ---
 
 export default {
@@ -942,6 +985,10 @@ export default {
 		if (path === "/api/admin/research/upsert") return handleAdminResearchUpsert(request, env);
 		if (path === "/api/admin/research/generate-am-brief")
 			return handleAdminGenerateAmBrief(request, env);
+		if (path === "/api/admin/research/generate-deep-dive")
+			return handleAdminGenerateDeepDive(request, env);
+		if (path === "/api/admin/research/generate-earnings-preview")
+			return handleAdminGenerateEarningsPreview(request, env);
 		if (path.startsWith("/api/admin/research/publish/")) {
 			const id = path.replace("/api/admin/research/publish/", "");
 			return handleAdminResearchPublish(request, env, id);

@@ -19,6 +19,7 @@ import { IdxMoversPage } from "./pages/idx-movers";
 import { IdxScreenerPage } from "./pages/idx-screener";
 import { NotFoundPage } from "./pages/not-found";
 import { PortfolioPage } from "./pages/portfolio";
+import { PortfolioAnalyticsPage } from "./pages/portfolio-analytics";
 import { PricingPage } from "./pages/pricing";
 import { AdminResearchPage } from "./pages/admin-research";
 import { ResearchPage } from "./pages/research";
@@ -135,6 +136,7 @@ export function App() {
 								<Route path="/signals" element={<SignalsPage />} />
 								<Route path="/agent" element={<AgentPage />} />
 								<Route path="/portfolio" element={<PortfolioPage />} />
+								<Route path="/portfolio/analytics" element={<PortfolioAnalyticsPage />} />
 								<Route path="/pricing" element={<PricingPage />} />
 								<Route path="/research" element={<ResearchPage />} />
 								<Route path="/research/:slug" element={<ResearchArticlePage />} />
