@@ -21,14 +21,22 @@ function firstParagraphs(md: string, n: number): string {
 	return md.split(/\n\s*\n/).filter((p) => p.trim()).slice(0, n).join("\n\n");
 }
 
+function typeLabel(type: string): string {
+	if (type === "am_brief") return "AM Brief";
+	if (type === "deep_dive") return "Deep Dive";
+	if (type === "earnings_preview") return "Earnings Preview";
+	return "Research";
+}
+
 function emailHtml(article: Article, recipientName: string | null): string {
 	const preview = firstParagraphs(article.body_md, 2);
 	const url = articleUrl(article.slug);
 	const tickers = article.tickers.slice(0, 8).join(" · ");
+	const label = typeLabel(article.type);
 	return `<!DOCTYPE html>
 <html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#141735;background:#fafaf7;margin:0;padding:24px;">
   <div style="max-width:640px;margin:0 auto;background:#fff;border:1px solid #e5e5de;border-radius:16px;padding:32px 28px;">
-    <div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#c2410c;letter-spacing:0.28em;text-transform:uppercase;margin-bottom:8px;">AM Brief — AIgnited Research</div>
+    <div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#c2410c;letter-spacing:0.28em;text-transform:uppercase;margin-bottom:8px;">${escapeHtml(label)} — AIgnited Research</div>
     <h1 style="font-size:26px;line-height:1.2;margin:4px 0 12px;color:#141735;">${escapeHtml(article.title)}</h1>
     <p style="color:#4a4e6e;font-size:14px;line-height:1.5;margin:0 0 20px;">${escapeHtml(article.summary)}</p>
     ${tickers ? `<div style="font-family:ui-monospace,monospace;font-size:11px;color:#6b6f8a;margin-bottom:20px;">${escapeHtml(tickers)}</div>` : ""}

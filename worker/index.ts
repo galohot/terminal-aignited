@@ -10,7 +10,11 @@ import {
 	listThreads as agentListThreads,
 	updateThread as agentUpdateThread,
 } from "./agent-threads";
-import { autoPublishStaleAmBriefs, generateAmBrief } from "./am-brief";
+import { autoPublishStaleDrafts, generateAmBrief } from "./am-brief";
+import {
+	generateRotatingDeepDive,
+	generateWeeklyEarningsPreviews,
+} from "./content-rotation";
 import { generateDeepDive } from "./deep-dive";
 import { generateEarningsPreview } from "./earnings-preview";
 import {
@@ -1020,9 +1024,10 @@ export default {
 	},
 
 	async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-		// Cron schedules (UTC):
-		//   "30 23 * * *"  →  06:30 WIB — generate AM brief as draft
-		//   "40 23 * * *"  →  06:40 WIB — auto-publish drafts older than 9 min
+		// Cron schedules (UTC) — capped at 2 to fit CF free plan's 5-per-account limit:
+		//   "30 23 * * *"  →  06:30 WIB daily — generate AM brief + rotating content:
+		//                     Mon-Fri = 1 rotating deep-dive, Sun = 3 earnings previews, Sat = skip
+		//   "40 23 * * *"  →  06:40 WIB daily — auto-publish stale drafts (all types, 9-min grace)
 		const cron = event.cron;
 		if (cron === "30 23 * * *") {
 			ctx.waitUntil(
@@ -1030,10 +1035,24 @@ export default {
 					console.log(`[am-brief] generate: ${JSON.stringify(r)}`);
 				}),
 			);
+			const dow = new Date(event.scheduledTime).getUTCDay(); // 0=Sun..6=Sat
+			if (dow === 0) {
+				ctx.waitUntil(
+					generateWeeklyEarningsPreviews(env, 3).then((r) => {
+						console.log(`[earnings-preview] batch: ${JSON.stringify(r)}`);
+					}),
+				);
+			} else if (dow >= 1 && dow <= 5) {
+				ctx.waitUntil(
+					generateRotatingDeepDive(env).then((r) => {
+						console.log(`[deep-dive] generate: ${JSON.stringify(r)}`);
+					}),
+				);
+			}
 		} else if (cron === "40 23 * * *") {
 			ctx.waitUntil(
-				autoPublishStaleAmBriefs(env).then((r) => {
-					console.log(`[am-brief] auto-publish: ${JSON.stringify(r)}`);
+				autoPublishStaleDrafts(env).then((r) => {
+					console.log(`[auto-publish] all-types: ${JSON.stringify(r)}`);
 				}),
 			);
 		}

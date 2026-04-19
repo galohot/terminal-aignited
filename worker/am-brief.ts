@@ -6,6 +6,7 @@
 import { callLLM, type LLMEnv } from "./llm";
 import { broadcastToTelegram, fanoutEmails, type NotificationsEnv } from "./notifications";
 import {
+	type ArticleType,
 	getArticleBySlug,
 	listDrafts,
 	listEmailSubscribersForType,
@@ -179,37 +180,51 @@ export async function generateAmBrief(env: BriefEnv): Promise<{ ok: boolean; slu
 	return { ok: true, slug };
 }
 
-// Auto-publish drafts older than 9 minutes (10-min grace per plan).
+// Auto-publish drafts older than their type's grace period.
 // On publish, fan out to email subscribers + Telegram channel.
-export async function autoPublishStaleAmBriefs(
+// Covers all research types: am_brief, deep_dive, earnings_preview.
+// Grace window before auto-publish fans out. Short for fully-automated types.
+// AM brief: 9min (preserves original 10-min-grace intent).
+// Deep-dive / earnings: 5min so the 10-min-later auto-publish cron catches
+// them in the same cycle (LLM gen can take 60-90s).
+const GRACE_MS: Record<ArticleType, number> = {
+	am_brief: 9 * 60 * 1000,
+	deep_dive: 5 * 60 * 1000,
+	earnings_preview: 5 * 60 * 1000,
+	sector_macro: 5 * 60 * 1000,
+	thematic: 5 * 60 * 1000,
+	idea: 5 * 60 * 1000,
+};
+
+export async function autoPublishStaleDrafts(
 	env: BriefEnv,
+	opts: { types?: ArticleType[] } = {},
 ): Promise<{ published: number; emailed: number; telegram: boolean }> {
 	const drafts = await listDrafts(env.AUTH_DATABASE_URL);
+	const filter = opts.types ? new Set(opts.types) : null;
 	const now = Date.now();
 	let published = 0;
 	let emailed = 0;
 	let telegram = false;
 	for (const a of drafts) {
-		if (a.type !== "am_brief") continue;
 		if (a.status !== "draft") continue;
+		if (filter && !filter.has(a.type)) continue;
+		const grace = GRACE_MS[a.type] ?? 9 * 60 * 1000;
 		const age = now - new Date(a.created_at).getTime();
-		if (age < 9 * 60 * 1000) continue;
+		if (age < grace) continue;
 		try {
 			await publishArticle(env.AUTH_DATABASE_URL, a.id, "auto-publish@aignited.id");
 			published++;
 
-			// Re-fetch to get published_at + canonical row for the fan-out payload.
 			const result = await getArticleBySlug(env.AUTH_DATABASE_URL, a.slug, "institutional");
 			if (!result) continue;
 			const article = result.article;
 
-			// Telegram first (single call, fast).
 			const tg = await broadcastToTelegram(env, article);
 			if (tg.ok) telegram = true;
-			else console.warn(`[am-brief] telegram failed: ${tg.error}`);
+			else console.warn(`[auto-publish] telegram failed for ${a.slug}: ${tg.error}`);
 
-			// Email fan-out.
-			const subs = await listEmailSubscribersForType(env.AUTH_DATABASE_URL, "am_brief");
+			const subs = await listEmailSubscribersForType(env.AUTH_DATABASE_URL, a.type);
 			if (subs.length > 0) {
 				const out = await fanoutEmails(
 					env,
@@ -217,11 +232,16 @@ export async function autoPublishStaleAmBriefs(
 					subs.map((s) => ({ email: s.email, name: s.name })),
 				);
 				emailed += out.sent;
-				console.log(`[am-brief] email fan-out: ${out.sent} sent, ${out.failed} failed`);
+				console.log(`[auto-publish] ${a.type} email: ${out.sent} sent, ${out.failed} failed`);
 			}
 		} catch (e) {
-			console.warn(`[am-brief] publish/fanout failed for ${a.slug}: ${e instanceof Error ? e.message : String(e)}`);
+			console.warn(`[auto-publish] failed for ${a.slug}: ${e instanceof Error ? e.message : String(e)}`);
 		}
 	}
 	return { published, emailed, telegram };
+}
+
+// Back-compat shim.
+export async function autoPublishStaleAmBriefs(env: BriefEnv) {
+	return autoPublishStaleDrafts(env, { types: ["am_brief"] });
 }
