@@ -28,13 +28,13 @@ function classifyIndex(code: string): "major" | "sector" | "thematic" {
 }
 
 function changeTone(pct: number) {
-	if (pct <= -5) return "border-t-red/40 bg-t-red/20 text-t-red";
-	if (pct < -2) return "border-t-red/25 bg-t-red/10 text-t-red";
-	if (pct < 0) return "border-t-red/15 bg-t-red/5 text-t-red";
-	if (pct === 0) return "border-white/10 bg-white/[0.04] text-t-text-secondary";
-	if (pct <= 2) return "border-t-green/15 bg-t-green/5 text-t-green";
-	if (pct <= 5) return "border-t-green/25 bg-t-green/10 text-t-green";
-	return "border-t-green/40 bg-t-green/20 text-t-green";
+	if (pct <= -5) return "border-neg/40 bg-neg/10 text-neg";
+	if (pct < -2) return "border-neg/25 bg-neg/[0.06] text-neg";
+	if (pct < 0) return "border-neg/15 bg-neg/[0.04] text-neg";
+	if (pct === 0) return "border-rule bg-paper-2 text-ink-3";
+	if (pct <= 2) return "border-pos/15 bg-pos/[0.04] text-pos";
+	if (pct <= 5) return "border-pos/25 bg-pos/[0.06] text-pos";
+	return "border-pos/40 bg-pos/10 text-pos";
 }
 
 export function IdxIndicesGrid() {
@@ -67,7 +67,7 @@ export function IdxIndicesGrid() {
 
 	if (error || !data?.indices.length) {
 		return (
-			<div className="rounded-2xl border border-dashed border-t-border p-4 text-sm text-t-text-muted">
+			<div className="rounded-[18px] border border-dashed border-rule bg-paper-2/60 p-4 text-sm text-ink-4">
 				IDX indices data unavailable.
 			</div>
 		);
@@ -85,7 +85,7 @@ export function IdxIndicesGrid() {
 function IndexGroup({ indices, label }: { indices: IdxIndex[]; label: string }) {
 	return (
 		<div>
-			<div className="mb-2 font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted">
+			<div className="mb-2 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4">
 				{label}
 			</div>
 			<div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
@@ -112,10 +112,10 @@ function IndexTile({ index }: { index: IdxIndex }) {
 
 	return (
 		<div className={`rounded-xl border p-3 transition-colors ${tone}`}>
-			<div className="truncate font-mono text-[11px] font-semibold tracking-wide text-white">
+			<div className="truncate font-mono text-[11px] font-semibold tracking-wide text-ink">
 				{index.index_code}
 			</div>
-			<div className="mt-1 font-mono text-sm text-white">{formatPrice(index.close)}</div>
+			<div className="mt-1 font-mono text-sm text-ink">{formatPrice(index.close)}</div>
 			<div className="mt-0.5 font-mono text-xs font-medium">{formatPercent(pct)}</div>
 			{data?.data && data.data.length >= 2 && (
 				<div className="mt-1.5">

@@ -23,14 +23,14 @@ export function WatchlistPanel({ selectedIndex = -1 }: WatchlistPanelProps) {
 
 	if (symbols.length === 0) {
 		return (
-			<div className="rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,22,22,0.96),rgba(9,12,12,0.98))] p-8 text-center">
+			<div className="rounded-[18px] border border-rule bg-card p-8 text-center">
 				<div className="mx-auto max-w-xl">
-					<div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-mono text-[11px] uppercase tracking-[0.22em] text-t-amber">
+					<div className="mb-3 inline-flex items-center gap-2 rounded-full border border-ember-400/30 bg-ember-50 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.22em] text-ember-700">
 						<ListPlus className="h-3.5 w-3.5" />
 						Watchlist empty
 					</div>
-					<h2 className="text-2xl font-semibold text-white">Build your first market board.</h2>
-					<p className="mt-3 text-sm leading-6 text-t-text-secondary">
+					<h2 className="text-2xl font-semibold text-ink">Build your first market board.</h2>
+					<p className="mt-3 text-sm leading-6 text-ink-3">
 						Add symbols from search and they will appear here with live prices, sparkline context,
 						and keyboard navigation.
 					</p>
@@ -44,24 +44,24 @@ export function WatchlistPanel({ selectedIndex = -1 }: WatchlistPanelProps) {
 			<div className="space-y-4">
 				<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
 					{["sk-1", "sk-2", "sk-3", "sk-4"].map((id) => (
-						<Skeleton key={id} className="h-28 w-full rounded-[24px]" />
+						<Skeleton key={id} className="h-28 w-full rounded-[18px]" />
 					))}
 				</div>
-				<Skeleton className="h-[420px] w-full rounded-[28px]" />
+				<Skeleton className="h-[420px] w-full rounded-[18px]" />
 			</div>
 		);
 	}
 
 	if (error) {
 		return (
-			<div className="rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,22,22,0.96),rgba(9,12,12,0.98))] p-8">
+			<div className="rounded-[18px] border border-rule bg-card p-8">
 				<div className="flex items-start gap-3">
-					<CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-t-amber" />
+					<CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-ember-600" />
 					<div>
-						<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-t-amber">
+						<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-ember-700">
 							Watchlist unavailable
 						</div>
-						<p className="mt-2 text-sm leading-6 text-t-text-secondary">
+						<p className="mt-2 text-sm leading-6 text-ink-3">
 							The watchlist quote batch could not be loaded right now.
 						</p>
 					</div>
@@ -133,8 +133,8 @@ export function WatchlistPanel({ selectedIndex = -1 }: WatchlistPanelProps) {
 			</div>
 
 			{missingSymbols.length > 0 && (
-				<div className="rounded-[24px] border border-t-amber/25 bg-t-amber/10 p-4">
-					<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-t-amber">
+				<div className="rounded-[18px] border border-ember-400/30 bg-ember-50 p-4">
+					<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-ember-700">
 						Missing symbols
 					</div>
 					<div className="mt-3 flex flex-wrap gap-2">
@@ -143,7 +143,7 @@ export function WatchlistPanel({ selectedIndex = -1 }: WatchlistPanelProps) {
 								key={symbol}
 								type="button"
 								onClick={() => removeSymbol(symbol)}
-								className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 font-mono text-xs text-t-text-secondary transition-colors hover:bg-white/10 hover:text-white"
+								className="rounded-full border border-rule bg-card px-3 py-1 font-mono text-xs text-ink-3 transition-colors hover:border-ember-400/40 hover:text-ember-700"
 							>
 								{symbol}
 							</button>
@@ -152,17 +152,17 @@ export function WatchlistPanel({ selectedIndex = -1 }: WatchlistPanelProps) {
 				</div>
 			)}
 
-			<div className="overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,22,22,0.96),rgba(9,12,12,0.98))]">
+			<div className="overflow-hidden rounded-[18px] border border-rule bg-card">
 				<div className="overflow-x-auto">
 					<table className="w-full min-w-[860px] text-sm">
-						<thead className="border-b border-white/8 bg-white/[0.03]">
+						<thead className="border-b border-rule bg-paper-2">
 							<tr>
-								<th className="px-4 py-3 text-left font-medium text-t-text-secondary">Symbol</th>
-								<th className="px-4 py-3 text-left font-medium text-t-text-secondary">Company</th>
-								<th className="px-4 py-3 text-right font-medium text-t-text-secondary">Last</th>
-								<th className="px-4 py-3 text-right font-medium text-t-text-secondary">Change</th>
-								<th className="px-4 py-3 text-right font-medium text-t-text-secondary">Volume</th>
-								<th className="px-4 py-3 text-left font-medium text-t-text-secondary">5D Trend</th>
+								<th className="px-4 py-3 text-left font-medium text-ink-3">Symbol</th>
+								<th className="px-4 py-3 text-left font-medium text-ink-3">Company</th>
+								<th className="px-4 py-3 text-right font-medium text-ink-3">Last</th>
+								<th className="px-4 py-3 text-right font-medium text-ink-3">Change</th>
+								<th className="px-4 py-3 text-right font-medium text-ink-3">Volume</th>
+								<th className="px-4 py-3 text-left font-medium text-ink-3">5D Trend</th>
 								<th className="w-12 px-4 py-3" />
 							</tr>
 						</thead>
@@ -195,13 +195,13 @@ function SummaryCard({
 	value: string;
 }) {
 	return (
-		<div className="min-w-0 rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(18,22,22,0.96),rgba(9,12,12,0.98))] p-4">
-			<div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-t-text-muted">
-				<span className="text-t-amber">{icon}</span>
+		<div className="min-w-0 rounded-[18px] border border-rule bg-card p-4">
+			<div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-ink-4">
+				<span className="text-ember-600">{icon}</span>
 				{label}
 			</div>
-			<div className="mt-2 break-words text-lg font-semibold text-white">{value}</div>
-			<div className="mt-2 break-words text-sm leading-6 text-t-text-secondary">{note}</div>
+			<div className="mt-2 break-words text-lg font-semibold text-ink">{value}</div>
+			<div className="mt-2 break-words text-sm leading-6 text-ink-3">{note}</div>
 		</div>
 	);
 }

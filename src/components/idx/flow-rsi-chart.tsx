@@ -1,9 +1,9 @@
 import {
+	createChart,
+	type DeepPartial,
 	type IChartApi,
 	LineSeries,
 	type LineSeriesOptions,
-	createChart,
-	type DeepPartial,
 } from "lightweight-charts";
 import { useEffect, useRef } from "react";
 import type { RSIAnalysis } from "../../types/flow";
@@ -25,29 +25,29 @@ export function FlowRSIChart({ rsi, height = 120 }: FlowRSIChartProps) {
 			width: container.clientWidth,
 			height,
 			layout: {
-				background: { color: "#0a0a0a" },
-				textColor: "#a3a3a3",
+				background: { color: "#ffffff" },
+				textColor: "#55598a",
 				fontFamily: "'JetBrains Mono', monospace",
 				fontSize: 10,
 			},
 			grid: {
-				vertLines: { color: "#1a1a1a" },
-				horzLines: { color: "#1a1a1a" },
+				vertLines: { color: "#f2ede4" },
+				horzLines: { color: "#f2ede4" },
 			},
 			crosshair: { mode: 0 },
 			rightPriceScale: {
-				borderColor: "#262626",
+				borderColor: "#e7e0d2",
 				autoScale: false,
 				scaleMargins: { top: 0.05, bottom: 0.05 },
 			},
-			timeScale: { borderColor: "#262626", visible: false },
+			timeScale: { borderColor: "#e7e0d2", visible: false },
 		});
 		chartRef.current = chart;
 
 		chart.priceScale("right").applyOptions({ autoScale: false });
 
 		const lineOpts: DeepPartial<LineSeriesOptions> = {
-			color: "#a855f7",
+			color: "#7a4bc8",
 			lineWidth: 2,
 			priceFormat: { type: "custom", formatter: (v: number) => v.toFixed(0) },
 		};
@@ -61,7 +61,7 @@ export function FlowRSIChart({ rsi, height = 120 }: FlowRSIChartProps) {
 
 		series.createPriceLine({
 			price: 70,
-			color: "#ef444480",
+			color: "#d2344a80",
 			lineWidth: 1,
 			lineStyle: 2,
 			axisLabelVisible: true,
@@ -69,7 +69,7 @@ export function FlowRSIChart({ rsi, height = 120 }: FlowRSIChartProps) {
 		});
 		series.createPriceLine({
 			price: 30,
-			color: "#22c55e80",
+			color: "#17a56880",
 			lineWidth: 1,
 			lineStyle: 2,
 			axisLabelVisible: true,
@@ -77,7 +77,7 @@ export function FlowRSIChart({ rsi, height = 120 }: FlowRSIChartProps) {
 		});
 		series.createPriceLine({
 			price: 50,
-			color: "#ffffff20",
+			color: "#8b8fb060",
 			lineWidth: 1,
 			lineStyle: 2,
 			axisLabelVisible: false,
@@ -101,16 +101,16 @@ export function FlowRSIChart({ rsi, height = 120 }: FlowRSIChartProps) {
 	return (
 		<div>
 			<div className="flex items-center justify-between px-1 pb-1">
-				<span className="font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+				<span className="font-mono text-[10px] uppercase tracking-wider text-ink-4">
 					RSI (14)
 				</span>
 				<span
 					className={`font-mono text-xs font-medium ${
 						rsi.signal === "overbought"
-							? "text-t-red"
+							? "text-neg"
 							: rsi.signal === "oversold"
-								? "text-t-green"
-								: "text-t-text-secondary"
+								? "text-pos"
+								: "text-ink-2"
 					}`}
 				>
 					{rsi.current.toFixed(0)}

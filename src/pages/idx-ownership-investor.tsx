@@ -1,10 +1,9 @@
 import { clsx } from "clsx";
 import { Link, useParams } from "react-router";
-import { INVESTOR_TYPE_COLORS, INVESTOR_TYPE_LABELS } from "../components/ownership/constants";
-import { Badge } from "../components/ownership/ownership-badge";
-import type { InvestorType } from "../components/ownership/types";
 import { IdxNav } from "../components/idx/idx-nav";
+import { Badge } from "../components/ownership/ownership-badge";
 import { OwnershipNav } from "../components/ownership/ownership-nav";
+import type { InvestorType } from "../components/ownership/types";
 import { Skeleton } from "../components/ui/loading";
 import { useKseiInvestor } from "../hooks/use-ksei";
 import { usePageTitle } from "../hooks/use-page-title";
@@ -20,7 +19,7 @@ export function IdxOwnershipInvestorPage() {
 		return (
 			<div className="mx-auto max-w-[1600px] p-4">
 				<IdxNav />
-			<OwnershipNav />
+				<OwnershipNav />
 				<Skeleton className="mb-4 h-20 w-full rounded-xl" />
 				<Skeleton className="h-[400px] w-full rounded-xl" />
 			</div>
@@ -31,14 +30,14 @@ export function IdxOwnershipInvestorPage() {
 		return (
 			<div className="mx-auto max-w-[1600px] p-4">
 				<IdxNav />
-			<OwnershipNav />
+				<OwnershipNav />
 				<div className="flex flex-col items-center justify-center gap-3 p-12 text-center">
-					<p className="font-mono text-sm text-t-text-secondary">
+					<p className="font-mono text-sm text-ink-3">
 						No KSEI data found for &ldquo;{decodedName}&rdquo;
 					</p>
 					<Link
 						to="/idx/ownership/investors"
-						className="rounded border border-t-border bg-t-surface px-3 py-1 font-mono text-xs text-t-text-secondary transition-colors hover:bg-t-hover"
+						className="rounded border border-rule bg-card px-3 py-1 font-mono text-xs text-ink-2 transition-colors hover:bg-paper-2 hover:text-ink"
 					>
 						Browse Investors
 					</Link>
@@ -51,7 +50,6 @@ export function IdxOwnershipInvestorPage() {
 	const totalPct = data.companies.reduce((sum, c) => sum + c.percentage, 0);
 	const companyCount = data.companies.length;
 
-	// Group by size bucket for summary
 	const major = data.companies.filter((c) => c.percentage > 10);
 	const significant = data.companies.filter((c) => c.percentage > 5 && c.percentage <= 10);
 	const minor = data.companies.filter((c) => c.percentage >= 1 && c.percentage <= 5);
@@ -61,11 +59,13 @@ export function IdxOwnershipInvestorPage() {
 			<IdxNav />
 			<OwnershipNav />
 
-			{/* Header */}
-			<div className="mb-6 rounded-lg border border-t-border bg-t-surface p-5">
+			<div className="mb-6 rounded-[18px] border border-rule bg-card p-5">
 				<div className="flex flex-wrap items-start gap-4">
-					<div className="flex-1 min-w-0">
-						<h1 className="font-mono text-xl font-semibold tracking-wide text-white break-words">
+					<div className="min-w-0 flex-1">
+						<h1
+							className="break-words text-[clamp(1.5rem,3vw,2rem)] leading-[1.1] text-ink"
+							style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.015em" }}
+						>
 							{data.investor_name}
 						</h1>
 						<div className="mt-2 flex flex-wrap items-center gap-2">
@@ -74,58 +74,58 @@ export function IdxOwnershipInvestorPage() {
 								className={clsx(
 									"rounded-full border px-2 py-0.5 font-mono text-[10px]",
 									data.local_foreign === "L"
-										? "border-t-green/30 bg-t-green/10 text-t-green"
+										? "border-pos/30 bg-pos/10 text-pos"
 										: data.local_foreign === "A"
-											? "border-t-blue/30 bg-t-blue/10 text-t-blue"
-											: "border-white/10 bg-white/[0.04] text-t-text-muted",
+											? "border-cyan-400/30 bg-cyan-50 text-cyan-700"
+											: "border-rule bg-paper-2 text-ink-4",
 								)}
 							>
-								{data.local_foreign === "L" ? "Local" : data.local_foreign === "A" ? "Foreign" : "Unknown"}
+								{data.local_foreign === "L"
+									? "Local"
+									: data.local_foreign === "A"
+										? "Foreign"
+										: "Unknown"}
 							</span>
 							{data.domicile && (
-								<span className="font-mono text-[11px] text-t-text-muted">
-									{data.domicile}
-								</span>
+								<span className="font-mono text-[11px] text-ink-4">{data.domicile}</span>
 							)}
 						</div>
 					</div>
 
-					{/* Summary stats */}
 					<div className="flex gap-6">
 						<div className="text-center">
-							<div className="font-mono text-2xl font-bold tabular-nums text-t-amber">
+							<div className="font-mono text-2xl font-bold tabular-nums text-ember-600">
 								{companyCount}
 							</div>
-							<div className="font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+							<div className="font-mono text-[10px] uppercase tracking-wider text-ink-4">
 								Companies
 							</div>
 						</div>
 						<div className="text-center">
-							<div className="font-mono text-2xl font-bold tabular-nums text-t-text">
+							<div className="font-mono text-2xl font-bold tabular-nums text-ink">
 								{totalPct.toFixed(1)}%
 							</div>
-							<div className="font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+							<div className="font-mono text-[10px] uppercase tracking-wider text-ink-4">
 								Total Holdings
 							</div>
 						</div>
 					</div>
 				</div>
 
-				{/* Size breakdown */}
 				{(major.length > 0 || significant.length > 0) && (
 					<div className="mt-4 flex flex-wrap gap-3">
 						{major.length > 0 && (
-							<span className="rounded-full border border-t-amber/30 bg-t-amber/10 px-2.5 py-0.5 font-mono text-[10px] text-t-amber">
+							<span className="rounded-full border border-ember-400/30 bg-ember-50 px-2.5 py-0.5 font-mono text-[10px] text-ember-700">
 								{major.length} major (&gt;10%)
 							</span>
 						)}
 						{significant.length > 0 && (
-							<span className="rounded-full border border-t-blue/30 bg-t-blue/10 px-2.5 py-0.5 font-mono text-[10px] text-t-blue">
+							<span className="rounded-full border border-cyan-400/30 bg-cyan-50 px-2.5 py-0.5 font-mono text-[10px] text-cyan-700">
 								{significant.length} significant (5-10%)
 							</span>
 						)}
 						{minor.length > 0 && (
-							<span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 font-mono text-[10px] text-t-text-muted">
+							<span className="rounded-full border border-rule bg-paper-2 px-2.5 py-0.5 font-mono text-[10px] text-ink-4">
 								{minor.length} minor (1-5%)
 							</span>
 						)}
@@ -133,67 +133,61 @@ export function IdxOwnershipInvestorPage() {
 				)}
 			</div>
 
-			{/* Holdings table */}
-			<div className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-t-text-muted">
+			<div className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-ink-4">
 				Holdings ({companyCount} companies)
 			</div>
-			<div className="overflow-x-auto rounded-xl border border-white/8">
+			<div className="overflow-x-auto rounded-[18px] border border-rule bg-card">
 				<table className="w-full text-sm">
 					<thead>
-						<tr className="border-b border-white/8 bg-white/[0.03]">
-							<th className="px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted">
+						<tr className="border-b border-rule bg-paper-2">
+							<th className="px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4">
 								Code
 							</th>
-							<th className="px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted">
+							<th className="px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4">
 								Company
 							</th>
-							<th className="px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted">
+							<th className="px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4">
 								Ownership
 							</th>
-							<th className="px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted w-[140px]">
+							<th className="w-[140px] px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4">
 								Bar
 							</th>
-							<th className="hidden px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted md:table-cell">
+							<th className="hidden px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4 md:table-cell">
 								Shares
 							</th>
 						</tr>
 					</thead>
-					<tbody className="divide-y divide-white/5">
+					<tbody className="divide-y divide-rule">
 						{data.companies.map((c) => {
 							const barColor =
 								c.percentage > 10
-									? "bg-t-amber/60"
+									? "bg-ember-500/60"
 									: c.percentage > 5
-										? "bg-t-blue/60"
-										: "bg-white/20";
+										? "bg-cyan-400/60"
+										: "bg-ink/20";
 							return (
-								<tr
-									key={c.kode_emiten}
-									className="transition-colors hover:bg-white/[0.04]"
-								>
+								<tr key={c.kode_emiten} className="transition-colors hover:bg-paper-2/60">
 									<td className="px-3 py-2">
 										<Link
 											to={`/idx/${c.kode_emiten}`}
-											className="font-mono text-sm font-semibold text-t-green hover:underline"
+											className="font-mono text-sm font-semibold text-ember-600 hover:underline"
 										>
 											{c.kode_emiten}
 										</Link>
 									</td>
-									<td className="max-w-[300px] truncate px-3 py-2 text-t-text">
-										{c.issuer_name}
-									</td>
-									<td className="px-3 py-2 text-right font-mono text-xs font-medium tabular-nums text-t-amber">
+									<td className="max-w-[300px] truncate px-3 py-2 text-ink">{c.issuer_name}</td>
+									<td className="px-3 py-2 text-right font-mono text-xs font-medium tabular-nums text-ember-700">
 										{c.percentage.toFixed(2)}%
 									</td>
-									<td className="px-3 py-2 w-[140px]">
-										<div className="h-2 w-full rounded-full bg-white/[0.06]">
+									<td className="w-[140px] px-3 py-2">
+										<div className="h-2 w-full rounded-full bg-paper-2">
 											<div
 												className={clsx("h-2 rounded-full", barColor)}
 												style={{ width: `${Math.min(c.percentage, 100)}%` }}
 											/>
 										</div>
 									</td>
-									<td className="hidden px-3 py-2 text-right font-mono text-xs tabular-nums text-t-text-muted md:table-cell">
+									<td className="hidden px-3 py-2 text-right font-mono text-xs tabular-nums text-ink-4 md:table-cell">
 										{c.total_shares > 0 ? c.total_shares.toLocaleString("en-US") : "—"}
 									</td>
 								</tr>

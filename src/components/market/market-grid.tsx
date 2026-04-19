@@ -96,7 +96,7 @@ export function MarketGrid() {
 		const is503 = error.message.includes("503");
 		return (
 			<div className="flex min-h-full flex-col items-center justify-center gap-3 p-12 text-center">
-				<p className="font-mono text-aig-text-2 text-sm">
+				<p className="font-mono text-ink-2 text-sm">
 					{is503
 						? "Market data is warming up. Try again in a moment."
 						: "Markets are unavailable right now."}
@@ -211,16 +211,16 @@ export function MarketGrid() {
 								</Chip>
 								<Chip tone="neutral">Updated {formatTime(data.updated_at)} UTC</Chip>
 							</div>
-							<h1 className="aig-headline max-w-[880px] break-words text-aig-text">
+							<h1 className="aig-headline max-w-[880px] break-words">
 								{heroNarrative.headline}
 							</h1>
-							<p className="max-w-[820px] break-words font-sans text-[15px] text-aig-text-2 leading-[1.55]">
+							<p className="max-w-[820px] break-words font-sans text-[15px] text-ink-3 leading-[1.55]">
 								{heroNarrative.summary}
 							</p>
 						</div>
 
-						<div className="min-w-0 rounded-[18px] border border-aig-navy-4/70 bg-[rgba(11,16,36,0.55)] p-4 md:min-w-[280px]">
-							<h4 className="mb-2 font-mono font-semibold text-[10px] text-aig-spark tracking-[0.26em] uppercase">
+						<div className="min-w-0 rounded-[18px] border border-rule bg-card p-4 shadow-[0_1px_2px_rgba(20,23,53,0.04)] md:min-w-[280px]">
+							<h4 className="mb-2 font-mono font-semibold text-[10px] text-ember-600 tracking-[0.26em] uppercase">
 								Desk Signals
 							</h4>
 							<SignalLine label="Jakarta" value={`${jakarta.time} WIB`} />
@@ -236,14 +236,14 @@ export function MarketGrid() {
 					</div>
 
 					{freshness.stale && (
-						<div className="mt-4 rounded-[18px] border border-aig-ember-500/25 bg-aig-ember-500/10 p-4">
+						<div className="mt-4 rounded-[18px] border border-ember-200 bg-ember-100/60 p-4">
 							<div className="flex items-start gap-3">
-								<TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-aig-ember-300" />
+								<TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-ember-600" />
 								<div>
-									<div className="font-mono text-[11px] text-aig-ember-300 tracking-[0.24em] uppercase">
+									<div className="font-mono text-[11px] text-ember-700 tracking-[0.24em] uppercase">
 										Feed notice
 									</div>
-									<p className="mt-1 text-aig-text-2 text-sm leading-6">
+									<p className="mt-1 text-ink-2 text-sm leading-6">
 										Quotes are delayed. Check feed freshness before using this overview as a live
 										board.
 									</p>
@@ -281,10 +281,10 @@ export function MarketGrid() {
 
 					{/* CTA row */}
 					<div className="mt-3.5 flex flex-wrap items-center gap-2.5">
-						<Link to="/watchlist" className="aig-btn aig-btn-primary">
+						<Link to="/watchlist" className="aig-btn aig-btn-ember">
 							Open Watchlist <ArrowRight className="h-3.5 w-3.5" />
 						</Link>
-						<Link to="/charts" className="aig-btn aig-btn-ghost">
+						<Link to="/charts" className="aig-btn aig-btn-primary">
 							Launch Charts
 						</Link>
 						<Link to="/idx/entities" className="aig-btn aig-btn-ghost">
@@ -492,19 +492,19 @@ function AigSection({
 			<div className="mb-3.5 flex items-start justify-between gap-4">
 				<div className="min-w-0">
 					<div className="flex items-center gap-2.5">
-						<span className="grid h-[22px] w-[22px] place-items-center rounded-[7px] border border-aig-ember-500/35 bg-aig-ember-500/10 text-aig-ember-300">
+						<span className="grid h-[22px] w-[22px] place-items-center rounded-[7px] border border-ember-200 bg-ember-100/60 text-ember-600">
 							{icon}
 						</span>
-						<span className="font-mono font-semibold text-[11px] text-aig-ember-300 tracking-[0.24em] uppercase">
+						<span className="font-mono font-semibold text-[11px] text-ember-600 tracking-[0.24em] uppercase">
 							{title}
 						</span>
 					</div>
-					<p className="mt-2 max-w-[560px] break-words text-[13px] text-aig-text-3 leading-[1.5]">
+					<p className="mt-2 max-w-[560px] break-words text-[13px] text-ink-3 leading-[1.5]">
 						{description}
 					</p>
 				</div>
 				{tools && tools.length > 0 && (
-					<div className="flex shrink-0 gap-1.5">
+					<div className="aig-tool-track shrink-0">
 						{tools.map((t, i) => (
 							<button
 								type="button"
@@ -546,15 +546,15 @@ function ChipDot() {
 function SignalLine({
 	label,
 	value,
-	valueClass = "text-aig-text",
+	valueClass = "text-ink",
 }: {
 	label: string;
 	value: string;
 	valueClass?: string;
 }) {
 	return (
-		<div className="flex items-center justify-between gap-4 border-aig-navy-4/40 border-t py-2 font-mono first:border-t-0 first:pt-1 last:pb-1">
-			<span className="font-mono text-[10px] text-aig-text-4 tracking-[0.2em] uppercase">
+		<div className="flex items-center justify-between gap-4 border-rule border-t py-2 font-mono first:border-t-0 first:pt-1 last:pb-1">
+			<span className="font-mono text-[10px] text-ink-4 tracking-[0.2em] uppercase">
 				{label}
 			</span>
 			<span className={`break-words text-right text-[12px] ${valueClass}`}>{value}</span>
@@ -578,7 +578,7 @@ function HeroSparkBar() {
 					style={{
 						height: `${h}px`,
 						background:
-							"linear-gradient(180deg, var(--color-aig-ember-500), var(--color-aig-ember-700))",
+							"linear-gradient(180deg, var(--color-ember-400), var(--color-ember-700))",
 					}}
 				/>
 			))}
@@ -597,7 +597,7 @@ function QuoteList({
 }) {
 	if (!quotes.length) {
 		return (
-			<div className="rounded-2xl border border-aig-navy-3/60 border-dashed p-4 text-aig-text-4 text-sm">
+			<div className="rounded-2xl border border-rule border-dashed p-4 text-ink-4 text-sm">
 				Awaiting market feed.
 			</div>
 		);
@@ -621,12 +621,12 @@ function QuoteRow({ quote, tone }: { quote: Quote; tone: QuoteTone }) {
 				<div className="aig-qc-accent" />
 				<div className="min-w-0">
 					<div className="flex min-w-0 items-baseline gap-2">
-						<span className="font-mono font-bold text-[13px] tracking-[0.04em] text-aig-text">
+						<span className="font-mono font-bold text-[13px] tracking-[0.04em] text-ink">
 							{quote.symbol}
 						</span>
-						<span className="truncate text-[12px] text-aig-text-3">{quote.name}</span>
+						<span className="truncate text-[12px] text-ink-3">{quote.name}</span>
 					</div>
-					<div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] text-aig-text-4 tracking-[0.2em] uppercase">
+					<div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] text-ink-4 tracking-[0.2em] uppercase">
 						{quote.exchange && <span>{quote.exchange}</span>}
 						{quote.volume != null && quote.volume > 0 && (
 							<span>Vol {formatVolume(quote.volume)}</span>
@@ -636,10 +636,10 @@ function QuoteRow({ quote, tone }: { quote: Quote; tone: QuoteTone }) {
 				</div>
 			</div>
 			<div className="flex min-w-[96px] max-w-[140px] flex-col items-end justify-center gap-[2px] font-mono">
-				<div className="text-right font-semibold text-[13px] text-aig-text">
+				<div className="text-right font-semibold text-[13px] text-ink">
 					{formatPrice(quote.price, quote.currency)}
 				</div>
-				<div className={`text-right text-[12px] ${isPositive ? "text-aig-pos" : "text-aig-neg"}`}>
+				<div className={`text-right text-[12px] ${isPositive ? "text-pos" : "text-neg"}`}>
 					{formatPercent(changePercent)}
 				</div>
 				<MiniSpark up={isPositive} />
@@ -682,7 +682,7 @@ function MiniSpark({ up }: { up: boolean }) {
 			<path
 				d={points}
 				fill="none"
-				stroke={up ? "var(--color-aig-pos)" : "var(--color-aig-neg)"}
+				stroke={up ? "var(--color-pos)" : "var(--color-neg)"}
 				strokeWidth="1.4"
 			/>
 		</svg>
@@ -702,52 +702,50 @@ function FocusCard({
 }) {
 	const changePercent = getChangePercent(quote);
 	const isPositive = changePercent >= 0;
-	const accent =
+	const barGrad =
 		tone === "local"
-			? "border-aig-ember-500/25"
+			? "linear-gradient(180deg,#ff8a2a,#b53b00)"
 			: tone === "apac"
-				? "border-aig-cyan-300/25"
+				? "linear-gradient(180deg,#7cb7ff,#0e3f90)"
 				: tone === "global"
-					? "border-aig-navy-5/60"
-					: isPositive
-						? "border-aig-pos/25"
-						: "border-aig-neg/25";
+					? "linear-gradient(180deg,#7a5cff,#141735)"
+					: "linear-gradient(180deg,#ffb020,#e84e00)";
 
 	return (
 		<Link
 			to={`/stock/${quote.symbol}`}
-			className={`relative min-w-0 overflow-hidden rounded-[18px] border ${accent} bg-[linear-gradient(180deg,rgba(20,32,72,0.6),rgba(8,12,28,0.7))] p-3.5 transition-transform hover:-translate-y-0.5`}
+			className="relative min-w-0 overflow-hidden rounded-[20px] border border-rule bg-card p-4 shadow-[0_1px_2px_rgba(20,23,53,0.04)] transition-all hover:-translate-y-0.5 hover:bg-card-2 hover:shadow-[0_10px_30px_rgba(20,23,53,0.06)]"
 		>
 			<span
-				className="-inset-x-0 pointer-events-none absolute inset-y-0"
-				style={{
-					background: "linear-gradient(180deg, transparent 50%, rgba(255,122,26,0.05) 100%)",
-				}}
+				className="pointer-events-none absolute inset-y-2 left-0 w-[3px] rounded-full"
+				style={{ background: barGrad }}
 			/>
-			<div className="relative">
-				<div className="font-mono text-[10px] text-aig-ember-300 tracking-[0.24em] uppercase">
+			<div className="relative pl-3">
+				<div className="font-mono text-[10px] text-ember-600 tracking-[0.24em] uppercase">
 					{kicker}
 				</div>
-				<div className="mt-2.5 break-words font-mono font-bold text-[22px] text-aig-text tracking-[0.03em]">
+				<div
+					className="mt-2.5 break-words font-mono font-bold text-[22px] text-ink tracking-[0.01em]"
+				>
 					{quote.symbol}
 				</div>
-				<div className="mt-0.5 break-words text-[12px] text-aig-text-3">{quote.name}</div>
+				<div className="mt-0.5 break-words text-[12px] text-ink-3">{quote.name}</div>
 
 				<div className="mt-3 flex items-end justify-between gap-2">
-					<div className="break-words font-mono font-semibold text-[20px] text-aig-text">
+					<div className="break-words font-mono font-semibold text-[20px] text-ink">
 						{formatPrice(quote.price, quote.currency)}
 					</div>
 					<div
 						className={`rounded-full border px-2 py-1 font-mono text-[11px] ${
 							isPositive
-								? "border-aig-pos/25 bg-[rgba(47,211,154,0.12)] text-aig-pos"
-								: "border-aig-neg/25 bg-[rgba(255,93,108,0.13)] text-aig-neg"
+								? "border-[rgba(23,165,104,0.28)] bg-[rgba(23,165,104,0.1)] text-pos"
+								: "border-[rgba(210,52,74,0.28)] bg-[rgba(210,52,74,0.08)] text-neg"
 						}`}
 					>
 						{formatPercent(changePercent)}
 					</div>
 				</div>
-				<div className="mt-2 break-words text-[12px] text-aig-text-3 leading-5">{note}</div>
+				<div className="mt-2 break-words text-[12px] text-ink-3 leading-5">{note}</div>
 			</div>
 		</Link>
 	);
@@ -767,15 +765,15 @@ function MetricCard({
 	direction: "up" | "down" | "flat";
 }) {
 	return (
-		<div className="relative overflow-hidden rounded-[16px] border border-aig-navy-4/60 bg-[linear-gradient(180deg,rgba(22,33,74,0.5),rgba(11,16,36,0.55))] p-3.5">
-			<div className="flex items-center gap-2 font-mono text-[10px] text-aig-text-3 tracking-[0.24em] uppercase">
-				<span className="text-aig-ember-300">{icon}</span>
+		<div className="relative overflow-hidden rounded-[18px] border border-rule bg-card p-4 shadow-[0_1px_2px_rgba(20,23,53,0.04)]">
+			<div className="flex items-center gap-2 font-mono text-[10px] text-ink-4 tracking-[0.24em] uppercase">
+				<span className="text-ember-600">{icon}</span>
 				{label}
 			</div>
-			<div className="mt-2.5 break-words font-mono font-semibold text-[18px] text-aig-text leading-[1.2] tracking-[0.02em]">
+			<div className="mt-2.5 break-words font-mono font-semibold text-[22px] text-ink leading-[1.2] tracking-[0.01em]">
 				{value}
 			</div>
-			<div className="mt-1.5 break-words text-[12px] text-aig-text-3 leading-[1.4]">
+			<div className="mt-1.5 break-words text-[12px] text-ink-3 leading-[1.4]">
 				{secondary}
 			</div>
 			<svg
@@ -788,10 +786,10 @@ function MetricCard({
 					fill="none"
 					stroke={
 						direction === "up"
-							? "var(--color-aig-pos)"
+							? "var(--color-pos)"
 							: direction === "down"
-								? "var(--color-aig-neg)"
-								: "var(--color-aig-ember-500)"
+								? "var(--color-neg)"
+								: "var(--color-ember-500)"
 					}
 					strokeWidth="1.6"
 					points={
@@ -821,48 +819,48 @@ function BreadthCard({ summary }: { summary: BreadthSummary }) {
 				: "Negative breadth";
 	const balanceClass =
 		summary.advancers === summary.decliners
-			? "text-aig-text-2"
+			? "text-ink-2"
 			: summary.advancers > summary.decliners
-				? "text-aig-pos"
-				: "text-aig-neg";
+				? "text-pos"
+				: "text-neg";
 
 	return (
-		<div className="min-w-0 rounded-[14px] border border-aig-navy-3/60 bg-[rgba(22,33,74,0.35)] p-3.5">
+		<div className="min-w-0 rounded-[14px] border border-rule bg-paper-2/60 p-3.5">
 			<div className="flex items-start justify-between gap-3">
 				<div>
-					<div className="font-mono text-[10px] text-aig-text-3 tracking-[0.24em] uppercase">
+					<div className="font-mono text-[10px] text-ink-4 tracking-[0.24em] uppercase">
 						{summary.label}
 					</div>
 					<div className={`mt-0.5 break-words font-bold text-sm ${balanceClass}`}>{balance}</div>
 				</div>
-				<div className="font-mono text-[11px] text-aig-text-4">
+				<div className="font-mono text-[11px] text-ink-4">
 					{summary.quotes.length} instrument{summary.quotes.length === 1 ? "" : "s"}
 				</div>
 			</div>
-			<div className="mt-2.5 flex h-2.5 overflow-hidden rounded-full border border-aig-navy-3/60 bg-[rgba(146,170,255,0.06)]">
+			<div className="mt-2.5 flex h-2.5 overflow-hidden rounded-full border border-rule bg-paper">
 				<div
 					className="h-full"
 					style={{
 						flex: upP,
-						background: "linear-gradient(90deg, var(--color-aig-pos), #64e5b6)",
+						background: "linear-gradient(90deg, var(--color-pos), #66d8a8)",
 					}}
 				/>
-				<div className="h-full bg-[rgba(146,170,255,0.18)]" style={{ flex: flP }} />
+				<div className="h-full bg-[rgba(20,23,53,0.08)]" style={{ flex: flP }} />
 				<div
 					className="h-full"
 					style={{
 						flex: dnP,
-						background: "linear-gradient(90deg, var(--color-aig-neg), #ff9aa3)",
+						background: "linear-gradient(90deg, var(--color-neg), #e97a8b)",
 					}}
 				/>
 			</div>
 			<div className="mt-2.5 grid grid-cols-3 gap-2 text-center font-mono text-xs">
-				<MiniStat label="Up" value={summary.advancers.toString()} valueClass="text-aig-pos" />
-				<MiniStat label="Down" value={summary.decliners.toString()} valueClass="text-aig-neg" />
+				<MiniStat label="Up" value={summary.advancers.toString()} valueClass="text-pos" />
+				<MiniStat label="Down" value={summary.decliners.toString()} valueClass="text-neg" />
 				<MiniStat label="Flat" value={summary.unchanged.toString()} />
 			</div>
-			<div className="mt-2.5 break-words text-[12px] text-aig-text-3 leading-[1.5]">
-				Average move <b className="text-aig-text-2">{formatPercent(summary.avgMove)}</b>.{" "}
+			<div className="mt-2.5 break-words text-[12px] text-ink-3 leading-[1.5]">
+				Average move <b className="text-ink">{formatPercent(summary.avgMove)}</b>.{" "}
 				{summary.leader
 					? `Lead: ${summary.leader.symbol} ${formatPercent(getChangePercent(summary.leader))}.`
 					: "Lead: awaiting quotes."}
@@ -874,15 +872,15 @@ function BreadthCard({ summary }: { summary: BreadthSummary }) {
 function MiniStat({
 	label,
 	value,
-	valueClass = "text-aig-text",
+	valueClass = "text-ink",
 }: {
 	label: string;
 	value: string;
 	valueClass?: string;
 }) {
 	return (
-		<div className="rounded-[10px] border border-aig-navy-3/60 bg-[rgba(11,16,36,0.6)] px-2 py-2">
-			<div className="font-mono text-[10px] text-aig-text-4 tracking-[0.2em] uppercase">
+		<div className="rounded-[10px] border border-rule bg-card px-2 py-2">
+			<div className="font-mono text-[10px] text-ink-4 tracking-[0.2em] uppercase">
 				{label}
 			</div>
 			<div className={`mt-1 font-bold text-sm ${valueClass}`}>{value}</div>
@@ -891,52 +889,48 @@ function MiniStat({
 }
 
 function InsightCard({ body, title, tone }: InsightItem) {
-	const toneClass =
-		tone === "positive"
-			? "border-aig-pos/25"
-			: tone === "warning"
-				? "border-aig-ember-500/25"
-				: "border-aig-navy-3/60";
 	const borderLeft =
 		tone === "positive"
-			? "var(--color-aig-pos)"
+			? "var(--color-pos)"
 			: tone === "warning"
-				? "var(--color-aig-ember-500)"
-				: "var(--color-aig-cyan-500)";
+				? "var(--color-ember-500)"
+				: "var(--color-cyan-500)";
 
 	return (
 		<div
-			className={`min-w-0 rounded-[14px] border ${toneClass} bg-[rgba(22,33,74,0.35)] p-3`}
+			className="min-w-0 rounded-[14px] border border-rule bg-paper-2/60 p-3"
 			style={{ borderLeft: `3px solid ${borderLeft}` }}
 		>
-			<div className="font-mono text-[10px] text-aig-text-4 tracking-[0.22em] uppercase">
+			<div className="font-mono text-[10px] text-ink-4 tracking-[0.22em] uppercase">
 				{title}
 			</div>
-			<p className="mt-1.5 break-words text-[13px] text-aig-text-2 leading-6">{body}</p>
+			<p className="mt-1.5 break-words text-[13px] text-ink-2 leading-6">{body}</p>
 		</div>
 	);
 }
 
 function SignalTile({ label, note, value }: { label: string; note: string; value: string }) {
 	return (
-		<div className="min-w-0 rounded-[14px] border border-aig-navy-3/60 bg-[rgba(22,33,74,0.35)] p-3">
-			<div className="font-mono text-[10px] text-aig-text-4 tracking-[0.22em] uppercase">
+		<div className="min-w-0 rounded-[14px] border border-rule bg-paper-2/60 p-3">
+			<div className="font-mono text-[10px] text-ink-4 tracking-[0.22em] uppercase">
 				{label}
 			</div>
-			<div className="mt-1 break-words font-semibold text-aig-text text-sm">{value}</div>
-			<div className="mt-1 break-words text-[12px] text-aig-text-3 leading-5">{note}</div>
+			<div className="mt-1 break-words font-semibold text-ink text-sm">{value}</div>
+			<div className="mt-1 break-words text-[12px] text-ink-3 leading-5">{note}</div>
 		</div>
 	);
 }
 
 function CoverageCard({ label, note, value }: CoverageCardData) {
 	return (
-		<div className="min-w-0 rounded-[14px] border border-aig-navy-3/60 bg-[rgba(22,33,74,0.35)] p-3">
-			<div className="font-mono text-[10px] text-aig-text-4 tracking-[0.22em] uppercase">
+		<div className="min-w-0 rounded-[14px] border border-rule bg-paper-2/60 p-3">
+			<div className="font-mono text-[10px] text-ink-4 tracking-[0.22em] uppercase">
 				{label}
 			</div>
-			<div className="mt-1 break-words font-mono font-bold text-[18px] text-aig-text">{value}</div>
-			<div className="mt-1 break-words text-[12px] text-aig-text-3 leading-5">{note}</div>
+			<div className="mt-1 break-words font-mono font-bold text-[18px] text-ink tracking-[0.01em]">
+				{value}
+			</div>
+			<div className="mt-1 break-words text-[12px] text-ink-3 leading-5">{note}</div>
 		</div>
 	);
 }
@@ -1336,9 +1330,9 @@ function formatConnectionStatus(status: ConnectionStatus) {
 }
 
 function connectionColor(status: ConnectionStatus) {
-	if (status === "connected") return "text-aig-pos";
-	if (status === "connecting") return "text-aig-spark";
-	return "text-aig-neg";
+	if (status === "connected") return "text-pos";
+	if (status === "connecting") return "text-spark";
+	return "text-neg";
 }
 
 function getFeedFreshness(updatedAt: string): FreshnessState {

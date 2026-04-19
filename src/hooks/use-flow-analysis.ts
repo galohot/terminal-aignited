@@ -1,9 +1,7 @@
 import { useMemo } from "react";
-import { useHistory } from "./use-history";
-import { useQuote } from "./use-quote";
-import { detectWyckoffPhases } from "../lib/wyckoff";
 import { analyzeVolumeTrend, computeMFI, computeRSI, detectDivergences } from "../lib/indicators";
 import { classifyRegime, computeAvgDailyTurnover } from "../lib/stock-regime";
+import { detectWyckoffPhases } from "../lib/wyckoff";
 import type {
 	DivergenceAnalysis,
 	FlowVerdict,
@@ -14,6 +12,8 @@ import type {
 	WyckoffAnalysis,
 } from "../types/flow";
 import type { HistoryPoint } from "../types/market";
+import { useHistory } from "./use-history";
+import { useQuote } from "./use-quote";
 
 const EMPTY_DATA: HistoryPoint[] = [];
 
@@ -41,12 +41,16 @@ export function useFlowAnalysis(kode: string) {
 	);
 
 	const divergences = useMemo<DivergenceAnalysis>(
-		() => (data.length > 0 ? detectDivergences(data, mfi, rsi) : { divergences: [], current: null }),
+		() =>
+			data.length > 0 ? detectDivergences(data, mfi, rsi) : { divergences: [], current: null },
 		[data, mfi, rsi],
 	);
 
 	const volumeTrend = useMemo<VolumeTrend>(
-		() => (data.length > 0 ? analyzeVolumeTrend(data) : { direction: "stable", ratio: 1, description: "No data" }),
+		() =>
+			data.length > 0
+				? analyzeVolumeTrend(data)
+				: { direction: "stable", ratio: 1, description: "No data" },
 		[data],
 	);
 
@@ -160,10 +164,7 @@ function buildVerdict(
 	else if (net < -0.3) signal = "bearish";
 
 	// Conviction: how strongly the evidence leans one way (0-100)
-	const conviction =
-		total > 0
-			? Math.min(Math.round((Math.abs(net) / total) * 100), 100)
-			: 0;
+	const conviction = total > 0 ? Math.min(Math.round((Math.abs(net) / total) * 100), 100) : 0;
 
 	return {
 		signal,

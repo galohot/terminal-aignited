@@ -16,7 +16,7 @@ export function BrokerSummaryTable({ kode }: { kode: string }) {
 
 	if (error || !data?.brokers?.length) {
 		return (
-			<div className="rounded-2xl border border-dashed border-t-border p-8 text-center text-sm text-t-text-muted">
+			<div className="rounded-[18px] border border-dashed border-rule bg-paper-2/60 p-8 text-center text-sm text-ink-4">
 				Broker activity data unavailable.
 			</div>
 		);
@@ -27,59 +27,59 @@ export function BrokerSummaryTable({ kode }: { kode: string }) {
 	return (
 		<div>
 			<div className="mb-2 flex items-center justify-between">
-				<span className="font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted">
+				<span className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4">
 					Broker Activity
 				</span>
-				{data.date && <span className="font-mono text-[10px] text-t-text-muted">{data.date}</span>}
+				{data.date && <span className="font-mono text-[10px] text-ink-4">{data.date}</span>}
 			</div>
-			<div className="overflow-x-auto rounded-xl border border-white/8">
+			<div className="overflow-x-auto rounded-[18px] border border-rule bg-card">
 				<table className="w-full text-sm">
 					<thead>
-						<tr className="border-b border-white/8 bg-white/[0.03]">
-							<th className="px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted">
+						<tr className="border-b border-rule bg-paper-2">
+							<th className="px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4">
 								Broker
 							</th>
-							<th className="hidden px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted sm:table-cell">
+							<th className="hidden px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4 sm:table-cell">
 								Name
 							</th>
-							<th className="px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted">
+							<th className="px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4">
 								Value
 							</th>
-							<th className="hidden px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted md:table-cell">
+							<th className="hidden px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4 md:table-cell">
 								Vol
 							</th>
-							<th className="hidden px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted md:table-cell">
+							<th className="hidden px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4 md:table-cell">
 								Freq
 							</th>
-							<th className="px-3 py-2.5 font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted">
+							<th className="px-3 py-2.5 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4">
 								Share
 							</th>
 						</tr>
 					</thead>
-					<tbody className="divide-y divide-white/5">
+					<tbody className="divide-y divide-rule">
 						{data.brokers.map((b) => {
 							const pct = (b.value / maxValue) * 100;
 							return (
-								<tr key={b.broker_code} className="transition-colors hover:bg-white/[0.04]">
-									<td className="px-3 py-2 font-mono text-sm font-semibold text-t-green">
+								<tr key={b.broker_code} className="transition-colors hover:bg-paper-2/60">
+									<td className="px-3 py-2 font-mono text-sm font-semibold text-ember-600">
 										{b.broker_code}
 									</td>
-									<td className="hidden max-w-[200px] truncate px-3 py-2 text-xs text-t-text-secondary sm:table-cell">
+									<td className="hidden max-w-[200px] truncate px-3 py-2 text-xs text-ink-2 sm:table-cell">
 										{b.broker_name}
 									</td>
-									<td className="px-3 py-2 text-right font-mono text-xs text-t-text-secondary">
+									<td className="px-3 py-2 text-right font-mono text-xs text-ink-2">
 										{formatValue(b.value)}
 									</td>
-									<td className="hidden px-3 py-2 text-right font-mono text-xs text-t-text-muted md:table-cell">
+									<td className="hidden px-3 py-2 text-right font-mono text-xs text-ink-4 md:table-cell">
 										{formatVolume(b.volume)}
 									</td>
-									<td className="hidden px-3 py-2 text-right font-mono text-xs text-t-text-muted md:table-cell">
+									<td className="hidden px-3 py-2 text-right font-mono text-xs text-ink-4 md:table-cell">
 										{b.frequency.toLocaleString("en-US")}
 									</td>
 									<td className="px-3 py-2">
-										<div className="relative h-3 w-20 overflow-hidden rounded-full bg-white/[0.04]">
+										<div className="relative h-3 w-20 overflow-hidden rounded-full bg-paper-2">
 											<div
-												className="absolute left-0 top-0 h-full rounded-full bg-t-green/40"
+												className="absolute left-0 top-0 h-full rounded-full bg-pos/60"
 												style={{ width: `${pct}%` }}
 											/>
 										</div>

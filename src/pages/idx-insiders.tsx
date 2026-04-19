@@ -39,33 +39,36 @@ export function IdxInsidersPage() {
 	return (
 		<div className="mx-auto max-w-[1600px] p-4">
 			<IdxNav />
-			<div className="mb-4">
-				<h1 className="font-mono text-lg font-semibold tracking-wide text-white">
-					Insider Network
+			<div className="mb-5">
+				<h1
+					className="text-[clamp(2rem,4vw,2.5rem)] leading-[1.05] text-ink"
+					style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.015em" }}
+				>
+					Insider <em className="text-ember-600">Network</em>
 				</h1>
-				<p className="mt-1 text-sm text-t-text-secondary">
+				<p className="mt-2 max-w-2xl text-sm text-ink-3">
 					Search any person or entity to see all their positions across IDX-listed companies.
 				</p>
 			</div>
 
 			<div className="relative mb-4 max-w-lg">
-				<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-t-text-muted" />
+				<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-4" />
 				<input
 					ref={searchRef}
 					type="text"
 					value={search}
 					onChange={(e) => setSearch(e.target.value)}
 					placeholder="Search by name... ( / )"
-					className="w-full rounded-lg border border-white/10 bg-white/[0.04] py-2 pl-9 pr-3 font-mono text-sm text-white placeholder-t-text-muted outline-none transition-colors focus:border-t-amber/50 focus:bg-white/[0.06]"
+					className="w-full rounded-lg border border-rule bg-card py-2 pl-9 pr-3 font-mono text-sm text-ink placeholder-ink-4 outline-none transition-colors focus:border-ember-500 focus:ring-2 focus:ring-ember-500/15"
 				/>
 			</div>
 
 			{!debouncedSearch ? (
-				<div className="rounded-2xl border border-dashed border-t-border p-12 text-center">
-					<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-t-amber">
+				<div className="rounded-[18px] border border-dashed border-rule bg-paper-2/60 p-12 text-center">
+					<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-ember-600">
 						Cross-Company Search
 					</div>
-					<p className="mt-3 text-sm text-t-text-secondary">
+					<p className="mt-3 text-sm text-ink-3">
 						Enter a name to find all director, commissioner, and shareholder positions across the
 						entire IDX.
 					</p>
@@ -73,12 +76,12 @@ export function IdxInsidersPage() {
 			) : isLoading ? (
 				<Skeleton className="h-[300px] w-full rounded-xl" />
 			) : error ? (
-				<div className="rounded-2xl border border-dashed border-t-border p-8 text-center text-sm text-t-text-muted">
+				<div className="rounded-[18px] border border-dashed border-rule bg-paper-2/60 p-8 text-center text-sm text-ink-4">
 					Failed to search insiders.
 				</div>
 			) : (
 				<>
-					<div className="mb-3 font-mono text-xs text-t-text-muted">
+					<div className="mb-3 font-mono text-xs text-ink-4">
 						Found {data?.total ?? 0} position{(data?.total ?? 0) === 1 ? "" : "s"} for "
 						{debouncedSearch}"
 					</div>

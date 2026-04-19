@@ -1,4 +1,12 @@
 import type {
+	BubbleNode,
+	ChordData,
+	GraphData,
+	HeatmapData,
+	SankeyData,
+	TreemapNode,
+} from "../components/ownership/types";
+import type {
 	IdxBrokerFlowHistoryResponse,
 	IdxBrokerFlowParams,
 	IdxBrokerFlowResponse,
@@ -35,9 +43,9 @@ import type {
 	IdxTopConnectorsResponse,
 	KseiCompanyListResponse,
 	KseiCompanyResponse,
-	KseiInvestorResponse,
 	KseiConcentrationBucket,
 	KseiInvestorListResponse,
+	KseiInvestorResponse,
 	KseiLfSplit,
 	KseiRecordsResponse,
 	KseiStats,
@@ -54,13 +62,13 @@ import type {
 	SearchResponse,
 } from "../types/market";
 import type {
-	BubbleNode,
-	ChordData,
-	GraphData,
-	HeatmapData,
-	SankeyData,
-	TreemapNode,
-} from "../components/ownership/types";
+	PaperAccount,
+	PaperFill,
+	PaperOrder,
+	PaperPnl,
+	PaperPortfolio,
+	PlaceOrderRequest,
+} from "../types/paper";
 
 export interface ApiError extends Error {
 	status?: number;
@@ -77,13 +85,30 @@ async function fetchAPI<T>(path: string, params?: Record<string, string>): Promi
 		}
 	}
 
-	const res = await fetch(url.toString());
+	const res = await fetch(url.toString(), { credentials: "include" });
 	if (!res.ok) {
 		const err = await res.json().catch(() => ({ error: "unknown" }));
 		const error = new Error((err as { message?: string }).message || `API error ${res.status}`);
 		(error as ApiError).status = res.status;
 		const retryAfter = res.headers.get("Retry-After");
 		if (retryAfter) (error as ApiError).retryAfter = Number(retryAfter);
+		throw error;
+	}
+	return res.json() as Promise<T>;
+}
+
+async function mutateAPI<T>(method: "POST" | "DELETE", path: string, body?: unknown): Promise<T> {
+	const url = new URL(`${BASE}${path}`, window.location.origin);
+	const res = await fetch(url.toString(), {
+		method,
+		credentials: "include",
+		headers: body ? { "Content-Type": "application/json" } : undefined,
+		body: body ? JSON.stringify(body) : undefined,
+	});
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({ error: "unknown" }));
+		const error = new Error((err as { message?: string }).message || `API error ${res.status}`);
+		(error as ApiError).status = res.status;
 		throw error;
 	}
 	return res.json() as Promise<T>;
@@ -269,8 +294,7 @@ export const api = {
 
 	kseiConcentration: () => fetchAPI<KseiConcentrationBucket[]>("/idx/ksei/concentration"),
 
-	kseiHeatmap: (top = 40) =>
-		fetchAPI<HeatmapData>("/idx/ksei/heatmap", { top: String(top) }),
+	kseiHeatmap: (top = 40) => fetchAPI<HeatmapData>("/idx/ksei/heatmap", { top: String(top) }),
 
 	kseiChord: () => fetchAPI<ChordData>("/idx/ksei/chord"),
 
@@ -298,7 +322,11 @@ export const api = {
 	macroOverview: () => fetchAPI<MacroOverview>("/macro/overview"),
 
 	kseiCompanies: (params: {
-		page?: number; per_page?: number; sort?: string; order?: string; search?: string;
+		page?: number;
+		per_page?: number;
+		sort?: string;
+		order?: string;
+		search?: string;
 	}) =>
 		fetchAPI<KseiCompanyListResponse>(
 			"/idx/ksei/companies",
@@ -310,8 +338,13 @@ export const api = {
 		),
 
 	kseiInvestors: (params: {
-		page?: number; per_page?: number; sort?: string; order?: string;
-		search?: string; investor_type?: string; local_foreign?: string;
+		page?: number;
+		per_page?: number;
+		sort?: string;
+		order?: string;
+		search?: string;
+		investor_type?: string;
+		local_foreign?: string;
 	}) =>
 		fetchAPI<KseiInvestorListResponse>(
 			"/idx/ksei/investors",
@@ -321,4 +354,102 @@ export const api = {
 					.map(([k, v]) => [k, String(v)]),
 			) as Record<string, string>,
 		),
+
+	// ── Paper trading (requires auth session) ──
+	paperPortfolio: () => fetchAPI<PaperPortfolio>("/paper/portfolio"),
+	paperOrders: (status?: string) =>
+		fetchAPI<PaperOrder[]>("/paper/orders", status ? { status } : undefined),
+	paperFills: (limit?: number) =>
+		fetchAPI<PaperFill[]>("/paper/fills", limit ? { limit: String(limit) } : undefined),
+	paperPnl: (range = "all") => fetchAPI<PaperPnl>("/paper/pnl", { range }),
+	paperInitAccount: () => mutateAPI<PaperAccount>("POST", "/paper/account/init"),
+	paperResetAccount: () => mutateAPI<PaperAccount>("POST", "/paper/account/reset"),
+	paperPlaceOrder: (req: PlaceOrderRequest) => mutateAPI<PaperOrder>("POST", "/paper/orders", req),
+	paperCancelOrder: (id: number) => mutateAPI<PaperOrder>("DELETE", `/paper/orders/${id}`),
+};
+
+// --- Research (Worker-native routes, not proxied to market-api) ---
+
+export type ResearchType =
+	| "am_brief"
+	| "deep_dive"
+	| "sector"
+	| "earnings_preview"
+	| "earnings_recap"
+	| "power_map"
+	| "macro";
+
+export interface ResearchArticle {
+	id: string;
+	slug: string;
+	type: ResearchType;
+	title: string;
+	summary: string;
+	body_md: string;
+	tickers: string[];
+	sectors: string[];
+	tags: string[];
+	required_tier: "starter" | "pro" | "institutional";
+	status: "draft" | "reviewed" | "published" | "archived";
+	published_at: string | null;
+	generated_by: string | null;
+	reviewed_by: string | null;
+	created_at: string;
+}
+
+async function fetchWorker<T>(path: string, params?: Record<string, string>): Promise<T> {
+	const url = new URL(path, window.location.origin);
+	if (params) {
+		for (const [k, v] of Object.entries(params)) {
+			if (v) url.searchParams.set(k, v);
+		}
+	}
+	const res = await fetch(url.toString(), { credentials: "include" });
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({ error: "unknown" }));
+		const error = new Error((err as { message?: string }).message || `API error ${res.status}`);
+		(error as ApiError).status = res.status;
+		throw error;
+	}
+	return res.json() as Promise<T>;
+}
+
+async function postWorker<T>(path: string, body?: unknown): Promise<T> {
+	const res = await fetch(path, {
+		method: "POST",
+		credentials: "include",
+		headers: body ? { "Content-Type": "application/json" } : undefined,
+		body: body ? JSON.stringify(body) : undefined,
+	});
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({ error: "unknown" }));
+		const error = new Error((err as { message?: string }).message || `API error ${res.status}`);
+		(error as ApiError).status = res.status;
+		throw error;
+	}
+	return res.json() as Promise<T>;
+}
+
+export const research = {
+	list: (params?: { type?: ResearchType; ticker?: string; tag?: string; limit?: number; offset?: number }) =>
+		fetchWorker<{ items: ResearchArticle[]; total: number }>(
+			"/api/research/list",
+			params
+				? Object.fromEntries(
+						Object.entries(params)
+							.filter(([, v]) => v != null && v !== "")
+							.map(([k, v]) => [k, String(v)]),
+					)
+				: undefined,
+		),
+	get: (slug: string) =>
+		fetchWorker<{ article: ResearchArticle; gated: boolean }>(
+			`/api/research/article/${encodeURIComponent(slug)}`,
+		),
+	adminDrafts: () => fetchWorker<{ items: ResearchArticle[] }>("/api/admin/research/drafts"),
+	adminUpsert: (input: Partial<ResearchArticle> & { slug: string; type: ResearchType; title: string; summary: string; body_md: string }) =>
+		postWorker<{ article: ResearchArticle }>("/api/admin/research/upsert", input),
+	adminPublish: (id: string) => postWorker<{ ok: boolean }>(`/api/admin/research/publish/${id}`),
+	adminGenerateAmBrief: () =>
+		postWorker<{ ok: boolean; slug?: string; error?: string }>("/api/admin/research/generate-am-brief"),
 };

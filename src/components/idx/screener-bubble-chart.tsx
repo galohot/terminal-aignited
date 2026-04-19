@@ -4,18 +4,18 @@ import { useNavigate } from "react-router";
 import type { IdxScreenerResult } from "../../types/market";
 
 const SECTOR_PALETTE = [
-	"#f59e0b",
-	"#3b82f6",
-	"#22c55e",
-	"#a855f7",
-	"#ef4444",
-	"#06b6d4",
-	"#f97316",
+	"#ff8a2a",
+	"#1d5fc9",
+	"#17a568",
+	"#7a4bc8",
+	"#d2344a",
+	"#0ea5a5",
+	"#d97706",
 	"#84cc16",
-	"#ec4899",
-	"#14b8a6",
-	"#8b5cf6",
-	"#f43f5e",
+	"#db2777",
+	"#0891b2",
+	"#6d28d9",
+	"#e11d48",
 ];
 
 function formatMarketCap(value: number | null): string {
@@ -104,9 +104,7 @@ export function ScreenerBubbleChart({ results }: { results: IdxScreenerResult[] 
 			.attr("width", innerW)
 			.attr("height", innerH);
 
-		const root = svg
-			.append("g")
-			.attr("transform", `translate(${margin.left},${margin.top})`);
+		const root = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
 		// Scales
 		const xExtent = d3.extent(valid, (d) => d.per) as [number, number];
@@ -148,7 +146,7 @@ export function ScreenerBubbleChart({ results }: { results: IdxScreenerResult[] 
 				.attr("x2", (d) => xs(d))
 				.attr("y1", 0)
 				.attr("y2", innerH)
-				.attr("stroke", "#ffffff15")
+				.attr("stroke", "#e7e0d2")
 				.attr("stroke-width", 1);
 
 			gridGroup
@@ -160,7 +158,7 @@ export function ScreenerBubbleChart({ results }: { results: IdxScreenerResult[] 
 				.attr("x2", innerW)
 				.attr("y1", (d) => ys(d))
 				.attr("y2", (d) => ys(d))
-				.attr("stroke", "#ffffff15")
+				.attr("stroke", "#e7e0d2")
 				.attr("stroke-width", 1);
 
 			// Zero ROE line when domain spans negative
@@ -175,7 +173,7 @@ export function ScreenerBubbleChart({ results }: { results: IdxScreenerResult[] 
 					.attr("x2", innerW)
 					.attr("y1", ys(0))
 					.attr("y2", ys(0))
-					.attr("stroke", "#ffffff35")
+					.attr("stroke", "#8b8fb0")
 					.attr("stroke-width", 1)
 					.attr("stroke-dasharray", "4 3");
 			}
@@ -193,22 +191,16 @@ export function ScreenerBubbleChart({ results }: { results: IdxScreenerResult[] 
 
 		function axisStyle(g: d3.Selection<SVGGElement, unknown, null, undefined>) {
 			g.select(".domain").remove();
-			g.selectAll(".tick line")
-				.attr("stroke", "#ffffff15")
-				.attr("stroke-width", 1);
+			g.selectAll(".tick line").attr("stroke", "#e7e0d2").attr("stroke-width", 1);
 			g.selectAll(".tick text")
-				.attr("fill", "#6b7280")
+				.attr("fill", "#55598a")
 				.attr("font-size", "10px")
 				.attr("font-family", "ui-monospace, monospace");
 		}
 
 		function drawAxes(xs: d3.ScaleLinear<number, number>, ys: d3.ScaleLinear<number, number>) {
-			xAxisGroup
-				.call(d3.axisBottom(xs).ticks(8).tickSize(4))
-				.call(axisStyle);
-			yAxisGroup
-				.call(d3.axisLeft(ys).ticks(6).tickSize(4))
-				.call(axisStyle);
+			xAxisGroup.call(d3.axisBottom(xs).ticks(8).tickSize(4)).call(axisStyle);
+			yAxisGroup.call(d3.axisLeft(ys).ticks(6).tickSize(4)).call(axisStyle);
 		}
 
 		drawAxes(xCurrent, yCurrent);
@@ -219,7 +211,7 @@ export function ScreenerBubbleChart({ results }: { results: IdxScreenerResult[] 
 			.attr("x", innerW / 2)
 			.attr("y", innerH + 40)
 			.attr("text-anchor", "middle")
-			.attr("fill", "#6b7280")
+			.attr("fill", "#55598a")
 			.attr("font-size", "11px")
 			.attr("font-family", "ui-monospace, monospace")
 			.text("PER ×");
@@ -230,15 +222,13 @@ export function ScreenerBubbleChart({ results }: { results: IdxScreenerResult[] 
 			.attr("x", -innerH / 2)
 			.attr("y", -44)
 			.attr("text-anchor", "middle")
-			.attr("fill", "#6b7280")
+			.attr("fill", "#55598a")
 			.attr("font-size", "11px")
 			.attr("font-family", "ui-monospace, monospace")
 			.text("ROE %");
 
 		// Bubbles group with clip path
-		const bubblesGroup = root
-			.append("g")
-			.attr("clip-path", `url(#${clipId})`);
+		const bubblesGroup = root.append("g").attr("clip-path", `url(#${clipId})`);
 
 		const circles = bubblesGroup
 			.selectAll<SVGCircleElement, (typeof valid)[0]>("circle")
@@ -247,9 +237,9 @@ export function ScreenerBubbleChart({ results }: { results: IdxScreenerResult[] 
 			.attr("cx", (d) => xCurrent(d.per!))
 			.attr("cy", (d) => yCurrent(d.roe!))
 			.attr("r", (d) => rScale(d.market_cap ?? 0))
-			.attr("fill", (d) => sectorColor.get(d.sector) ?? "#6b7280")
+			.attr("fill", (d) => sectorColor.get(d.sector) ?? "#8b8fb0")
 			.attr("fill-opacity", 0.65)
-			.attr("stroke", (d) => sectorColor.get(d.sector) ?? "#6b7280")
+			.attr("stroke", (d) => sectorColor.get(d.sector) ?? "#8b8fb0")
 			.attr("stroke-opacity", 0.8)
 			.attr("stroke-width", 1)
 			.style("cursor", "pointer");
@@ -263,10 +253,10 @@ export function ScreenerBubbleChart({ results }: { results: IdxScreenerResult[] 
 					x: event.clientX - containerRect.left,
 					y: event.clientY - containerRect.top,
 					d,
-					color: sectorColor.get(d.sector) ?? "#6b7280",
+					color: sectorColor.get(d.sector) ?? "#8b8fb0",
 				});
 			})
-			.on("mousemove", function (event: MouseEvent) {
+			.on("mousemove", (event: MouseEvent) => {
 				const containerRect = containerRef.current?.getBoundingClientRect();
 				if (!containerRect) return;
 				setTooltip((prev) =>
@@ -304,9 +294,7 @@ export function ScreenerBubbleChart({ results }: { results: IdxScreenerResult[] 
 				xCurrent = t.rescaleX(xScale);
 				yCurrent = t.rescaleY(yScale);
 
-				circles
-					.attr("cx", (d) => xCurrent(d.per!))
-					.attr("cy", (d) => yCurrent(d.roe!));
+				circles.attr("cx", (d) => xCurrent(d.per!)).attr("cy", (d) => yCurrent(d.roe!));
 
 				drawAxes(xCurrent, yCurrent);
 				drawGrid(xCurrent, yCurrent);
@@ -321,9 +309,9 @@ export function ScreenerBubbleChart({ results }: { results: IdxScreenerResult[] 
 
 	if (valid.length === 0) {
 		return (
-			<div className="rounded-2xl border border-dashed border-t-border p-8 text-center">
-				<p className="text-sm text-t-text-muted">No data available for scatter chart.</p>
-				<p className="mt-1 text-xs text-t-text-muted">
+			<div className="rounded-[18px] border border-dashed border-rule bg-paper-2/60 p-8 text-center">
+				<p className="text-sm text-ink-3">No data available for scatter chart.</p>
+				<p className="mt-1 text-xs text-ink-4">
 					At least one result needs valid PER (0–150) and ROE values.
 				</p>
 			</div>
@@ -335,17 +323,14 @@ export function ScreenerBubbleChart({ results }: { results: IdxScreenerResult[] 
 			{/* Legend */}
 			<div className="mb-3 flex flex-wrap gap-x-4 gap-y-1.5">
 				{legendSectors.map((sector) => {
-					const color = sectorColor.get(sector) ?? "#6b7280";
+					const color = sectorColor.get(sector) ?? "#8b8fb0";
 					return (
 						<div key={sector} className="flex items-center gap-1.5">
 							<span
 								className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
 								style={{ backgroundColor: color }}
 							/>
-							<span
-								className="font-mono text-[10px]"
-								style={{ color }}
-							>
+							<span className="font-mono text-[10px]" style={{ color }}>
 								{sector}
 							</span>
 						</div>
@@ -360,7 +345,7 @@ export function ScreenerBubbleChart({ results }: { results: IdxScreenerResult[] 
 				{/* Tooltip */}
 				{tooltip && (
 					<div
-						className="pointer-events-none absolute z-10 rounded-lg border border-white/10 bg-black/90 px-3 py-2 shadow-xl"
+						className="pointer-events-none absolute z-10 rounded-[12px] border border-rule bg-card px-3 py-2 shadow-[0_10px_30px_rgba(20,23,53,0.12)]"
 						style={{
 							left: tooltip.x + 14,
 							top: tooltip.y - 10,
@@ -370,27 +355,24 @@ export function ScreenerBubbleChart({ results }: { results: IdxScreenerResult[] 
 									: undefined,
 						}}
 					>
-						<div
-							className="font-mono text-sm font-semibold"
-							style={{ color: tooltip.color }}
-						>
+						<div className="font-mono text-sm font-semibold" style={{ color: tooltip.color }}>
 							{tooltip.d.kode_emiten}
 						</div>
-						<div className="mt-0.5 max-w-[180px] truncate font-mono text-[11px] text-t-text-secondary">
+						<div className="mt-0.5 max-w-[180px] truncate font-mono text-[11px] text-ink-3">
 							{tooltip.d.name}
 						</div>
-						<div className="mt-1 font-mono text-[10px] text-t-text-muted">{tooltip.d.sector}</div>
+						<div className="mt-1 font-mono text-[10px] text-ink-4">{tooltip.d.sector}</div>
 						<div className="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-0.5">
-							<div className="font-mono text-[10px] text-t-text-muted">PER</div>
-							<div className="font-mono text-[10px] text-t-text">
+							<div className="font-mono text-[10px] text-ink-4">PER</div>
+							<div className="font-mono text-[10px] text-ink">
 								{tooltip.d.per != null ? `${tooltip.d.per.toFixed(1)}×` : "—"}
 							</div>
-							<div className="font-mono text-[10px] text-t-text-muted">ROE</div>
-							<div className="font-mono text-[10px] text-t-text">
+							<div className="font-mono text-[10px] text-ink-4">ROE</div>
+							<div className="font-mono text-[10px] text-ink">
 								{tooltip.d.roe != null ? `${tooltip.d.roe.toFixed(1)}%` : "—"}
 							</div>
-							<div className="font-mono text-[10px] text-t-text-muted">Mkt Cap</div>
-							<div className="font-mono text-[10px] text-t-text">
+							<div className="font-mono text-[10px] text-ink-4">Mkt Cap</div>
+							<div className="font-mono text-[10px] text-ink">
 								{formatMarketCap(tooltip.d.market_cap)}
 							</div>
 						</div>
@@ -399,7 +381,7 @@ export function ScreenerBubbleChart({ results }: { results: IdxScreenerResult[] 
 			</div>
 
 			{/* Caption */}
-			<p className="mt-2 text-center font-mono text-[10px] text-t-text-muted">
+			<p className="mt-2 text-center font-mono text-[10px] text-ink-4">
 				scroll to zoom · bubble size = market cap · click to open
 			</p>
 		</div>

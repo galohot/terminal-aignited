@@ -15,9 +15,7 @@ export function OwnershipNav() {
 	return (
 		<div className="mb-4 flex items-center gap-1 overflow-x-auto">
 			{OWNERSHIP_LINKS.map((link) => {
-				const active = link.exact
-					? pathname === link.to
-					: pathname.startsWith(link.to);
+				const active = link.exact ? pathname === link.to : pathname.startsWith(link.to);
 				const Icon = link.icon;
 
 				return (
@@ -27,14 +25,14 @@ export function OwnershipNav() {
 						className={clsx(
 							"group flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] transition-all",
 							active
-								? "bg-white/[0.08] text-white"
-								: "text-t-text-muted hover:bg-white/[0.04] hover:text-t-text-secondary",
+								? "border border-ink bg-ink text-paper"
+								: "border border-transparent text-ink-3 hover:bg-paper-2 hover:text-ink",
 						)}
 					>
 						<Icon
 							className={clsx(
 								"h-3 w-3 transition-colors",
-								active ? "text-t-amber" : "text-t-text-muted/60 group-hover:text-t-text-muted",
+								active ? "text-ember-400" : "text-ink-4 group-hover:text-ink-2",
 							)}
 						/>
 						{link.label}

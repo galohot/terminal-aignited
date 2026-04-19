@@ -57,9 +57,7 @@ export function useConsensusTop(signal: "buy" | "sell" | "all", limit = 20) {
 	return useQuery({
 		queryKey: ["consensus", "top", signal, limit],
 		queryFn: () =>
-			fetchConsensus<{ data: ConsensusSignal[] }>(
-				`/consensus/top?signal=${signal}&limit=${limit}`,
-			),
+			fetchConsensus<{ data: ConsensusSignal[] }>(`/consensus/top?signal=${signal}&limit=${limit}`),
 		staleTime: 5 * 60 * 1000,
 	});
 }

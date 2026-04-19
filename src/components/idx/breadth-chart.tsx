@@ -37,7 +37,10 @@ export function BreadthChart({ data }: { data: MarketBreadthEntry[] }) {
 		const dates = sorted.map((d) => parseDate(d.date) ?? new Date(d.date));
 		const ratios = sorted.map((d) => d.advance_decline_ratio);
 
-		const x = d3.scaleTime().domain(d3.extent(dates) as [Date, Date]).range([0, innerW]);
+		const x = d3
+			.scaleTime()
+			.domain(d3.extent(dates) as [Date, Date])
+			.range([0, innerW]);
 		const maxR = Math.max(d3.max(ratios) ?? 2, 2);
 		const y = d3.scaleLinear().domain([0, maxR]).range([innerH, 0]).nice();
 
@@ -51,18 +54,18 @@ export function BreadthChart({ data }: { data: MarketBreadthEntry[] }) {
 					.tickFormat((d) => d3.timeFormat("%m/%d")(d as Date)),
 			)
 			.call((axis) => {
-				axis.select(".domain").attr("stroke", "#ffffff15");
-				axis.selectAll(".tick line").attr("stroke", "#ffffff10");
-				axis.selectAll(".tick text").attr("fill", "#6b7280").attr("font-size", "9px");
+				axis.select(".domain").attr("stroke", "#e7e0d2");
+				axis.selectAll(".tick line").attr("stroke", "#f2ede4");
+				axis.selectAll(".tick text").attr("fill", "#55598a").attr("font-size", "9px");
 			});
 
 		// Y axis
 		g.append("g")
 			.call(d3.axisLeft(y).ticks(4))
 			.call((axis) => {
-				axis.select(".domain").attr("stroke", "#ffffff15");
-				axis.selectAll(".tick line").attr("stroke", "#ffffff10");
-				axis.selectAll(".tick text").attr("fill", "#6b7280").attr("font-size", "9px");
+				axis.select(".domain").attr("stroke", "#e7e0d2");
+				axis.selectAll(".tick line").attr("stroke", "#f2ede4");
+				axis.selectAll(".tick text").attr("fill", "#55598a").attr("font-size", "9px");
 			});
 
 		// 1.0 reference line
@@ -71,7 +74,7 @@ export function BreadthChart({ data }: { data: MarketBreadthEntry[] }) {
 			.attr("x2", innerW)
 			.attr("y1", y(1))
 			.attr("y2", y(1))
-			.attr("stroke", "#ffffff30")
+			.attr("stroke", "#8b8fb0")
 			.attr("stroke-dasharray", "3,3");
 
 		// Area above 1.0 (green)
@@ -85,7 +88,7 @@ export function BreadthChart({ data }: { data: MarketBreadthEntry[] }) {
 		g.append("path")
 			.datum(d3.range(sorted.length))
 			.attr("d", areaAbove)
-			.attr("fill", "#22c55e20")
+			.attr("fill", "#17a56822")
 			.attr("stroke", "none");
 
 		// Area below 1.0 (red)
@@ -99,7 +102,7 @@ export function BreadthChart({ data }: { data: MarketBreadthEntry[] }) {
 		g.append("path")
 			.datum(d3.range(sorted.length))
 			.attr("d", areaBelow)
-			.attr("fill", "#ef444420")
+			.attr("fill", "#d2344a22")
 			.attr("stroke", "none");
 
 		// Line
@@ -113,7 +116,7 @@ export function BreadthChart({ data }: { data: MarketBreadthEntry[] }) {
 			.datum(d3.range(sorted.length))
 			.attr("d", line)
 			.attr("fill", "none")
-			.attr("stroke", "#ffffffaa")
+			.attr("stroke", "#141735")
 			.attr("stroke-width", 1.5);
 
 		// Invisible overlay for hover
@@ -143,23 +146,23 @@ export function BreadthChart({ data }: { data: MarketBreadthEntry[] }) {
 	}, [sorted, isEmpty]);
 
 	return (
-		<div className="rounded-lg border border-t-border bg-white/[0.02]">
-			<div className="border-b border-t-border px-4 py-3">
-				<h3 className="font-mono text-sm font-semibold text-white">Market Breadth</h3>
-				<p className="mt-0.5 font-mono text-[10px] text-t-text-muted">
+		<div className="rounded-[18px] border border-rule bg-card">
+			<div className="border-b border-rule px-4 py-3">
+				<h3 className="font-mono text-sm font-semibold text-ink">Market Breadth</h3>
+				<p className="mt-0.5 font-mono text-[10px] text-ink-4">
 					Advance / Decline Ratio (30 days)
 				</p>
 			</div>
 			{isEmpty ? (
 				<div className="flex h-[200px] items-center justify-center">
-					<p className="font-mono text-xs text-t-text-muted">No breadth data available</p>
+					<p className="font-mono text-xs text-ink-4">No breadth data available</p>
 				</div>
 			) : (
 				<div ref={containerRef} className="relative w-full" style={{ height: 200 }}>
 					<svg ref={svgRef} className="w-full" style={{ height: 200, display: "block" }} />
 					{tooltip && (
 						<div
-							className="pointer-events-none absolute z-10 rounded-lg border border-white/10 bg-black/90 px-3 py-2 shadow-xl"
+							className="pointer-events-none absolute z-10 rounded-[12px] border border-rule bg-card px-3 py-2 shadow-[0_10px_30px_rgba(20,23,53,0.12)]"
 							style={{
 								left: tooltip.x + 12,
 								top: tooltip.y - 10,
@@ -169,15 +172,13 @@ export function BreadthChart({ data }: { data: MarketBreadthEntry[] }) {
 										: undefined,
 							}}
 						>
-							<div className="font-mono text-xs font-semibold text-white">
-								{tooltip.entry.date}
-							</div>
-							<div className="mt-1 font-mono text-[10px] text-t-text-muted">
+							<div className="font-mono text-xs font-semibold text-ink">{tooltip.entry.date}</div>
+							<div className="mt-1 font-mono text-[10px] text-ink-4">
 								↑ {tooltip.entry.advances} advances · ↓ {tooltip.entry.declines} declines
 							</div>
 							<div
 								className={`mt-0.5 font-mono text-xs font-medium ${
-									tooltip.entry.advance_decline_ratio >= 1 ? "text-t-green" : "text-t-red"
+									tooltip.entry.advance_decline_ratio >= 1 ? "text-pos" : "text-neg"
 								}`}
 							>
 								Ratio: {tooltip.entry.advance_decline_ratio.toFixed(2)}

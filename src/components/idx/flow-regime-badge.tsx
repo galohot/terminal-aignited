@@ -2,17 +2,17 @@ import { clsx } from "clsx";
 import type { StockRegime } from "../../types/flow";
 
 const CAP_COLORS: Record<string, string> = {
-	large: "border-t-green/30 bg-t-green/10 text-t-green",
-	mid: "border-t-amber/30 bg-t-amber/10 text-t-amber",
-	small: "border-orange-400/30 bg-orange-400/10 text-orange-400",
-	micro: "border-t-red/30 bg-t-red/10 text-t-red",
+	large: "border-pos/30 bg-pos/10 text-pos",
+	mid: "border-ember-500/35 bg-ember-500/12 text-ember-700",
+	small: "border-ember-400/30 bg-ember-400/10 text-ember-600",
+	micro: "border-neg/30 bg-neg/10 text-neg",
 };
 
 const LIQ_COLORS: Record<string, string> = {
-	high: "border-t-green/30 bg-t-green/10 text-t-green",
-	medium: "border-t-amber/30 bg-t-amber/10 text-t-amber",
-	low: "border-orange-400/30 bg-orange-400/10 text-orange-400",
-	very_low: "border-t-red/30 bg-t-red/10 text-t-red",
+	high: "border-pos/30 bg-pos/10 text-pos",
+	medium: "border-ember-500/35 bg-ember-500/12 text-ember-700",
+	low: "border-ember-400/30 bg-ember-400/10 text-ember-600",
+	very_low: "border-neg/30 bg-neg/10 text-neg",
 };
 
 export function FlowRegimeBadge({ regime }: { regime: StockRegime }) {

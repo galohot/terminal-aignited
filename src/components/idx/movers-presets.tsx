@@ -43,8 +43,8 @@ export function MoversPresetsBar({
 						className={clsx(
 							"rounded-full border px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] transition-colors",
 							isActive
-								? "border-white/20 bg-white text-black"
-								: "border-white/10 bg-white/[0.04] text-t-text-secondary hover:bg-white/10 hover:text-white",
+								? "border-ink bg-ink text-paper"
+								: "border-rule bg-card text-ink-3 hover:bg-paper-2 hover:text-ink",
 						)}
 					>
 						{preset.label}

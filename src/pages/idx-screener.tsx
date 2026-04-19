@@ -244,16 +244,21 @@ export function IdxScreenerPage() {
 		<div className="mx-auto max-w-[1600px] p-4">
 			<IdxNav />
 			<div className="mb-4">
-				<h1 className="font-mono text-lg font-semibold tracking-wide text-white">Stock Screener</h1>
-				<p className="mt-1 text-sm text-t-text-secondary">
+				<h1
+					className="break-words text-3xl font-semibold tracking-tight text-ink sm:text-[2.25rem]"
+					style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.015em" }}
+				>
+					Stock Screener
+				</h1>
+				<p className="mt-2 text-sm leading-6 text-ink-3">
 					Filter IDX companies by financial metrics.
 				</p>
 			</div>
 
 			{/* Group filter banner */}
 			{codesSet && (
-				<div className="mb-4 flex items-center gap-3 rounded-lg border border-t-amber/25 bg-t-amber/10 px-4 py-2.5">
-					<span className="font-mono text-xs text-t-amber">
+				<div className="mb-4 flex items-center gap-3 rounded-[14px] border border-ember-200 bg-ember-100/60 px-4 py-2.5">
+					<span className="font-mono text-xs text-ember-700">
 						Showing {codesSet.size} companies{groupLabel ? ` from ${groupLabel}` : ""}
 					</span>
 					<button
@@ -269,7 +274,7 @@ export function IdxScreenerPage() {
 								{ replace: true },
 							);
 						}}
-						className="rounded-full border border-t-amber/30 bg-t-amber/20 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-t-amber transition-colors hover:bg-t-amber/30"
+						className="rounded-full border border-ember-200 bg-card px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-ember-700 transition-colors hover:bg-paper-2"
 					>
 						Show all
 					</button>
@@ -283,7 +288,7 @@ export function IdxScreenerPage() {
 						key={preset.label}
 						type="button"
 						onClick={() => applyPreset(preset)}
-						className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-t-text-secondary transition-colors hover:bg-white/10 hover:text-white"
+						className="rounded-full border border-rule bg-card px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-3 transition-colors hover:bg-paper-2 hover:text-ink"
 					>
 						{preset.label}
 					</button>
@@ -291,14 +296,14 @@ export function IdxScreenerPage() {
 				<button
 					type="button"
 					onClick={clearAll}
-					className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-t-text-muted transition-colors hover:bg-white/10 hover:text-white"
+					className="rounded-full border border-rule bg-card px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-4 transition-colors hover:bg-paper-2 hover:text-ink"
 				>
 					Clear
 				</button>
 			</div>
 
 			{/* Filters */}
-			<div className="mb-4 rounded-lg border border-white/10 bg-white/[0.02] p-3">
+			<div className="mb-4 rounded-[18px] border border-rule bg-card p-3">
 				<div className="flex flex-wrap items-end gap-3">
 					<FilterSelect
 						label="Sector"
@@ -358,15 +363,15 @@ export function IdxScreenerPage() {
 
 			{/* Results */}
 			{isLoading ? (
-				<Skeleton className="h-[400px] w-full rounded-xl" />
+				<Skeleton className="h-[400px] w-full rounded-[18px]" />
 			) : error ? (
-				<div className="rounded-2xl border border-dashed border-t-border p-8 text-center text-sm text-t-text-muted">
+				<div className="rounded-[18px] border border-dashed border-rule bg-paper-2/60 p-8 text-center text-sm text-ink-4">
 					Failed to load screener data.
 				</div>
 			) : !data?.results.length ? (
-				<div className="rounded-2xl border border-dashed border-t-border p-8 text-center">
-					<p className="text-sm text-t-text-muted">No results found.</p>
-					<p className="mt-1 text-xs text-t-text-muted">
+				<div className="rounded-[18px] border border-dashed border-rule bg-paper-2/60 p-8 text-center">
+					<p className="text-sm text-ink-3">No results found.</p>
+					<p className="mt-1 text-xs text-ink-4">
 						Try loosening your filters or using a different preset.
 					</p>
 				</div>
@@ -374,7 +379,7 @@ export function IdxScreenerPage() {
 				<>
 					{/* View toggle + results count */}
 					<div className="mb-3 flex items-center justify-between">
-						<span className="font-mono text-xs text-t-text-muted">
+						<span className="font-mono text-xs text-ink-4">
 							{data.results.length === data.total
 								? `${data.total} result${data.total !== 1 ? "s" : ""}`
 								: `${data.results.length} of ${data.total} results`}
@@ -384,10 +389,10 @@ export function IdxScreenerPage() {
 								type="button"
 								onClick={() => setView("table")}
 								className={clsx(
-									"rounded-l-lg border px-3 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors",
+									"rounded-l-[12px] border px-3 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors",
 									view === "table"
-										? "border-white/20 bg-white text-black"
-										: "border-white/10 bg-white/[0.04] text-t-text-secondary hover:bg-white/10 hover:text-white",
+										? "border-ink bg-ink text-paper"
+										: "border-rule bg-card text-ink-3 hover:bg-paper-2 hover:text-ink",
 								)}
 							>
 								Table
@@ -396,10 +401,10 @@ export function IdxScreenerPage() {
 								type="button"
 								onClick={() => setView("scatter")}
 								className={clsx(
-									"rounded-r-lg border border-l-0 px-3 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors",
+									"rounded-r-[12px] border border-l-0 px-3 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors",
 									view === "scatter"
-										? "border-white/20 bg-white text-black"
-										: "border-white/10 bg-white/[0.04] text-t-text-secondary hover:bg-white/10 hover:text-white",
+										? "border-ink bg-ink text-paper"
+										: "border-rule bg-card text-ink-3 hover:bg-paper-2 hover:text-ink",
 								)}
 							>
 								Scatter
@@ -410,120 +415,125 @@ export function IdxScreenerPage() {
 					{view === "scatter" ? (
 						<ScreenerBubbleChart results={data.results} />
 					) : (
-					<>
-					<div className="overflow-x-auto rounded-lg border border-t-border">
-						<table className="w-full text-xs">
-							<thead>
-								<tr className="border-b border-white/10 bg-white/[0.02]">
-									<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
-										Code
-									</th>
-									<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
-										Name
-									</th>
-									<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
-										Sector
-									</th>
-									<SortableHeader
-										label="Mkt Cap"
-										field="market_cap"
-										currentSort={currentSort}
-										currentOrder={currentOrder}
-										onClick={setSort}
-									/>
-									{RATIO_COLUMNS.map((col) => (
-										<SortableHeader
-											key={col.key}
-											label={col.label}
-											field={col.key}
-											currentSort={currentSort}
-											currentOrder={currentOrder}
-											onClick={setSort}
-										/>
-									))}
-									<th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
-										Div %
-									</th>
-								</tr>
-							</thead>
-							<tbody className="divide-y divide-white/5">
-								{data.results.map((row) => (
-									<tr key={row.kode_emiten} className="transition-colors hover:bg-white/[0.04]">
-										<td className="whitespace-nowrap px-3 py-2">
-											<Link
-												to={`/idx/${row.kode_emiten}`}
-												className="font-mono text-xs font-medium text-t-green transition-colors hover:text-t-amber hover:underline"
-											>
-												{row.kode_emiten}
-											</Link>
-										</td>
-										<td className="max-w-[200px] truncate px-3 py-2 text-t-text-secondary">
-											{row.name}
-										</td>
-										<td className="whitespace-nowrap px-3 py-2 text-t-text-muted">{row.sector}</td>
-										<td className="whitespace-nowrap px-3 py-2 text-right font-mono text-t-text-secondary">
-											{formatMarketCap(row.market_cap)}
-										</td>
-										{RATIO_COLUMNS.map((col) => {
-											const v = row[col.key];
-											return (
-												<td
+						<>
+							<div className="overflow-x-auto rounded-[18px] border border-rule bg-card">
+								<table className="w-full text-xs">
+									<thead>
+										<tr className="border-b border-rule bg-paper-2">
+											<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-ink-4">
+												Code
+											</th>
+											<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-ink-4">
+												Name
+											</th>
+											<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-ink-4">
+												Sector
+											</th>
+											<SortableHeader
+												label="Mkt Cap"
+												field="market_cap"
+												currentSort={currentSort}
+												currentOrder={currentOrder}
+												onClick={setSort}
+											/>
+											{RATIO_COLUMNS.map((col) => (
+												<SortableHeader
 													key={col.key}
-													className={clsx(
-														"whitespace-nowrap px-3 py-2 text-right font-mono",
-														ratioColor(col.key, v),
-													)}
-												>
-													{v != null ? `${v.toFixed(2)}${col.suffix}` : "—"}
+													label={col.label}
+													field={col.key}
+													currentSort={currentSort}
+													currentOrder={currentOrder}
+													onClick={setSort}
+												/>
+											))}
+											<th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-ink-4">
+												Div %
+											</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-rule">
+										{data.results.map((row) => (
+											<tr key={row.kode_emiten} className="transition-colors hover:bg-paper-2/60">
+												<td className="whitespace-nowrap px-3 py-2">
+													<Link
+														to={`/idx/${row.kode_emiten}`}
+														className="font-mono text-xs font-medium text-ember-600 transition-colors hover:text-ember-700 hover:underline"
+													>
+														{row.kode_emiten}
+													</Link>
 												</td>
-											);
-										})}
-										<td className="whitespace-nowrap px-3 py-2 text-right font-mono text-t-text-secondary">
-											{row.dividend_yield != null ? `${row.dividend_yield.toFixed(2)}%` : "—"}
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
-
-					{totalPages > 1 && (
-						<div className="mt-4 flex items-center justify-between">
-							<span className="font-mono text-xs text-t-text-muted">
-								Showing {offset + 1}-{Math.min(offset + PAGE_SIZE, totalItems)} of {totalItems}
-							</span>
-							<div className="flex items-center gap-1">
-								<PageButton disabled={currentPage <= 1} onClick={() => goToPage(currentPage - 1)}>
-									←
-								</PageButton>
-								{paginationRange(currentPage, totalPages).map((page) =>
-									page === "..." ? (
-										<span
-											key={`ellipsis-${page}`}
-											className="px-2 font-mono text-xs text-t-text-muted"
-										>
-											...
-										</span>
-									) : (
-										<PageButton
-											key={page}
-											active={page === currentPage}
-											onClick={() => goToPage(page as number)}
-										>
-											{page}
-										</PageButton>
-									),
-								)}
-								<PageButton
-									disabled={currentPage >= totalPages}
-									onClick={() => goToPage(currentPage + 1)}
-								>
-									→
-								</PageButton>
+												<td className="max-w-[200px] truncate px-3 py-2 text-ink-2">
+													{row.name}
+												</td>
+												<td className="whitespace-nowrap px-3 py-2 text-ink-4">
+													{row.sector}
+												</td>
+												<td className="whitespace-nowrap px-3 py-2 text-right font-mono text-ink-2">
+													{formatMarketCap(row.market_cap)}
+												</td>
+												{RATIO_COLUMNS.map((col) => {
+													const v = row[col.key];
+													return (
+														<td
+															key={col.key}
+															className={clsx(
+																"whitespace-nowrap px-3 py-2 text-right font-mono",
+																ratioColor(col.key, v),
+															)}
+														>
+															{v != null ? `${v.toFixed(2)}${col.suffix}` : "—"}
+														</td>
+													);
+												})}
+												<td className="whitespace-nowrap px-3 py-2 text-right font-mono text-ink-2">
+													{row.dividend_yield != null ? `${row.dividend_yield.toFixed(2)}%` : "—"}
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
 							</div>
-						</div>
-					)}
-					</>
+
+							{totalPages > 1 && (
+								<div className="mt-4 flex items-center justify-between">
+									<span className="font-mono text-xs text-ink-4">
+										Showing {offset + 1}-{Math.min(offset + PAGE_SIZE, totalItems)} of {totalItems}
+									</span>
+									<div className="flex items-center gap-1">
+										<PageButton
+											disabled={currentPage <= 1}
+											onClick={() => goToPage(currentPage - 1)}
+										>
+											←
+										</PageButton>
+										{paginationRange(currentPage, totalPages).map((page) =>
+											page === "..." ? (
+												<span
+													key={`ellipsis-${page}`}
+													className="px-2 font-mono text-xs text-ink-4"
+												>
+													...
+												</span>
+											) : (
+												<PageButton
+													key={page}
+													active={page === currentPage}
+													onClick={() => goToPage(page as number)}
+												>
+													{page}
+												</PageButton>
+											),
+										)}
+										<PageButton
+											disabled={currentPage >= totalPages}
+											onClick={() => goToPage(currentPage + 1)}
+										>
+											→
+										</PageButton>
+									</div>
+								</div>
+							)}
+						</>
 					)}
 				</>
 			)}
@@ -601,7 +611,7 @@ function FilterSelect({
 			<select
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
-				className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-xs text-t-text-secondary outline-none transition-colors focus:border-t-amber/50"
+				className="rounded-[10px] border border-rule bg-paper-2 px-3 py-1.5 font-mono text-xs text-ink-2 outline-none transition-colors focus:border-ember-500 focus:ring-2 focus:ring-ember-500/15"
 			>
 				<option value="">{placeholder}</option>
 				{options.map((o) => (
@@ -639,7 +649,7 @@ function FilterRange({
 					value={values[keyMin] ?? ""}
 					onChange={(e) => onChange(keyMin, e.target.value)}
 					placeholder="min"
-					className="w-16 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 font-mono text-xs text-white placeholder-t-text-muted outline-none transition-colors focus:border-t-amber/50"
+					className="w-16 rounded-[10px] border border-rule bg-paper-2 px-2 py-1.5 font-mono text-xs text-ink placeholder:text-ink-4 outline-none transition-colors focus:border-ember-500 focus:ring-2 focus:ring-ember-500/15"
 				/>
 				<span className="text-[10px] text-t-text-muted">-</span>
 				<input
@@ -648,7 +658,7 @@ function FilterRange({
 					value={values[keyMax] ?? ""}
 					onChange={(e) => onChange(keyMax, e.target.value)}
 					placeholder="max"
-					className="w-16 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 font-mono text-xs text-white placeholder-t-text-muted outline-none transition-colors focus:border-t-amber/50"
+					className="w-16 rounded-[10px] border border-rule bg-paper-2 px-2 py-1.5 font-mono text-xs text-ink placeholder:text-ink-4 outline-none transition-colors focus:border-ember-500 focus:ring-2 focus:ring-ember-500/15"
 				/>
 			</div>
 		</fieldset>
@@ -676,7 +686,7 @@ function FilterInput({
 				value={values[filterKey] ?? ""}
 				onChange={(e) => onChange(filterKey, e.target.value)}
 				placeholder="—"
-				className="w-16 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 font-mono text-xs text-white placeholder-t-text-muted outline-none transition-colors focus:border-t-amber/50"
+				className="w-16 rounded-lg border border-rule bg-paper-2 px-2 py-1.5 font-mono text-xs text-ink placeholder-ink-4 outline-none transition-colors focus:border-ember-500 focus:ring-2 focus:ring-ember-500/15"
 			/>
 		</label>
 	);
@@ -705,7 +715,7 @@ function MarketCapFilter({
 			<select
 				value={values.market_cap_min ?? ""}
 				onChange={(e) => onChange("market_cap_min", e.target.value)}
-				className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-xs text-t-text-secondary outline-none transition-colors focus:border-t-amber/50"
+				className="rounded-[10px] border border-rule bg-paper-2 px-3 py-1.5 font-mono text-xs text-ink-2 outline-none transition-colors focus:border-ember-500 focus:ring-2 focus:ring-ember-500/15"
 			>
 				{MCAP_OPTIONS.map((o) => (
 					<option key={o.value} value={o.value}>
@@ -734,11 +744,11 @@ function PageButton({
 			disabled={disabled}
 			onClick={onClick}
 			className={clsx(
-				"min-w-[32px] rounded-lg border px-2 py-1 font-mono text-xs transition-colors",
-				disabled && "cursor-not-allowed opacity-30",
+				"min-w-[32px] rounded-[10px] border px-2 py-1 font-mono text-xs transition-colors",
+				disabled && "cursor-not-allowed opacity-40",
 				active
-					? "border-white/20 bg-white text-black"
-					: "border-white/10 bg-white/[0.04] text-t-text-secondary hover:bg-white/10 hover:text-white",
+					? "border-ink bg-ink text-paper"
+					: "border-rule bg-card text-ink-3 hover:bg-paper-2 hover:text-ink",
 			)}
 		>
 			{children}

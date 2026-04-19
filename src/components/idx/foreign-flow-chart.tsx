@@ -54,8 +54,8 @@ export function ForeignFlowChart({ kode, days = 30 }: { kode: string; days?: num
 				.attr("y", y(d.foreign_buy))
 				.attr("width", bw)
 				.attr("height", Math.max(innerH - y(d.foreign_buy), 0))
-				.attr("fill", "#22c55e")
-				.attr("fill-opacity", 0.6)
+				.attr("fill", "#17a568")
+				.attr("fill-opacity", 0.7)
 				.attr("rx", 1);
 		});
 
@@ -66,8 +66,8 @@ export function ForeignFlowChart({ kode, days = 30 }: { kode: string; days?: num
 				.attr("y", y(d.foreign_sell))
 				.attr("width", bw)
 				.attr("height", Math.max(innerH - y(d.foreign_sell), 0))
-				.attr("fill", "#ef4444")
-				.attr("fill-opacity", 0.6)
+				.attr("fill", "#d2344a")
+				.attr("fill-opacity", 0.7)
 				.attr("rx", 1);
 		});
 
@@ -89,7 +89,7 @@ export function ForeignFlowChart({ kode, days = 30 }: { kode: string; days?: num
 			.datum(flow)
 			.attr("d", line)
 			.attr("fill", "none")
-			.attr("stroke", "#f59e0b")
+			.attr("stroke", "#ff8a2a")
 			.attr("stroke-width", 2);
 
 		// Zero line for net
@@ -99,7 +99,7 @@ export function ForeignFlowChart({ kode, days = 30 }: { kode: string; days?: num
 				.attr("x2", innerW)
 				.attr("y1", yNet(0))
 				.attr("y2", yNet(0))
-				.attr("stroke", "#ffffff20")
+				.attr("stroke", "#8b8fb0")
 				.attr("stroke-dasharray", "3,3");
 		}
 
@@ -112,11 +112,11 @@ export function ForeignFlowChart({ kode, days = 30 }: { kode: string; days?: num
 					.tickFormat((d) => formatCompact(d as number)),
 			)
 			.call((axis) => axis.select(".domain").remove())
-			.call((axis) => axis.selectAll(".tick line").attr("stroke", "#ffffff10"))
+			.call((axis) => axis.selectAll(".tick line").attr("stroke", "#f2ede4"))
 			.call((axis) =>
 				axis
 					.selectAll(".tick text")
-					.attr("fill", "#a3a3a3")
+					.attr("fill", "#55598a")
 					.style("font-size", "9px")
 					.style("font-family", "'JetBrains Mono', monospace"),
 			);
@@ -155,7 +155,7 @@ export function ForeignFlowChart({ kode, days = 30 }: { kode: string; days?: num
 
 	if (error || !data?.history?.length) {
 		return (
-			<div className="rounded-2xl border border-dashed border-t-border p-8 text-center text-sm text-t-text-muted">
+			<div className="rounded-[18px] border border-dashed border-rule bg-paper-2/60 p-8 text-center text-sm text-ink-4">
 				Foreign flow data unavailable.
 			</div>
 		);
@@ -164,16 +164,16 @@ export function ForeignFlowChart({ kode, days = 30 }: { kode: string; days?: num
 	return (
 		<div>
 			<div className="mb-1 flex items-center gap-3">
-				<span className="font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted">
+				<span className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4">
 					Foreign Flow
 				</span>
-				<span className="flex items-center gap-1.5 text-[10px] text-t-text-muted">
-					<span className="inline-block h-2 w-2 rounded-sm bg-[#22c55e]/60" /> Buy
-					<span className="ml-1 inline-block h-2 w-2 rounded-sm bg-[#ef4444]/60" /> Sell
-					<span className="ml-1 inline-block h-0.5 w-3 bg-[#f59e0b]" /> Net
+				<span className="flex items-center gap-1.5 text-[10px] text-ink-4">
+					<span className="inline-block h-2 w-2 rounded-sm bg-[#17a568]/70" /> Buy
+					<span className="ml-1 inline-block h-2 w-2 rounded-sm bg-[#d2344a]/70" /> Sell
+					<span className="ml-1 inline-block h-0.5 w-3 bg-[#ff8a2a]" /> Net
 				</span>
 			</div>
-			<div className="overflow-hidden rounded-xl border border-white/8 bg-[#0a0a0a] p-2">
+			<div className="overflow-hidden rounded-[18px] border border-rule bg-card p-2">
 				<svg ref={svgRef} className="w-full" style={{ height: 200 }} />
 			</div>
 		</div>

@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+import { IdxNav } from "../components/idx/idx-nav";
 import { INVESTOR_TYPE_COLORS, INVESTOR_TYPE_LABELS } from "../components/ownership/constants";
+import { OwnershipNav } from "../components/ownership/ownership-nav";
 import { NetworkGraph } from "../components/ownership/ownership-network-graph";
 import type { GraphNode, InvestorType } from "../components/ownership/types";
-import { IdxNav } from "../components/idx/idx-nav";
-import { OwnershipNav } from "../components/ownership/ownership-nav";
 import { Skeleton } from "../components/ui/loading";
 import { useKseiGraph } from "../hooks/use-ksei";
 import { usePageTitle } from "../hooks/use-page-title";
@@ -22,9 +22,7 @@ export function IdxOwnershipNetworkPage() {
 	const [selectedTypes, setSelectedTypes] = useState<string[]>(
 		initialTypes ? initialTypes.split(",") : [],
 	);
-	const [selectedLf, setSelectedLf] = useState<string[]>(
-		initialLf ? initialLf.split(",") : [],
-	);
+	const [selectedLf, setSelectedLf] = useState<string[]>(initialLf ? initialLf.split(",") : []);
 
 	const graphParams = useMemo(
 		() => ({
@@ -97,22 +95,23 @@ export function IdxOwnershipNetworkPage() {
 			<IdxNav />
 			<OwnershipNav />
 
-			<div className="mb-4">
-				<h1 className="font-mono text-lg font-semibold tracking-wide text-white">
-					Ownership Network
+			<div className="mb-5">
+				<h1
+					className="text-[clamp(2rem,4vw,2.5rem)] leading-[1.05] text-ink"
+					style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.015em" }}
+				>
+					Ownership <em className="text-ember-600">Network</em>
 				</h1>
-				<p className="mt-1 text-sm text-t-text-secondary">
+				<p className="mt-2 max-w-2xl text-sm text-ink-3">
 					Force-directed graph of multi-company shareholders across the entire IDX.
 				</p>
 			</div>
 
-			<div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
-				{/* Controls */}
+			<div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_1fr]">
 				<div className="space-y-4">
-					{/* Min connections slider */}
-					<div className="rounded-lg border border-t-border bg-t-surface p-3">
+					<div className="rounded-[18px] border border-rule bg-card p-3">
 						<label className="block">
-							<span className="mb-2 block font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+							<span className="mb-2 block font-mono text-[10px] uppercase tracking-wider text-ink-4">
 								Min connections: {minConnections}
 							</span>
 							<input
@@ -121,18 +120,17 @@ export function IdxOwnershipNetworkPage() {
 								max={20}
 								value={minConnections}
 								onChange={(e) => handleMinChange(Number(e.target.value))}
-								className="w-full accent-t-amber"
+								className="w-full accent-ember-500"
 							/>
-							<div className="flex justify-between font-mono text-[9px] text-t-text-muted mt-1">
+							<div className="mt-1 flex justify-between font-mono text-[9px] text-ink-4">
 								<span>2</span>
 								<span>20</span>
 							</div>
 						</label>
 					</div>
 
-					{/* Type filters */}
-					<div className="rounded-lg border border-t-border bg-t-surface p-3">
-						<span className="mb-2 block font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+					<div className="rounded-[18px] border border-rule bg-card p-3">
+						<span className="mb-2 block font-mono text-[10px] uppercase tracking-wider text-ink-4">
 							Investor Type
 						</span>
 						<div className="space-y-1">
@@ -140,29 +138,30 @@ export function IdxOwnershipNetworkPage() {
 								Object.entries(graph.data.availableTypeCounts)
 									.sort(([, a], [, b]) => (b as number) - (a as number))
 									.map(([type, count]) => (
-										<label key={type} className="flex items-center gap-2 cursor-pointer">
+										<label key={type} className="flex cursor-pointer items-center gap-2">
 											<input
 												type="checkbox"
 												checked={selectedTypes.length === 0 || selectedTypes.includes(type)}
 												onChange={() => handleTypeToggle(type)}
-												className="accent-t-amber"
+												className="accent-ember-500"
 											/>
 											<span
 												className="h-2 w-2 rounded-full"
 												style={{ backgroundColor: INVESTOR_TYPE_COLORS[type as InvestorType] }}
 											/>
-											<span className="font-mono text-[11px] text-t-text-secondary flex-1">
+											<span className="flex-1 font-mono text-[11px] text-ink-2">
 												{INVESTOR_TYPE_LABELS[type as InvestorType] || type}
 											</span>
-											<span className="font-mono text-[10px] text-t-text-muted">{count as number}</span>
+											<span className="font-mono text-[10px] text-ink-4">
+												{count as number}
+											</span>
 										</label>
 									))}
 						</div>
 					</div>
 
-					{/* L/F filter */}
-					<div className="rounded-lg border border-t-border bg-t-surface p-3">
-						<span className="mb-2 block font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+					<div className="rounded-[18px] border border-rule bg-card p-3">
+						<span className="mb-2 block font-mono text-[10px] uppercase tracking-wider text-ink-4">
 							Origin
 						</span>
 						<div className="space-y-1">
@@ -170,46 +169,46 @@ export function IdxOwnershipNetworkPage() {
 								Object.entries(graph.data.availableLFCounts)
 									.filter(([k]) => k === "L" || k === "A")
 									.map(([lf, count]) => (
-										<label key={lf} className="flex items-center gap-2 cursor-pointer">
+										<label key={lf} className="flex cursor-pointer items-center gap-2">
 											<input
 												type="checkbox"
 												checked={selectedLf.length === 0 || selectedLf.includes(lf)}
 												onChange={() => handleLfToggle(lf)}
-												className="accent-t-amber"
+												className="accent-ember-500"
 											/>
-											<span className="font-mono text-[11px] text-t-text-secondary flex-1">
+											<span className="flex-1 font-mono text-[11px] text-ink-2">
 												{lf === "L" ? "Local" : "Foreign"}
 											</span>
-											<span className="font-mono text-[10px] text-t-text-muted">{count as number}</span>
+											<span className="font-mono text-[10px] text-ink-4">
+												{count as number}
+											</span>
 										</label>
 									))}
 						</div>
 					</div>
 
-					{/* Stats */}
-					<div className="rounded-lg border border-t-border bg-t-surface p-3">
-						<span className="mb-2 block font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+					<div className="rounded-[18px] border border-rule bg-card p-3">
+						<span className="mb-2 block font-mono text-[10px] uppercase tracking-wider text-ink-4">
 							Graph Stats
 						</span>
-						<div className="space-y-1 font-mono text-xs text-t-text-secondary">
+						<div className="space-y-1 font-mono text-xs text-ink-2">
 							<div className="flex justify-between">
 								<span>Nodes</span>
-								<span className="text-t-text tabular-nums">{nodeCount}</span>
+								<span className="tabular-nums text-ink">{nodeCount}</span>
 							</div>
 							<div className="flex justify-between">
 								<span>Links</span>
-								<span className="text-t-text tabular-nums">{linkCount}</span>
+								<span className="tabular-nums text-ink">{linkCount}</span>
 							</div>
 						</div>
 					</div>
 				</div>
 
-				{/* Graph */}
-				<div className="rounded-lg border border-t-border bg-t-surface min-h-[500px]">
+				<div className="min-h-[500px] rounded-[18px] border border-rule bg-card">
 					{graph.isLoading ? (
 						<Skeleton className="h-[500px] w-full" />
 					) : graph.error ? (
-						<div className="flex h-[500px] items-center justify-center text-sm text-t-text-muted">
+						<div className="flex h-[500px] items-center justify-center text-sm text-ink-4">
 							Failed to load network graph.
 						</div>
 					) : graph.data ? (

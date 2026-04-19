@@ -86,10 +86,10 @@ export function ChartsPage() {
 	});
 
 	return (
-		<div className="min-h-full bg-[radial-gradient(circle_at_top_left,rgba(110,168,255,0.10),transparent_30%),radial-gradient(circle_at_top_right,rgba(61,220,145,0.10),transparent_28%)]">
+		<div className="min-h-full">
 			<div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 p-4 pb-6">
-				<section className="overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(12,19,20,0.98),rgba(7,10,11,0.97))] shadow-[0_24px_90px_rgba(0,0,0,0.28)]">
-					<div className="flex flex-col gap-5 p-5 sm:p-6">
+				<section className="aig-section overflow-hidden">
+					<div className="flex flex-col gap-5">
 						<div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
 							<div className="min-w-0 max-w-3xl">
 								<div className="mb-3 flex flex-wrap items-center gap-2">
@@ -99,14 +99,17 @@ export function ChartsPage() {
 									</Pill>
 									<Pill tone="neutral">{LAYOUT_LABELS[layout]} layout</Pill>
 								</div>
-								<h1 className="break-words text-3xl font-semibold tracking-tight text-white sm:text-[2.45rem]">
+								<h1
+									className="break-words text-3xl font-semibold tracking-tight text-ink sm:text-[2.45rem]"
+									style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.015em" }}
+								>
 									Charts
 								</h1>
-								<p className="mt-3 max-w-3xl break-words text-sm leading-6 text-t-text-secondary sm:text-[15px]">
+								<p className="mt-3 max-w-3xl break-words text-sm leading-6 text-ink-3 sm:text-[15px]">
 									Manage layouts, compare symbols, and load names from the watchlist.
 								</p>
 							</div>
-							<div className="grid max-w-full min-w-0 gap-2 rounded-[24px] border border-white/10 bg-black/20 p-3 text-sm text-t-text-secondary">
+							<div className="grid max-w-full min-w-0 gap-2 rounded-[18px] border border-rule bg-paper-2 p-3 text-sm text-ink-3">
 								<KeyValue label="Active slots" value={`${count}`} />
 								<KeyValue label="Loaded symbols" value={`${activeSymbols.length}`} />
 								<KeyValue label="Shortcuts" value="L / Shift+C" />
@@ -154,8 +157,8 @@ export function ChartsPage() {
 											className={clsx(
 												"inline-flex items-center gap-2 rounded-full border px-3 py-2 font-mono text-xs uppercase tracking-[0.18em] transition-colors",
 												layout === mode
-													? "border-white/20 bg-white text-black"
-													: "border-white/10 bg-white/5 text-t-text-secondary hover:bg-white/10 hover:text-white",
+													? "border-ink bg-ink text-paper"
+													: "border-rule bg-card text-ink-3 hover:bg-paper-2 hover:text-ink",
 											)}
 										>
 											<Icon className="h-3.5 w-3.5" />
@@ -169,8 +172,8 @@ export function ChartsPage() {
 									className={clsx(
 										"inline-flex items-center gap-2 rounded-full border px-3 py-2 font-mono text-xs uppercase tracking-[0.18em] transition-colors",
 										compareMode
-											? "border-t-green/30 bg-t-green/10 text-t-green"
-											: "border-white/10 bg-white/5 text-t-text-secondary hover:bg-white/10 hover:text-white",
+											? "border-[rgba(23,165,104,0.28)] bg-[rgba(23,165,104,0.1)] text-pos"
+											: "border-rule bg-card text-ink-3 hover:bg-paper-2 hover:text-ink",
 									)}
 								>
 									<LineChart className="h-3.5 w-3.5" />
@@ -182,7 +185,7 @@ export function ChartsPage() {
 								<button
 									type="button"
 									onClick={() => setSymbols(watchlistSymbols)}
-									className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs uppercase tracking-[0.18em] text-t-text-secondary transition-colors hover:bg-white/10 hover:text-white"
+									className="inline-flex items-center gap-2 rounded-full border border-rule bg-card px-3 py-2 font-mono text-xs uppercase tracking-[0.18em] text-ink-3 transition-colors hover:bg-paper-2 hover:text-ink"
 								>
 									<Sparkles className="h-3.5 w-3.5" />
 									Load Watchlist
@@ -190,7 +193,7 @@ export function ChartsPage() {
 								<button
 									type="button"
 									onClick={clearWorkspace}
-									className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs uppercase tracking-[0.18em] text-t-text-secondary transition-colors hover:bg-white/10 hover:text-white"
+									className="inline-flex items-center gap-2 rounded-full border border-rule bg-card px-3 py-2 font-mono text-xs uppercase tracking-[0.18em] text-ink-3 transition-colors hover:bg-paper-2 hover:text-ink"
 								>
 									<RefreshCw className="h-3.5 w-3.5" />
 									Clear
@@ -200,19 +203,19 @@ export function ChartsPage() {
 					</div>
 				</section>
 
-				<section className="rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,20,20,0.96),rgba(8,11,12,0.98))] p-3 shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
+				<section className="aig-section p-3">
 					{compareMode ? (
 						<div className="flex min-h-[640px] flex-col">
-							<div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/8 px-3 py-3">
+							<div className="flex flex-wrap items-center justify-between gap-3 border-b border-rule px-3 py-3">
 								<div>
-									<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-t-amber">
+									<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-ember-600">
 										Comparison View
 									</div>
-									<p className="mt-1 text-sm text-t-text-secondary">
+									<p className="mt-1 text-sm text-ink-3">
 										One-year relative performance.
 									</p>
 								</div>
-								<div className="max-w-full break-words font-mono text-xs text-t-text-muted sm:text-right">
+								<div className="max-w-full break-words font-mono text-xs text-ink-4 sm:text-right">
 									{activeSymbols.length ? activeSymbols.join(" · ") : "Add symbols to start"}
 								</div>
 							</div>
@@ -274,12 +277,12 @@ export function ChartsPage() {
 
 function WorkspaceCard({ label, note, value }: { label: string; note: string; value: string }) {
 	return (
-		<div className="min-w-0 rounded-[24px] border border-white/8 bg-white/[0.04] p-4">
-			<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-t-text-muted">
+		<div className="min-w-0 rounded-[18px] border border-rule bg-paper-2 p-4">
+			<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-4">
 				{label}
 			</div>
-			<div className="mt-2 break-words text-sm font-semibold leading-6 text-white">{value}</div>
-			<div className="mt-2 break-words text-sm leading-6 text-t-text-secondary">{note}</div>
+			<div className="mt-2 break-words text-sm font-semibold leading-6 text-ink">{value}</div>
+			<div className="mt-2 break-words text-sm leading-6 text-ink-3">{note}</div>
 		</div>
 	);
 }
@@ -287,8 +290,8 @@ function WorkspaceCard({ label, note, value }: { label: string; note: string; va
 function KeyValue({ label, value }: { label: string; value: string }) {
 	return (
 		<div className="flex flex-col items-start gap-1 font-mono text-xs sm:flex-row sm:items-center sm:justify-between sm:gap-8">
-			<span className="uppercase tracking-[0.2em] text-t-text-muted">{label}</span>
-			<span className="break-words text-white sm:text-right">{value}</span>
+			<span className="uppercase tracking-[0.2em] text-ink-4">{label}</span>
+			<span className="break-words text-ink sm:text-right">{value}</span>
 		</div>
 	);
 }
@@ -296,10 +299,10 @@ function KeyValue({ label, value }: { label: string; value: string }) {
 function Pill({ children, tone }: { children: ReactNode; tone: "blue" | "green" | "neutral" }) {
 	const classes =
 		tone === "blue"
-			? "border-t-blue/30 bg-t-blue/10 text-t-blue"
+			? "border-[rgba(29,95,201,0.28)] bg-[rgba(29,95,201,0.08)] text-cyan-700"
 			: tone === "green"
-				? "border-t-green/30 bg-t-green/10 text-t-green"
-				: "border-white/10 bg-white/[0.05] text-t-text-secondary";
+				? "border-[rgba(23,165,104,0.28)] bg-[rgba(23,165,104,0.1)] text-pos"
+				: "border-rule bg-paper-2 text-ink-3";
 
 	return (
 		<span
@@ -312,12 +315,12 @@ function Pill({ children, tone }: { children: ReactNode; tone: "blue" | "green" 
 
 function ChartEmptyState({ body, title }: { body: string; title: string }) {
 	return (
-		<div className="flex h-full min-h-[320px] items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-white/[0.03] p-8 text-center">
+		<div className="flex h-full min-h-[320px] items-center justify-center rounded-[18px] border border-dashed border-rule bg-paper-2/60 p-8 text-center">
 			<div className="max-w-md">
-				<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-t-amber">
+				<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-ember-600">
 					{title}
 				</div>
-				<p className="mt-3 text-sm leading-6 text-t-text-secondary">{body}</p>
+				<p className="mt-3 text-sm leading-6 text-ink-3">{body}</p>
 			</div>
 		</div>
 	);

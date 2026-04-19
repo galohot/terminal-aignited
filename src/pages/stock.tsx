@@ -74,14 +74,14 @@ export function StockPage() {
 	if (quote.error || !quote.data) {
 		return (
 			<div className="flex flex-col items-center justify-center gap-3 p-12 text-center">
-				<p className="font-mono text-sm text-t-text-secondary">
+				<p className="font-mono text-sm text-ink-3">
 					{quote.error?.message.includes("404")
 						? `Symbol "${symbol}" not found`
 						: "Failed to load quote"}
 				</p>
 				<Link
 					to="/"
-					className="rounded border border-t-border bg-t-surface px-3 py-1 font-mono text-xs text-t-text-secondary transition-colors hover:bg-t-hover"
+					className="rounded-full border border-rule bg-card px-3 py-1 font-mono text-xs text-ink-3 transition-colors hover:bg-paper-2 hover:text-ink"
 				>
 					Back to Dashboard
 				</Link>
@@ -128,7 +128,7 @@ export function StockPage() {
 						{!symbol.startsWith("^") && (
 							<Link
 								to={`/stock/${symbol}/financials`}
-								className="flex-1 rounded border border-t-border bg-t-surface px-3 py-1.5 text-center font-mono text-xs text-t-text-secondary transition-colors hover:bg-t-hover"
+								className="flex-1 rounded-full border border-rule bg-card px-3 py-1.5 text-center font-mono text-xs text-ink-3 transition-colors hover:border-ember-400/40 hover:bg-ember-50 hover:text-ember-700"
 							>
 								Financials →
 							</Link>
@@ -136,7 +136,7 @@ export function StockPage() {
 						{isJK && (
 							<Link
 								to={`/idx/${idxKode}`}
-								className="flex-1 rounded border border-t-border bg-t-surface px-3 py-1.5 text-center font-mono text-xs text-t-text-secondary transition-colors hover:bg-t-hover"
+								className="flex-1 rounded-full border border-rule bg-card px-3 py-1.5 text-center font-mono text-xs text-ink-3 transition-colors hover:border-ember-400/40 hover:bg-ember-50 hover:text-ember-700"
 							>
 								IDX Profile →
 							</Link>

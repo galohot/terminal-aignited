@@ -86,11 +86,11 @@ export function TickerRail() {
 						<span
 							// biome-ignore lint/suspicious/noArrayIndexKey: looped ticker has stable order
 							key={`${sym}-${i}`}
-							className="inline-flex items-center gap-2 font-mono text-xs text-aig-text-2"
+							className="inline-flex items-center gap-2 font-mono text-xs text-ink-3"
 						>
-							<span className="font-semibold tracking-wider text-aig-text">{sym}</span>
-							<span className="text-aig-text-2">{px}</span>
-							<span className={up ? "text-aig-pos" : "text-aig-neg"}>
+							<span className="font-semibold tracking-wider text-ink">{sym}</span>
+							<span className="text-ink-2">{px}</span>
+							<span className={up ? "text-pos" : "text-neg"}>
 								{arrow} {pct >= 0 ? "+" : ""}
 								{pct.toFixed(2)}%
 							</span>

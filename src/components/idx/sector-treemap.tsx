@@ -136,11 +136,11 @@ export function SectorTreemap({
 				g.append("text")
 					.attr("x", 6)
 					.attr("y", 14)
-					.attr("fill", color + "e6") // ~90% opacity
+					.attr("fill", "#141735")
 					.attr("font-size", "10px")
 					.attr("font-family", "ui-monospace, monospace")
 					.attr("pointer-events", "none")
-					.text(function () {
+					.text(() => {
 						const maxChars = Math.floor(cellW / 6.5);
 						const name = d.data.sector;
 						return name.length > maxChars ? name.slice(0, maxChars - 1) + "…" : name;
@@ -151,7 +151,7 @@ export function SectorTreemap({
 					g.append("text")
 						.attr("x", 6)
 						.attr("y", 26)
-						.attr("fill", "#6b7280")
+						.attr("fill", "#55598a")
 						.attr("font-size", "9px")
 						.attr("font-family", "ui-monospace, monospace")
 						.attr("pointer-events", "none")
@@ -179,7 +179,7 @@ export function SectorTreemap({
 					color: sectorColor.get(d.data.sector) ?? "#6b7280",
 				});
 			})
-			.on("mousemove", function (event: MouseEvent) {
+			.on("mousemove", (event: MouseEvent) => {
 				const containerRect = containerRef.current?.getBoundingClientRect();
 				if (!containerRect) return;
 				setTooltip((prev) =>
@@ -211,16 +211,16 @@ export function SectorTreemap({
 	}, [sectors]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	return (
-		<div className="rounded border border-t-border bg-t-surface overflow-hidden">
+		<div className="rounded-[18px] border border-rule bg-card overflow-hidden">
 			{/* Header */}
-			<div className="px-4 py-3 border-b border-t-border">
+			<div className="px-4 py-3 border-b border-rule">
 				<div className="flex items-center justify-between">
-					<h3 className="font-mono text-sm font-semibold text-t-text">Sector Map</h3>
-					<span className="font-mono text-[10px] text-t-text-muted uppercase tracking-wider">
+					<h3 className="font-mono text-sm font-semibold text-ink">Sector Map</h3>
+					<span className="font-mono text-[10px] text-ink-4 uppercase tracking-wider">
 						click to filter
 					</span>
 				</div>
-				<p className="mt-0.5 font-mono text-[11px] text-t-text-muted">
+				<p className="mt-0.5 font-mono text-[11px] text-ink-4">
 					{totalCompanies} companies across {sectors.length} sectors
 				</p>
 			</div>
@@ -232,7 +232,7 @@ export function SectorTreemap({
 				{/* Tooltip */}
 				{tooltip && (
 					<div
-						className="pointer-events-none absolute z-10 rounded-lg border border-white/10 bg-black/90 px-3 py-2 shadow-xl"
+						className="pointer-events-none absolute z-10 rounded-[12px] border border-rule bg-card px-3 py-2 shadow-[0_10px_30px_rgba(20,23,53,0.12)]"
 						style={{
 							left: tooltip.x + 12,
 							top: tooltip.y - 10,
@@ -242,16 +242,13 @@ export function SectorTreemap({
 									: undefined,
 						}}
 					>
-						<div
-							className="font-mono text-sm font-semibold"
-							style={{ color: tooltip.color }}
-						>
+						<div className="font-mono text-sm font-semibold" style={{ color: tooltip.color }}>
 							{tooltip.sector}
 						</div>
-						<div className="mt-1 font-mono text-[11px] text-t-text-secondary">
+						<div className="mt-1 font-mono text-[11px] text-ink-2">
 							{tooltip.count} companies
 						</div>
-						<div className="mt-1 font-mono text-[10px] text-t-text-muted">
+						<div className="mt-1 font-mono text-[10px] text-ink-4">
 							Click to filter screener
 						</div>
 					</div>

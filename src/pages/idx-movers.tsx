@@ -3,15 +3,19 @@ import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { BreadthChart } from "../components/idx/breadth-chart";
 import { IdxNav } from "../components/idx/idx-nav";
-import { type MoversPreset, MOVERS_PRESETS, MoversPresetsBar } from "../components/idx/movers-presets";
+import {
+	MOVERS_PRESETS,
+	type MoversPreset,
+	MoversPresetsBar,
+} from "../components/idx/movers-presets";
 import { MoversTable } from "../components/idx/movers-table";
 import { StockHeatmap } from "../components/idx/stock-heatmap";
 import { Skeleton } from "../components/ui/loading";
 import { useHeatmap } from "../hooks/use-heatmap";
+import { useIdxSectors } from "../hooks/use-idx-screener";
 import { useMarketBreadth } from "../hooks/use-market-breadth";
 import { useMovers } from "../hooks/use-movers";
 import { usePageTitle } from "../hooks/use-page-title";
-import { useIdxSectors } from "../hooks/use-idx-screener";
 import type { MoversParams } from "../types/market";
 
 function parseNum(v: string | null): number | undefined {
@@ -30,17 +34,20 @@ export function IdxMoversPage() {
 	const sortField = searchParams.get("sort") || "change_percent";
 	const sortOrder = searchParams.get("order") || "desc";
 
-	const params: MoversParams = useMemo(() => ({
-		change_min: parseNum(searchParams.get("change_min")),
-		change_max: parseNum(searchParams.get("change_max")),
-		volume_min: parseNum(searchParams.get("volume_min")),
-		relative_volume_min: parseNum(searchParams.get("relative_volume_min")),
-		sector: searchParams.get("sector") || undefined,
-		sort: sortField,
-		order: sortOrder,
-		preset: searchParams.get("preset") || undefined,
-		limit: parseNum(searchParams.get("limit")) ?? 50,
-	}), [searchParams, sortField, sortOrder]);
+	const params: MoversParams = useMemo(
+		() => ({
+			change_min: parseNum(searchParams.get("change_min")),
+			change_max: parseNum(searchParams.get("change_max")),
+			volume_min: parseNum(searchParams.get("volume_min")),
+			relative_volume_min: parseNum(searchParams.get("relative_volume_min")),
+			sector: searchParams.get("sector") || undefined,
+			sort: sortField,
+			order: sortOrder,
+			preset: searchParams.get("preset") || undefined,
+			limit: parseNum(searchParams.get("limit")) ?? 50,
+		}),
+		[searchParams, sortField, sortOrder],
+	);
 
 	const { data, isLoading, error } = useMovers(params);
 	const breadth = useMarketBreadth(30);
@@ -101,9 +108,14 @@ export function IdxMoversPage() {
 	return (
 		<div className="mx-auto max-w-[1600px] p-4">
 			<IdxNav />
-			<div className="mb-4">
-				<h1 className="font-mono text-lg font-semibold tracking-wide text-white">Movers & Market</h1>
-				<p className="mt-1 text-sm text-t-text-secondary">
+			<div className="mb-5">
+				<h1
+					className="text-[clamp(2rem,4vw,2.5rem)] leading-[1.05] text-ink"
+					style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.015em" }}
+				>
+					Movers <em className="text-ember-600">& Market</em>
+				</h1>
+				<p className="mt-2 max-w-2xl text-sm text-ink-3">
 					Price action screener, market breadth, and stock heatmap.
 				</p>
 			</div>
@@ -115,21 +127,21 @@ export function IdxMoversPage() {
 				<button
 					type="button"
 					onClick={() => setFiltersOpen(!filtersOpen)}
-					className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-t-text-muted transition-colors hover:text-t-text-secondary"
+					className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-4 transition-colors hover:text-ink-2"
 				>
 					{filtersOpen ? "▼" : "▶"} Custom Filters
 				</button>
 				{filtersOpen && (
-					<div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
+					<div className="rounded-[18px] border border-rule bg-card p-3">
 						<div className="flex flex-wrap items-end gap-3">
 							<label className="block">
-								<span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+								<span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-ink-4">
 									Sector
 								</span>
 								<select
 									value={searchParams.get("sector") || ""}
 									onChange={(e) => setFilter("sector", e.target.value)}
-									className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-xs text-t-text-secondary outline-none transition-colors focus:border-t-amber/50"
+									className="rounded-lg border border-rule bg-paper-2 px-3 py-1.5 font-mono text-xs text-ink outline-none transition-colors focus:border-ember-500 focus:ring-2 focus:ring-ember-500/15"
 								>
 									<option value="">All Sectors</option>
 									{(sectors.data?.sectors ?? []).map((s) => (
@@ -171,20 +183,20 @@ export function IdxMoversPage() {
 					{isLoading ? (
 						<Skeleton className="h-[400px] w-full rounded-xl" />
 					) : error ? (
-						<div className="rounded-2xl border border-dashed border-t-border p-8 text-center text-sm text-t-text-muted">
+						<div className="rounded-[18px] border border-dashed border-rule bg-paper-2/60 p-8 text-center text-sm text-ink-4">
 							Failed to load movers data.
 						</div>
 					) : !data?.movers.length ? (
-						<div className="rounded-2xl border border-dashed border-t-border p-8 text-center">
-							<p className="text-sm text-t-text-muted">No movers found.</p>
-							<p className="mt-1 text-xs text-t-text-muted">
+						<div className="rounded-[18px] border border-dashed border-rule bg-paper-2/60 p-8 text-center">
+							<p className="text-sm text-ink-4">No movers found.</p>
+							<p className="mt-1 text-xs text-ink-4">
 								Try a different preset or loosen your filters.
 							</p>
 						</div>
 					) : (
 						<>
 							<div className="mb-2">
-								<span className="font-mono text-xs text-t-text-muted">
+								<span className="font-mono text-xs text-ink-4">
 									{data.movers.length} of {data.total} stocks
 								</span>
 							</div>
@@ -228,7 +240,7 @@ function FilterInput({
 }) {
 	return (
 		<label className="block">
-			<span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+			<span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-ink-4">
 				{label}
 			</span>
 			<input
@@ -236,7 +248,7 @@ function FilterInput({
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
 				placeholder="—"
-				className="w-20 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 font-mono text-xs text-white placeholder-t-text-muted outline-none transition-colors focus:border-t-amber/50"
+				className="w-20 rounded-lg border border-rule bg-paper-2 px-2 py-1.5 font-mono text-xs text-ink placeholder-ink-4 outline-none transition-colors focus:border-ember-500 focus:ring-2 focus:ring-ember-500/15"
 			/>
 		</label>
 	);

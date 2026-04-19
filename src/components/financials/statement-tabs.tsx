@@ -23,7 +23,7 @@ interface StatementTabsProps {
 
 export function StatementTabs({ type, period, onTypeChange, onPeriodChange }: StatementTabsProps) {
 	return (
-		<div className="flex flex-wrap items-center gap-4 border-b border-t-border px-4 py-2">
+		<div className="flex flex-wrap items-center gap-4 border-b border-rule bg-card px-4 py-2">
 			<div className="flex gap-1">
 				{STATEMENT_TYPES.map((st) => (
 					<button
@@ -31,10 +31,10 @@ export function StatementTabs({ type, period, onTypeChange, onPeriodChange }: St
 						type="button"
 						onClick={() => onTypeChange(st.key)}
 						className={clsx(
-							"rounded px-2.5 py-1 font-mono text-xs transition-colors",
+							"rounded-full border px-3 py-1 font-mono text-xs transition-colors",
 							type === st.key
-								? "bg-t-border-active text-t-text"
-								: "text-t-text-muted hover:bg-t-hover hover:text-t-text-secondary",
+								? "border-ink bg-ink text-paper"
+								: "border-rule bg-card text-ink-3 hover:bg-paper-2 hover:text-ink",
 						)}
 					>
 						{st.label}
@@ -48,10 +48,10 @@ export function StatementTabs({ type, period, onTypeChange, onPeriodChange }: St
 						type="button"
 						onClick={() => onPeriodChange(p.key)}
 						className={clsx(
-							"rounded px-2 py-1 font-mono text-xs transition-colors",
+							"rounded-full border px-3 py-1 font-mono text-xs transition-colors",
 							period === p.key
-								? "bg-t-border-active text-t-text"
-								: "text-t-text-muted hover:bg-t-hover hover:text-t-text-secondary",
+								? "border-ember-400/40 bg-ember-50 text-ember-700"
+								: "border-rule bg-card text-ink-3 hover:bg-paper-2 hover:text-ink",
 						)}
 					>
 						{p.label}

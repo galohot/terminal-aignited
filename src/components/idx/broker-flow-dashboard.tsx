@@ -27,12 +27,12 @@ export function BrokerFlowDashboard({ data }: { data: IdxBrokerFlowResponse }) {
 	const top = sorted.slice(0, 20);
 
 	return (
-		<div className="rounded-lg border border-t-border bg-white/[0.02]">
-			<div className="border-b border-t-border px-4 py-3">
+		<div className="rounded-[18px] border border-rule bg-card">
+			<div className="border-b border-rule px-4 py-3">
 				<div className="flex items-center justify-between">
 					<div>
-						<h3 className="font-mono text-sm font-semibold text-white">Broker Flow</h3>
-						<p className="mt-0.5 font-mono text-[10px] text-t-text-muted">
+						<h3 className="font-mono text-sm font-semibold text-ink">Broker Flow</h3>
+						<p className="mt-0.5 font-mono text-[10px] text-ink-4">
 							{data.date} · {data.totals.broker_count} brokers
 						</p>
 					</div>
@@ -45,8 +45,8 @@ export function BrokerFlowDashboard({ data }: { data: IdxBrokerFlowResponse }) {
 								className={clsx(
 									"rounded-md px-2 py-1 font-mono text-[10px] uppercase tracking-wider transition-colors",
 									sortBy === s
-										? "bg-white/10 text-white"
-										: "text-t-text-muted hover:text-t-text-secondary",
+										? "bg-ink text-paper"
+										: "text-ink-4 hover:bg-paper-2 hover:text-ink-2",
 								)}
 							>
 								{s}
@@ -57,7 +57,7 @@ export function BrokerFlowDashboard({ data }: { data: IdxBrokerFlowResponse }) {
 			</div>
 
 			{/* Summary stats */}
-			<div className="grid grid-cols-3 gap-px border-b border-t-border bg-white/5">
+			<div className="grid grid-cols-3 gap-px border-b border-rule bg-rule">
 				<StatCard label="Total Value" value={formatValue(data.totals.total_value)} />
 				<StatCard label="Total Volume" value={formatVolume(data.totals.total_volume)} />
 				<StatCard label="Frequency" value={data.totals.total_frequency.toLocaleString()} />
@@ -66,26 +66,26 @@ export function BrokerFlowDashboard({ data }: { data: IdxBrokerFlowResponse }) {
 			{/* Table */}
 			<div className="max-h-[400px] overflow-y-auto">
 				<table className="w-full text-xs">
-					<thead className="sticky top-0 bg-[#0a0a0a]">
-						<tr className="border-b border-white/10">
-							<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+					<thead className="sticky top-0 bg-paper-2">
+						<tr className="border-b border-rule">
+							<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-ink-4">
 								#
 							</th>
-							<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+							<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-ink-4">
 								Broker
 							</th>
-							<th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+							<th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-ink-4">
 								Value
 							</th>
-							<th className="hidden px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-t-text-muted sm:table-cell">
+							<th className="hidden px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-ink-4 sm:table-cell">
 								Volume
 							</th>
-							<th className="hidden px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-t-text-muted sm:table-cell">
+							<th className="hidden px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-ink-4 sm:table-cell">
 								Freq
 							</th>
 						</tr>
 					</thead>
-					<tbody className="divide-y divide-white/5">
+					<tbody className="divide-y divide-rule">
 						{top.map((broker, idx) => (
 							<BrokerRow
 								key={broker.broker_code}
@@ -95,9 +95,7 @@ export function BrokerFlowDashboard({ data }: { data: IdxBrokerFlowResponse }) {
 								maxValue={top[0]?.[sortBy] ?? 1}
 								isSelected={selectedBroker === broker.broker_code}
 								onSelect={() =>
-									setSelectedBroker(
-										selectedBroker === broker.broker_code ? "" : broker.broker_code,
-									)
+									setSelectedBroker(selectedBroker === broker.broker_code ? "" : broker.broker_code)
 								}
 							/>
 						))}
@@ -107,7 +105,7 @@ export function BrokerFlowDashboard({ data }: { data: IdxBrokerFlowResponse }) {
 
 			{/* Broker history panel */}
 			{selectedBroker && (
-				<div className="border-t border-t-border p-4">
+				<div className="border-t border-rule p-4">
 					<BrokerHistoryPanel code={selectedBroker} />
 				</div>
 			)}
@@ -117,9 +115,9 @@ export function BrokerFlowDashboard({ data }: { data: IdxBrokerFlowResponse }) {
 
 function StatCard({ label, value }: { label: string; value: string }) {
 	return (
-		<div className="bg-[#0a0a0a] px-4 py-3">
-			<div className="font-mono text-[10px] uppercase tracking-wider text-t-text-muted">{label}</div>
-			<div className="mt-1 font-mono text-sm font-medium text-white">{value}</div>
+		<div className="bg-card px-4 py-3">
+			<div className="font-mono text-[10px] uppercase tracking-wider text-ink-4">{label}</div>
+			<div className="mt-1 font-mono text-sm font-semibold text-ink">{value}</div>
 		</div>
 	);
 }
@@ -145,32 +143,32 @@ function BrokerRow({
 		<tr
 			className={clsx(
 				"cursor-pointer transition-colors",
-				isSelected ? "bg-white/[0.06]" : "hover:bg-white/[0.03]",
+				isSelected ? "bg-paper-2" : "hover:bg-paper-2/60",
 			)}
 			onClick={onSelect}
 		>
-			<td className="px-3 py-2 font-mono text-t-text-muted">{rank}</td>
+			<td className="px-3 py-2 font-mono text-ink-4">{rank}</td>
 			<td className="px-3 py-2">
 				<div className="relative">
 					<div
-						className="absolute inset-y-0 left-0 rounded-sm bg-t-amber/10"
+						className="absolute inset-y-0 left-0 rounded-sm bg-ember-500/12"
 						style={{ width: `${pct}%` }}
 					/>
 					<div className="relative">
-						<span className="font-mono text-xs font-medium text-white">{broker.broker_code}</span>
-						<span className="ml-2 font-mono text-[10px] text-t-text-muted">
+						<span className="font-mono text-xs font-semibold text-ember-600">
+							{broker.broker_code}
+						</span>
+						<span className="ml-2 font-mono text-[10px] text-ink-4">
 							{broker.broker_name?.slice(0, 20)}
 						</span>
 					</div>
 				</div>
 			</td>
-			<td className="px-3 py-2 text-right font-mono text-t-text-secondary">
-				{formatValue(broker.value)}
-			</td>
-			<td className="hidden px-3 py-2 text-right font-mono text-t-text-muted sm:table-cell">
+			<td className="px-3 py-2 text-right font-mono text-ink-2">{formatValue(broker.value)}</td>
+			<td className="hidden px-3 py-2 text-right font-mono text-ink-4 sm:table-cell">
 				{formatVolume(broker.volume)}
 			</td>
-			<td className="hidden px-3 py-2 text-right font-mono text-t-text-muted sm:table-cell">
+			<td className="hidden px-3 py-2 text-right font-mono text-ink-4 sm:table-cell">
 				{broker.frequency.toLocaleString()}
 			</td>
 		</tr>
@@ -183,7 +181,7 @@ function BrokerHistoryPanel({ code }: { code: string }) {
 	if (isLoading) return <Skeleton className="h-32 w-full rounded-lg" />;
 	if (error || !data) {
 		return (
-			<div className="py-4 text-center font-mono text-xs text-t-text-muted">
+			<div className="py-4 text-center font-mono text-xs text-ink-4">
 				Failed to load history for {code}
 			</div>
 		);
@@ -192,7 +190,7 @@ function BrokerHistoryPanel({ code }: { code: string }) {
 	const history = data.history;
 	if (history.length === 0) {
 		return (
-			<div className="py-4 text-center font-mono text-xs text-t-text-muted">
+			<div className="py-4 text-center font-mono text-xs text-ink-4">
 				No history data available
 			</div>
 		);
@@ -203,12 +201,10 @@ function BrokerHistoryPanel({ code }: { code: string }) {
 	return (
 		<div>
 			<div className="mb-2 flex items-center justify-between">
-				<span className="font-mono text-xs font-medium text-white">
+				<span className="font-mono text-xs font-semibold text-ink">
 					{code} — {data.broker_name}
 				</span>
-				<span className="font-mono text-[10px] text-t-text-muted">
-					{data.total_days} days
-				</span>
+				<span className="font-mono text-[10px] text-ink-4">{data.total_days} days</span>
 			</div>
 			{/* Simple bar chart for value over time */}
 			<div className="flex items-end gap-px" style={{ height: 80 }}>
@@ -217,15 +213,11 @@ function BrokerHistoryPanel({ code }: { code: string }) {
 					const hasDelta = h.value_delta != null;
 					const isUp = hasDelta && (h.value_delta ?? 0) > 0;
 					return (
-						<div
-							key={h.date}
-							className="group relative flex-1"
-							style={{ height: "100%" }}
-						>
+						<div key={h.date} className="group relative flex-1" style={{ height: "100%" }}>
 							<div
 								className={clsx(
 									"absolute bottom-0 left-0 right-0 rounded-t-sm transition-colors",
-									isUp ? "bg-t-green/40" : "bg-t-red/30",
+									isUp ? "bg-pos/50" : "bg-neg/40",
 								)}
 								style={{ height: `${barH}%` }}
 								title={`${h.date}: ${formatValue(h.value)}${hasDelta ? ` (${isUp ? "+" : ""}${formatValue(h.value_delta ?? 0)})` : ""}`}
@@ -234,7 +226,7 @@ function BrokerHistoryPanel({ code }: { code: string }) {
 					);
 				})}
 			</div>
-			<div className="mt-1 flex justify-between font-mono text-[9px] text-t-text-muted">
+			<div className="mt-1 flex justify-between font-mono text-[9px] text-ink-4">
 				<span>{history[0]?.date}</span>
 				<span>{history[history.length - 1]?.date}</span>
 			</div>

@@ -1,15 +1,51 @@
 import { neon } from "@neondatabase/serverless";
+import { runAgent } from "./agent";
+import { autoPublishStaleAmBriefs, generateAmBrief } from "./am-brief";
+import {
+	clearSessionCookie,
+	parseCookie,
+	randomState,
+	setSessionCookie,
+	setStateCookie,
+	signJwt,
+	verifyJwt,
+} from "./auth";
+import { createCheckout, handleWebhook, TIERS, type Tier } from "./billing";
+import {
+	type ArticleInput,
+	type ArticleType,
+	getArticleBySlug,
+	listArticles,
+	listDrafts,
+	markRead,
+	publishArticle,
+	upsertArticle,
+} from "./research";
+import type { ToolCtx } from "./tools";
+import { authenticateWithCode, buildAuthorizeUrl, displayName, type WorkOSUser } from "./workos";
 
 interface Env {
 	ASSETS: Fetcher;
 	API_BASE_URL: string;
 	API_KEY: string;
-	DATABASE_URL: string;
+	TERMINAL_API_KEY?: string;
+	WORKER_AUTH_SECRET?: string;
+	DATABASE_URL: string; // analytics Neon DB (sessions, page_views)
+	AUTH_DATABASE_URL: string; // auth/billing Neon DB (terminal_users, terminal_subscriptions)
+	WORKOS_CLIENT_ID: string;
+	WORKOS_API_KEY: string;
+	JWT_SIGNING_SECRET: string;
+	AUTH_REDIRECT_URI: string;
+	MINIMAX_API_KEY?: string;
+	KIMI_API_KEY?: string;
+	OPENROUTER_API_KEY?: string;
+	MAYAR_API_KEY?: string;
+	MAYAR_WEBHOOK_TOKEN?: string;
 }
 
 const CORS_HEADERS = {
 	"Access-Control-Allow-Origin": "*",
-	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+	"Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
 	"Access-Control-Allow-Headers": "Content-Type",
 };
 
@@ -17,37 +53,431 @@ function corsResponse() {
 	return new Response(null, { headers: CORS_HEADERS });
 }
 
-// --- API Proxy: /api/proxy/* -> backend /api/v1/* ---
+function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
+	const headers = new Headers(init.headers);
+	headers.set("Content-Type", "application/json");
+	headers.set("Access-Control-Allow-Origin", "*");
+	return new Response(JSON.stringify(body), { ...init, headers });
+}
 
-async function handleProxy(request: Request, env: Env, subpath: string): Promise<Response> {
+// --- API Proxy: /api/proxy/* -> backend /api/v1/* ---
+// Paper endpoints (/paper/*) require an authenticated user and inject X-User-Id.
+// GET responses that match CACHE_RULES are cached at the CF edge (caches.default) and
+// coalesced in-isolate via INFLIGHT so concurrent identical requests hit origin once.
+
+interface CacheRule {
+	pattern: RegExp;
+	ttl: number;
+}
+
+// Subpath (no query) → TTL seconds. First match wins; order specific-before-generic.
+const CACHE_RULES: CacheRule[] = [
+	{ pattern: /^quotes\/batch$/, ttl: 10 },
+	{ pattern: /^quotes\//, ttl: 10 },
+	{ pattern: /^markets$/, ttl: 15 },
+	{ pattern: /^dashboard$/, ttl: 30 },
+	{ pattern: /^idx\/heatmap$/, ttl: 30 },
+	{ pattern: /^idx\/top-movers$/, ttl: 30 },
+	{ pattern: /^idx\/screener/, ttl: 30 },
+	{ pattern: /^idx\/market-breadth$/, ttl: 30 },
+	{ pattern: /^idx\/sectors/, ttl: 60 },
+	{ pattern: /^idx\/indices/, ttl: 60 },
+	{ pattern: /^idx\/broker-flow/, ttl: 30 },
+	{ pattern: /^idx\/foreign-flow\//, ttl: 30 },
+	{ pattern: /^idx\/broker-summary\//, ttl: 30 },
+	{ pattern: /^idx\/disclosures/, ttl: 60 },
+	{ pattern: /^idx\/companies/, ttl: 120 },
+	{ pattern: /^idx\/brokers$/, ttl: 300 },
+	{ pattern: /^idx\/insiders\//, ttl: 300 },
+	{ pattern: /^idx\/entity-groups/, ttl: 300 },
+	{ pattern: /^idx\/financials\//, ttl: 300 },
+	{ pattern: /^idx\/ksei\//, ttl: 300 },
+	{ pattern: /^history\//, ttl: 60 },
+	{ pattern: /^fundamentals\//, ttl: 600 },
+	{ pattern: /^news/, ttl: 60 },
+	{ pattern: /^search$/, ttl: 60 },
+	{ pattern: /^macro\/overview$/, ttl: 300 },
+	{ pattern: /^consensus/, ttl: 60 },
+];
+
+function matchCacheTTL(subpath: string): number | null {
+	for (const rule of CACHE_RULES) {
+		if (rule.pattern.test(subpath)) return rule.ttl;
+	}
+	return null;
+}
+
+// Per-isolate singleflight map. Coalesces concurrent identical GETs into one origin call.
+// Short-lived (Worker isolates recycle) but free and effective during traffic bursts.
+const INFLIGHT = new Map<string, Promise<Response>>();
+
+async function handleProxy(
+	request: Request,
+	env: Env,
+	ctx: ExecutionContext,
+	subpath: string,
+): Promise<Response> {
 	if (request.method === "OPTIONS") return corsResponse();
+
+	const isPaper = subpath.startsWith("paper/");
+	let userId: string | null = null;
+	if (isPaper) {
+		const session = await getSession(request, env);
+		if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
+		userId = session.userId;
+	}
 
 	const backendPath = `/api/v1/${subpath}`;
 	const url = new URL(backendPath, env.API_BASE_URL);
-
 	const reqUrl = new URL(request.url);
 	reqUrl.searchParams.forEach((value, key) => {
 		url.searchParams.set(key, value);
 	});
 
 	const hasBody = request.method !== "GET" && request.method !== "HEAD";
-	const response = await fetch(url.toString(), {
-		method: request.method,
-		headers: {
-			"X-API-Key": env.API_KEY,
-			"Content-Type": "application/json",
-		},
-		body: hasBody ? request.body : undefined,
+	const upstreamHeaders: Record<string, string> = {
+		"X-API-Key": env.TERMINAL_API_KEY || env.API_KEY,
+		"Content-Type": "application/json",
+	};
+	if (env.WORKER_AUTH_SECRET) {
+		upstreamHeaders["X-Worker-Auth"] = env.WORKER_AUTH_SECRET;
+	}
+	if (userId) upstreamHeaders["X-User-Id"] = userId;
+
+	// Only GET, non-paper, cache-ruled requests use the edge cache path.
+	const cacheTtl =
+		!isPaper && request.method === "GET" ? matchCacheTTL(subpath) : null;
+
+	if (cacheTtl === null) {
+		// Pass-through (paper, mutations, or uncached GETs)
+		const response = await fetch(url.toString(), {
+			method: request.method,
+			headers: upstreamHeaders,
+			body: hasBody ? request.body : undefined,
+		});
+		const outHeaders = new Headers(response.headers);
+		outHeaders.set("Access-Control-Allow-Origin", "*");
+		outHeaders.set("Cache-Control", isPaper ? "no-store" : "public, max-age=10");
+		outHeaders.set("X-Edge-Cache", "BYPASS");
+		return new Response(response.body, { status: response.status, headers: outHeaders });
+	}
+
+	// Edge cache path.
+	const cache = caches.default;
+	const cacheKey = new Request(url.toString(), { method: "GET" });
+	const inflightKey = url.toString();
+
+	const cached = await cache.match(cacheKey);
+	if (cached) {
+		const h = new Headers(cached.headers);
+		h.set("Access-Control-Allow-Origin", "*");
+		h.set("X-Edge-Cache", "HIT");
+		return new Response(cached.body, { status: cached.status, headers: h });
+	}
+
+	// Coalesce concurrent misses within this isolate.
+	let pending = INFLIGHT.get(inflightKey);
+	let coalesced = false;
+	if (pending) {
+		coalesced = true;
+	} else {
+		pending = (async () => {
+			const response = await fetch(url.toString(), {
+				method: "GET",
+				headers: upstreamHeaders,
+			});
+			if (!response.ok) return response; // don't cache 4xx/5xx
+			// Buffer body so we can both cache and return it.
+			const buf = await response.arrayBuffer();
+			const respHeaders = new Headers(response.headers);
+			respHeaders.set("Cache-Control", `public, max-age=${cacheTtl}`);
+			const toCache = new Response(buf, { status: response.status, headers: respHeaders });
+			ctx.waitUntil(cache.put(cacheKey, toCache.clone()));
+			return toCache;
+		})();
+		INFLIGHT.set(inflightKey, pending);
+		pending.finally(() => INFLIGHT.delete(inflightKey));
+	}
+
+	const originResponse = await pending;
+	const outHeaders = new Headers(originResponse.headers);
+	outHeaders.set("Access-Control-Allow-Origin", "*");
+	outHeaders.set("X-Edge-Cache", coalesced ? "COALESCED" : "MISS");
+	// Clone body — multiple coalesced callers read from the same buffered Response.
+	return new Response(originResponse.clone().body, {
+		status: originResponse.status,
+		headers: outHeaders,
 	});
-
-	const headers = new Headers(response.headers);
-	headers.set("Access-Control-Allow-Origin", "*");
-	headers.set("Cache-Control", "public, max-age=10");
-
-	return new Response(response.body, { status: response.status, headers });
 }
 
-// --- Analytics: POST /api/analytics/event ---
+// --- Auth session helpers ---
+
+interface Session {
+	userId: string;
+	email: string;
+}
+
+async function getSession(request: Request, env: Env): Promise<Session | null> {
+	const token = parseCookie(request, "tai_session");
+	if (!token) return null;
+	const payload = await verifyJwt(token, env.JWT_SIGNING_SECRET);
+	if (!payload) return null;
+	return { userId: payload.sub, email: payload.email };
+}
+
+// Founders / staff with unconditional institutional access. Checked by email
+// so grant survives DB resets and doesn't need a subscription row.
+const FOUNDER_EMAILS = new Set<string>([
+	"irwndedi@gmail.com",
+	"rivsyah@gmail.com",
+	"biroumumkemlu@gmail.com", // Dedi's signed-in email on this host
+]);
+
+async function getActiveSubscription(
+	env: Env,
+	userId: string,
+	email: string,
+): Promise<{ tier: string; status: string; expires_at: string | null } | null> {
+	if (FOUNDER_EMAILS.has(email.toLowerCase())) {
+		return { tier: "institutional", status: "active", expires_at: null };
+	}
+	const sql = neon(env.AUTH_DATABASE_URL);
+	const rows = (await sql`
+		SELECT tier, status, expires_at
+		FROM terminal_subscriptions
+		WHERE user_id = ${userId}
+		  AND status = 'active'
+		  AND (expires_at IS NULL OR expires_at > now())
+		ORDER BY expires_at DESC NULLS LAST
+		LIMIT 1
+	`) as { tier: string; status: string; expires_at: string | null }[];
+	return rows[0] ?? null;
+}
+
+// --- Auth routes ---
+
+async function handleAuthLogin(env: Env): Promise<Response> {
+	const state = randomState();
+	const authorizeUrl = buildAuthorizeUrl({
+		clientId: env.WORKOS_CLIENT_ID,
+		redirectUri: env.AUTH_REDIRECT_URI,
+		state,
+	});
+	return new Response(null, {
+		status: 302,
+		headers: {
+			Location: authorizeUrl,
+			"Set-Cookie": setStateCookie(state),
+		},
+	});
+}
+
+async function handleAuthCallback(request: Request, env: Env): Promise<Response> {
+	const url = new URL(request.url);
+	const code = url.searchParams.get("code");
+	const state = url.searchParams.get("state");
+	const stateCookie = parseCookie(request, "tai_oauth_state");
+	if (!code || !state || state !== stateCookie) {
+		return new Response("Invalid OAuth state", { status: 400 });
+	}
+
+	let user: WorkOSUser;
+	try {
+		user = await authenticateWithCode({
+			clientId: env.WORKOS_CLIENT_ID,
+			apiKey: env.WORKOS_API_KEY,
+			code,
+		});
+	} catch (e) {
+		return new Response(`OAuth exchange failed: ${String(e)}`, { status: 502 });
+	}
+
+	const sql = neon(env.AUTH_DATABASE_URL);
+	const name = displayName(user);
+	await sql`
+		INSERT INTO terminal_users (id, email, name, picture)
+		VALUES (${user.id}, ${user.email}, ${name}, ${user.profile_picture_url ?? null})
+		ON CONFLICT (id) DO UPDATE SET
+			email = EXCLUDED.email,
+			name = EXCLUDED.name,
+			picture = EXCLUDED.picture,
+			updated_at = now()
+	`;
+
+	const jwt = await signJwt({ sub: user.id, email: user.email }, env.JWT_SIGNING_SECRET);
+
+	const headers = new Headers();
+	headers.append("Set-Cookie", setSessionCookie(jwt, 604800));
+	headers.append("Set-Cookie", "tai_oauth_state=; Path=/; Max-Age=0");
+	headers.set("Location", "/");
+	return new Response(null, { status: 302, headers });
+}
+
+async function handleAuthMe(request: Request, env: Env): Promise<Response> {
+	const session = await getSession(request, env);
+	if (!session) return jsonResponse({ authenticated: false });
+
+	const sql = neon(env.AUTH_DATABASE_URL);
+	const userRows = (await sql`
+		SELECT id, email, name, picture FROM terminal_users WHERE id = ${session.userId}
+	`) as { id: string; email: string; name: string | null; picture: string | null }[];
+	if (!userRows[0]) return jsonResponse({ authenticated: false });
+
+	const sub = await getActiveSubscription(env, session.userId, session.email);
+	return jsonResponse({
+		authenticated: true,
+		user: userRows[0],
+		subscription: sub,
+	});
+}
+
+async function handleAuthLogout(): Promise<Response> {
+	return new Response(null, {
+		status: 204,
+		headers: {
+			"Set-Cookie": clearSessionCookie(),
+			"Access-Control-Allow-Origin": "*",
+		},
+	});
+}
+
+// --- Agent ---
+
+interface AgentChatBody {
+	message: string;
+	history?: Array<{ role: "user" | "assistant"; content: unknown }>;
+}
+
+async function handleAgentChat(request: Request, env: Env): Promise<Response> {
+	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method !== "POST") {
+		return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
+	}
+
+	const session = await getSession(request, env);
+	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
+
+	let body: AgentChatBody;
+	try {
+		body = (await request.json()) as AgentChatBody;
+	} catch {
+		return jsonResponse({ error: "INVALID_JSON" }, { status: 400 });
+	}
+	if (!body.message || typeof body.message !== "string") {
+		return jsonResponse({ error: "MESSAGE_REQUIRED" }, { status: 400 });
+	}
+
+	const sub = await getActiveSubscription(env, session.userId, session.email);
+	const tier = (sub?.tier ?? null) as ToolCtx["tier"];
+
+	const ctx: ToolCtx = {
+		userId: session.userId,
+		tier,
+		apiBase: env.API_BASE_URL.endsWith("/api/v1")
+			? env.API_BASE_URL
+			: `${env.API_BASE_URL.replace(/\/$/, "")}/api/v1`,
+		apiKey: env.TERMINAL_API_KEY || env.API_KEY,
+	};
+
+	return runAgent({
+		userMessage: body.message,
+		history: (body.history ?? []) as Parameters<typeof runAgent>[0]["history"],
+		ctx,
+		llmEnv: {
+			MINIMAX_API_KEY: env.MINIMAX_API_KEY,
+			KIMI_API_KEY: env.KIMI_API_KEY,
+			OPENROUTER_API_KEY: env.OPENROUTER_API_KEY,
+		},
+	});
+}
+
+// --- Billing ---
+
+async function handleBillingCheckout(request: Request, env: Env): Promise<Response> {
+	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method !== "POST") {
+		return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
+	}
+	if (!env.MAYAR_API_KEY) {
+		return jsonResponse({ error: "BILLING_NOT_CONFIGURED" }, { status: 503 });
+	}
+
+	const session = await getSession(request, env);
+	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
+
+	let body: { tier?: string };
+	try {
+		body = (await request.json()) as { tier?: string };
+	} catch {
+		return jsonResponse({ error: "INVALID_JSON" }, { status: 400 });
+	}
+	const tier = body.tier as Tier | undefined;
+	if (!tier || !(tier in TIERS)) {
+		return jsonResponse({ error: "INVALID_TIER" }, { status: 400 });
+	}
+
+	// Look up display name from the users table.
+	const sql = neon(env.AUTH_DATABASE_URL);
+	const rows = (await sql`
+		SELECT email, name FROM terminal_users WHERE id = ${session.userId}
+	`) as { email: string; name: string | null }[];
+	const user = rows[0];
+	if (!user) return jsonResponse({ error: "USER_NOT_FOUND" }, { status: 404 });
+
+	const origin = new URL(request.url).origin;
+
+	try {
+		const result = await createCheckout({
+			authDbUrl: env.AUTH_DATABASE_URL,
+			mayarApiKey: env.MAYAR_API_KEY,
+			userId: session.userId,
+			email: user.email,
+			name: user.name || user.email.split("@")[0],
+			tier,
+			origin,
+		});
+		return jsonResponse({ link: result.link, sub_id: result.subId });
+	} catch (e) {
+		return jsonResponse(
+			{ error: "CHECKOUT_FAILED", message: e instanceof Error ? e.message : String(e) },
+			{ status: 502 },
+		);
+	}
+}
+
+async function handleBillingWebhook(request: Request, env: Env): Promise<Response> {
+	if (request.method !== "POST") {
+		return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
+	}
+	if (!env.MAYAR_API_KEY || !env.MAYAR_WEBHOOK_TOKEN) {
+		return jsonResponse({ error: "BILLING_NOT_CONFIGURED" }, { status: 503 });
+	}
+
+	let body: Parameters<typeof handleWebhook>[0]["body"];
+	try {
+		body = await request.json();
+	} catch {
+		return jsonResponse({ error: "INVALID_JSON" }, { status: 400 });
+	}
+
+	try {
+		const result = await handleWebhook({
+			authDbUrl: env.AUTH_DATABASE_URL,
+			mayarApiKey: env.MAYAR_API_KEY,
+			webhookToken: env.MAYAR_WEBHOOK_TOKEN,
+			callbackToken: request.headers.get("X-Callback-Token"),
+			body,
+		});
+		return jsonResponse(result, { status: result.ok ? 200 : 400 });
+	} catch (e) {
+		return jsonResponse(
+			{ ok: false, message: e instanceof Error ? e.message : String(e) },
+			{ status: 500 },
+		);
+	}
+}
+
+// --- Analytics (unchanged) ---
 
 interface EventBody {
 	session_id: string;
@@ -61,7 +491,7 @@ async function handleAnalyticsEvent(request: Request, env: Env): Promise<Respons
 	try {
 		const body = (await request.json()) as EventBody;
 		if (!body.session_id || !body.path) {
-			return Response.json({ error: "missing fields" }, { status: 400 });
+			return jsonResponse({ error: "missing fields" }, { status: 400 });
 		}
 
 		const sql = neon(env.DATABASE_URL);
@@ -81,16 +511,11 @@ async function handleAnalyticsEvent(request: Request, env: Env): Promise<Respons
 			VALUES (${body.session_id}, ${body.path}, ${body.referrer ?? null}, ${country}, now())
 		`;
 
-		return Response.json({ ok: true }, { headers: { "Access-Control-Allow-Origin": "*" } });
+		return jsonResponse({ ok: true });
 	} catch {
-		return Response.json(
-			{ error: "internal" },
-			{ status: 500, headers: { "Access-Control-Allow-Origin": "*" } },
-		);
+		return jsonResponse({ error: "internal" }, { status: 500 });
 	}
 }
-
-// --- Analytics: GET /api/analytics/stats ---
 
 async function handleAnalyticsStats(env: Env): Promise<Response> {
 	try {
@@ -102,38 +527,155 @@ async function handleAnalyticsStats(env: Env): Promise<Response> {
 			sql`SELECT COUNT(*)::int AS count FROM page_views`,
 		]);
 
-		return Response.json(
+		return jsonResponse(
 			{
 				online: activeRows[0]?.count ?? 0,
 				total_visitors: totalVisitorRows[0]?.count ?? 0,
 				total_views: totalViewRows[0]?.count ?? 0,
 			},
-			{
-				headers: {
-					"Access-Control-Allow-Origin": "*",
-					"Cache-Control": "public, max-age=10",
-				},
-			},
+			{ headers: { "Cache-Control": "public, max-age=10" } },
 		);
 	} catch {
-		return Response.json(
-			{ online: 0, total_visitors: 0, total_views: 0 },
-			{ status: 500, headers: { "Access-Control-Allow-Origin": "*" } },
-		);
+		return jsonResponse({ online: 0, total_visitors: 0, total_views: 0 }, { status: 500 });
 	}
+}
+
+// --- Research ---
+
+function isFounder(email: string | undefined): boolean {
+	return !!email && FOUNDER_EMAILS.has(email.toLowerCase());
+}
+
+async function handleResearchList(request: Request, env: Env): Promise<Response> {
+	const url = new URL(request.url);
+	const type = (url.searchParams.get("type") || undefined) as ArticleType | undefined;
+	const ticker = url.searchParams.get("ticker") || undefined;
+	const tag = url.searchParams.get("tag") || undefined;
+	const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+	const offset = parseInt(url.searchParams.get("offset") || "0", 10);
+
+	const result = await listArticles(env.AUTH_DATABASE_URL, { type, ticker, tag, limit, offset });
+	return jsonResponse(result);
+}
+
+async function handleResearchArticle(
+	request: Request,
+	env: Env,
+	slug: string,
+): Promise<Response> {
+	const session = await getSession(request, env);
+	const viewerTier = session
+		? (await getActiveSubscription(env, session.userId, session.email))?.tier ?? null
+		: null;
+	const tierForRead = session && isFounder(session.email) ? "institutional" : (viewerTier as Tier | null);
+
+	const result = await getArticleBySlug(env.AUTH_DATABASE_URL, slug, tierForRead);
+	if (!result) return jsonResponse({ error: "not_found" }, { status: 404 });
+
+	if (session && !result.gated) {
+		// Fire-and-forget read tracking; don't block response.
+		markRead(env.AUTH_DATABASE_URL, session.userId, result.article.id).catch(() => {});
+	}
+
+	return jsonResponse(result);
+}
+
+async function handleAdminResearchDrafts(request: Request, env: Env): Promise<Response> {
+	const session = await getSession(request, env);
+	if (!session || !isFounder(session.email)) {
+		return jsonResponse({ error: "forbidden" }, { status: 403 });
+	}
+	const items = await listDrafts(env.AUTH_DATABASE_URL);
+	return jsonResponse({ items });
+}
+
+async function handleAdminResearchUpsert(request: Request, env: Env): Promise<Response> {
+	if (request.method === "OPTIONS") return corsResponse();
+	const session = await getSession(request, env);
+	if (!session || !isFounder(session.email)) {
+		return jsonResponse({ error: "forbidden" }, { status: 403 });
+	}
+	let body: ArticleInput;
+	try {
+		body = (await request.json()) as ArticleInput;
+	} catch {
+		return jsonResponse({ error: "bad_json" }, { status: 400 });
+	}
+	if (!body.slug || !body.type || !body.title || !body.summary || !body.body_md) {
+		return jsonResponse({ error: "missing_fields" }, { status: 400 });
+	}
+	const article = await upsertArticle(env.AUTH_DATABASE_URL, {
+		...body,
+		reviewed_by: body.reviewed_by ?? session.email,
+	});
+	return jsonResponse({ article });
+}
+
+async function handleAdminResearchPublish(
+	request: Request,
+	env: Env,
+	id: string,
+): Promise<Response> {
+	if (request.method === "OPTIONS") return corsResponse();
+	const session = await getSession(request, env);
+	if (!session || !isFounder(session.email)) {
+		return jsonResponse({ error: "forbidden" }, { status: 403 });
+	}
+	await publishArticle(env.AUTH_DATABASE_URL, id, session.email);
+	return jsonResponse({ ok: true });
+}
+
+async function handleAdminGenerateAmBrief(request: Request, env: Env): Promise<Response> {
+	if (request.method === "OPTIONS") return corsResponse();
+	const session = await getSession(request, env);
+	if (!session || !isFounder(session.email)) {
+		return jsonResponse({ error: "forbidden" }, { status: 403 });
+	}
+	const result = await generateAmBrief(env);
+	return jsonResponse(result, { status: result.ok ? 200 : 500 });
 }
 
 // --- Router ---
 
 export default {
-	async fetch(request: Request, env: Env): Promise<Response> {
+	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
 		const path = url.pathname;
+
+		// Auth
+		if (path === "/api/auth/login") return handleAuthLogin(env);
+		if (path === "/api/auth/callback") return handleAuthCallback(request, env);
+		if (path === "/api/auth/me") return handleAuthMe(request, env);
+		if (path === "/api/auth/logout") {
+			if (request.method === "OPTIONS") return corsResponse();
+			return handleAuthLogout();
+		}
+
+		// Agent
+		if (path === "/api/agent/chat") return handleAgentChat(request, env);
+
+		// Billing
+		if (path === "/api/billing/checkout") return handleBillingCheckout(request, env);
+		if (path === "/api/billing/webhook") return handleBillingWebhook(request, env);
+
+		// Research
+		if (path === "/api/research/list") return handleResearchList(request, env);
+		if (path.startsWith("/api/research/article/")) {
+			const slug = path.replace("/api/research/article/", "");
+			return handleResearchArticle(request, env, slug);
+		}
+		if (path === "/api/admin/research/drafts") return handleAdminResearchDrafts(request, env);
+		if (path === "/api/admin/research/upsert") return handleAdminResearchUpsert(request, env);
+		if (path === "/api/admin/research/generate-am-brief") return handleAdminGenerateAmBrief(request, env);
+		if (path.startsWith("/api/admin/research/publish/")) {
+			const id = path.replace("/api/admin/research/publish/", "");
+			return handleAdminResearchPublish(request, env, id);
+		}
 
 		// API proxy
 		if (path.startsWith("/api/proxy/")) {
 			const subpath = path.replace("/api/proxy/", "");
-			return handleProxy(request, env, subpath);
+			return handleProxy(request, env, ctx, subpath);
 		}
 
 		// Analytics
@@ -145,7 +687,7 @@ export default {
 			return handleAnalyticsStats(env);
 		}
 
-		// Everything else: static assets
+		// Static assets
 		const assetResponse = await env.ASSETS.fetch(request);
 		const response = new Response(assetResponse.body, assetResponse);
 		response.headers.set("X-Content-Type-Options", "nosniff");
@@ -153,5 +695,25 @@ export default {
 		response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
 		response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
 		return response;
+	},
+
+	async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+		// Cron schedules (UTC):
+		//   "30 23 * * *"  →  06:30 WIB — generate AM brief as draft
+		//   "40 23 * * *"  →  06:40 WIB — auto-publish drafts older than 9 min
+		const cron = event.cron;
+		if (cron === "30 23 * * *") {
+			ctx.waitUntil(
+				generateAmBrief(env).then((r) => {
+					console.log(`[am-brief] generate: ${JSON.stringify(r)}`);
+				}),
+			);
+		} else if (cron === "40 23 * * *") {
+			ctx.waitUntil(
+				autoPublishStaleAmBriefs(env).then((r) => {
+					console.log(`[am-brief] auto-publish: ${JSON.stringify(r)}`);
+				}),
+			);
+		}
 	},
 };

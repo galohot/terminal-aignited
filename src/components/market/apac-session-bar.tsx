@@ -39,13 +39,13 @@ export function ApacSessionBar({ apacQuotes }: { apacQuotes: Quote[] }) {
 
 function SessionTile({ session }: { session: ApacSessionStatus }) {
 	return (
-		<div className="flex items-center gap-2 rounded-xl border border-white/6 bg-white/[0.04] px-3 py-2">
+		<div className="flex items-center gap-2 rounded-[14px] border border-rule bg-card px-3 py-2">
 			<span
-				className={`h-2 w-2 shrink-0 rounded-full ${session.isOpen ? "bg-t-green" : "bg-t-red/60"}`}
+				className={`h-2 w-2 shrink-0 rounded-full ${session.isOpen ? "bg-pos" : "bg-neg/60"}`}
 			/>
 			<div className="min-w-0">
-				<div className="font-mono text-[11px] font-medium text-white">{session.name}</div>
-				<div className="font-mono text-[10px] text-t-text-muted">
+				<div className="font-mono text-[11px] font-medium text-ink">{session.name}</div>
+				<div className="font-mono text-[10px] text-ink-4">
 					{session.isOpen ? session.localTime : "Closed"}
 				</div>
 			</div>

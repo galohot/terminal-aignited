@@ -34,14 +34,14 @@ export function MoversTable({
 	const navigate = useNavigate();
 
 	return (
-		<div className="overflow-x-auto rounded-lg border border-t-border">
+		<div className="overflow-x-auto rounded-[18px] border border-rule bg-card">
 			<table className="w-full text-xs">
 				<thead>
-					<tr className="border-b border-white/10 bg-white/[0.02]">
-						<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+					<tr className="border-b border-rule bg-paper-2">
+						<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-ink-4">
 							Symbol
 						</th>
-						<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+						<th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-ink-4">
 							Name
 						</th>
 						<SortHeader
@@ -51,7 +51,7 @@ export function MoversTable({
 							order={sortOrder}
 							onClick={onSort}
 						/>
-						<th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+						<th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-ink-4">
 							Price
 						</th>
 						<SortHeader
@@ -75,7 +75,7 @@ export function MoversTable({
 							order={sortOrder}
 							onClick={onSort}
 						/>
-						<th className="hidden px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-t-text-muted md:table-cell">
+						<th className="hidden px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-ink-4 md:table-cell">
 							Sector
 						</th>
 						<SortHeader
@@ -88,61 +88,57 @@ export function MoversTable({
 						/>
 					</tr>
 				</thead>
-				<tbody className="divide-y divide-white/5">
+				<tbody className="divide-y divide-rule">
 					{movers.map((stock) => (
 						<tr
 							key={stock.symbol}
 							onClick={() => navigate(`/stock/${stock.symbol}`)}
-							className="cursor-pointer transition-colors hover:bg-white/[0.04]"
+							className="cursor-pointer transition-colors hover:bg-paper-2/60"
 						>
 							<td className="whitespace-nowrap px-3 py-2">
-								<span className="font-mono text-xs font-medium text-t-green">
+								<span className="font-mono text-xs font-semibold text-ember-600">
 									{stock.symbol}
 								</span>
 							</td>
-							<td className="max-w-[180px] truncate px-3 py-2 text-t-text-secondary">
-								{stock.name}
-							</td>
+							<td className="max-w-[180px] truncate px-3 py-2 text-ink-2">{stock.name}</td>
 							<td
 								className={clsx(
 									"whitespace-nowrap px-3 py-2 text-right font-mono font-medium",
-									stock.change_percent >= 0 ? "text-t-green" : "text-t-red",
+									stock.change_percent >= 0 ? "text-pos" : "text-neg",
 								)}
 							>
 								{stock.change_percent >= 0 ? "+" : ""}
 								{stock.change_percent.toFixed(2)}%
 							</td>
-							<td className="whitespace-nowrap px-3 py-2 text-right font-mono text-t-text-secondary">
+							<td className="whitespace-nowrap px-3 py-2 text-right font-mono text-ink-2">
 								{stock.price.toLocaleString()}
 							</td>
-							<td className="whitespace-nowrap px-3 py-2 text-right font-mono text-t-text-secondary">
+							<td className="whitespace-nowrap px-3 py-2 text-right font-mono text-ink-2">
 								{formatVolume(stock.volume)}
 							</td>
 							<td
 								className={clsx(
 									"whitespace-nowrap px-3 py-2 text-right font-mono",
 									stock.relative_volume != null && stock.relative_volume > 1.5
-										? "font-medium text-t-amber"
-										: "text-t-text-secondary",
+										? "font-medium text-ember-600"
+										: "text-ink-2",
 								)}
 							>
-								{stock.relative_volume != null
-									? `${stock.relative_volume.toFixed(1)}x`
-									: "—"}
+								{stock.relative_volume != null ? `${stock.relative_volume.toFixed(1)}x` : "—"}
 							</td>
 							<td
 								className={clsx(
 									"whitespace-nowrap px-3 py-2 text-right font-mono",
-									stock.gap_percent >= 0 ? "text-t-green" : "text-t-red",
+									stock.gap_percent >= 0 ? "text-pos" : "text-neg",
 								)}
 							>
 								{stock.gap_percent >= 0 ? "+" : ""}
 								{stock.gap_percent.toFixed(2)}%
 							</td>
-							<td className="hidden whitespace-nowrap px-3 py-2 text-t-text-muted md:table-cell">
+							<td className="hidden whitespace-nowrap px-3 py-2 text-ink-4 md:table-cell">
 								{stock.sector}
 							</td>
-							<td className="hidden whitespace-nowrap px-3 py-2 text-right font-mono text-t-text-secondary lg:table-cell">
+							<td className="hidden whitespace-nowrap px-3 py-2 text-right font-mono text-ink-2 lg:table-cell">
 								{formatMarketCap(stock.market_cap)}
 							</td>
 						</tr>
@@ -176,7 +172,7 @@ function SortHeader({
 				onClick={() => onClick(field)}
 				className={clsx(
 					"font-mono text-[10px] uppercase tracking-wider transition-colors",
-					isActive ? "text-t-amber" : "text-t-text-muted hover:text-t-text-secondary",
+					isActive ? "text-ember-600" : "text-ink-4 hover:text-ink-2",
 				)}
 			>
 				{label}

@@ -91,15 +91,15 @@ export function PeerRadarChart({
 	const peer2 = useIdxFinancialSummary(topPeers[1]?.kode_emiten ?? "");
 
 	const companies: Company[] = [
-		{ label: kode, color: "#f59e0b", data: financials },
+		{ label: kode, color: "#ff8a2a", data: financials },
 		{
 			label: topPeers[0]?.kode_emiten ?? "",
-			color: "#3b82f6",
+			color: "#1d5fc9",
 			data: peer1.data?.latest,
 		},
 		{
 			label: topPeers[1]?.kode_emiten ?? "",
-			color: "#22c55e",
+			color: "#17a568",
 			data: peer2.data?.latest,
 		},
 	];
@@ -124,7 +124,7 @@ export function PeerRadarChart({
 				.append("path")
 				.attr("d", ringGen([...ringPoints, ringPoints[0]]) ?? "")
 				.attr("fill", "none")
-				.attr("stroke", "#ffffff08")
+				.attr("stroke", "#e7e0d2")
 				.attr("stroke-width", 1);
 		});
 
@@ -137,7 +137,7 @@ export function PeerRadarChart({
 				.attr("y1", CY)
 				.attr("x2", x)
 				.attr("y2", y)
-				.attr("stroke", "#ffffff15")
+				.attr("stroke", "#d8cfb9")
 				.attr("stroke-width", 1);
 		});
 
@@ -152,7 +152,7 @@ export function PeerRadarChart({
 				.attr("dominant-baseline", dominantBaseline(i))
 				.attr("font-family", "ui-monospace, monospace")
 				.attr("font-size", 10)
-				.attr("fill", "#6b7280")
+				.attr("fill", "#55598a")
 				.text(label);
 		});
 
@@ -174,12 +174,7 @@ export function PeerRadarChart({
 			// Dots at each vertex
 			scores.forEach((s, i) => {
 				const [x, y] = axisPoint(i, s * MAX_R);
-				sel
-					.append("circle")
-					.attr("cx", x)
-					.attr("cy", y)
-					.attr("r", 3)
-					.attr("fill", color);
+				sel.append("circle").attr("cx", x).attr("cy", y).attr("r", 3).attr("fill", color);
 			});
 		});
 	}, [financials, peer1.data, peer2.data, rendered]);
@@ -188,12 +183,12 @@ export function PeerRadarChart({
 	if (rendered.length === 0) return null;
 
 	return (
-		<div className="rounded border border-t-border bg-t-surface">
-			<div className="border-b border-t-border px-3 py-2">
-				<h3 className="text-xs font-medium uppercase tracking-wider text-t-text-secondary">
+		<div className="rounded-[18px] border border-rule bg-card">
+			<div className="border-b border-rule px-3 py-2">
+				<h3 className="text-xs font-medium uppercase tracking-wider text-ink-2">
 					Peer Comparison
 				</h3>
-				<p className="mt-0.5 font-mono text-[10px] text-t-text-muted">
+				<p className="mt-0.5 font-mono text-[10px] text-ink-4">
 					Radar of key financial ratios
 				</p>
 			</div>
@@ -211,7 +206,7 @@ export function PeerRadarChart({
 								className="inline-block h-2.5 w-2.5 rounded-full"
 								style={{ backgroundColor: color }}
 							/>
-							<span className="font-mono text-[11px] text-t-text-muted">{label}</span>
+							<span className="font-mono text-[11px] text-ink-4">{label}</span>
 						</div>
 					))}
 				</div>

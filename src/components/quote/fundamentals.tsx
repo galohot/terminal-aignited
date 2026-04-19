@@ -2,9 +2,9 @@ import type { Fundamentals as FundamentalsType } from "../../types/market";
 
 export function FundamentalsPanel({ data }: { data: FundamentalsType }) {
 	return (
-		<div className="rounded border border-t-border bg-t-surface">
-			<div className="border-b border-t-border px-3 py-2">
-				<h3 className="text-xs font-medium uppercase tracking-wider text-t-text-secondary">
+		<div className="rounded-[18px] border border-rule bg-card">
+			<div className="border-b border-rule px-3 py-2">
+				<h3 className="text-xs font-medium uppercase tracking-wider text-ink-3">
 					Company Info
 				</h3>
 			</div>
@@ -17,12 +17,12 @@ export function FundamentalsPanel({ data }: { data: FundamentalsType }) {
 				)}
 				{data.website && (
 					<div className="flex justify-between">
-						<span className="text-t-text-muted">Website</span>
+						<span className="text-ink-4">Website</span>
 						<a
 							href={data.website}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="font-mono text-t-blue hover:underline"
+							className="font-mono text-ember-600 hover:text-ember-700 hover:underline"
 						>
 							{data.website.replace(/^https?:\/\/(www\.)?/, "")}
 						</a>
@@ -30,8 +30,8 @@ export function FundamentalsPanel({ data }: { data: FundamentalsType }) {
 				)}
 			</div>
 			{data.description && (
-				<div className="border-t border-t-border px-3 py-2">
-					<p className="line-clamp-4 text-xs leading-relaxed text-t-text-secondary">
+				<div className="border-t border-rule px-3 py-2">
+					<p className="line-clamp-4 text-xs leading-relaxed text-ink-3">
 						{data.description}
 					</p>
 				</div>
@@ -43,8 +43,8 @@ export function FundamentalsPanel({ data }: { data: FundamentalsType }) {
 function InfoRow({ label, value }: { label: string; value: string }) {
 	return (
 		<div className="flex justify-between">
-			<span className="text-t-text-muted">{label}</span>
-			<span className="text-t-text">{value}</span>
+			<span className="text-ink-4">{label}</span>
+			<span className="text-ink">{value}</span>
 		</div>
 	);
 }

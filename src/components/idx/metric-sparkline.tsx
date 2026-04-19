@@ -25,9 +25,7 @@ export function MetricSparkline({
 		const selection = d3.select(svg);
 		selection.selectAll("*").remove();
 
-		const g = selection
-			.append("g")
-			.attr("transform", `translate(${PAD.left},${PAD.top})`);
+		const g = selection.append("g").attr("transform", `translate(${PAD.left},${PAD.top})`);
 
 		if (type === "line") {
 			const indexed: { i: number; v: number }[] = [];
@@ -46,10 +44,7 @@ export function MetricSparkline({
 				.domain([0, data.length - 1])
 				.range([0, INNER_W]);
 
-			const yScale = d3
-				.scaleLinear()
-				.domain([yMin, yMax])
-				.range([INNER_H, 0]);
+			const yScale = d3.scaleLinear().domain([yMin, yMax]).range([INNER_H, 0]);
 
 			// Zero line if domain spans negative
 			if (yMin < 0 && yMax > 0) {
@@ -109,11 +104,7 @@ export function MetricSparkline({
 			const yMax = Math.max(rawMax, 0);
 			const valuePad = Math.max((yMax - yMin) * 0.05, 0.1);
 
-			const xScale = d3
-				.scaleBand<number>()
-				.domain(d3.range(n))
-				.range([0, INNER_W])
-				.paddingInner(0);
+			const xScale = d3.scaleBand<number>().domain(d3.range(n)).range([0, INNER_W]).paddingInner(0);
 
 			const yScale = d3
 				.scaleLinear()

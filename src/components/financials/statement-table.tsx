@@ -110,7 +110,7 @@ export function StatementTable({ type, data }: StatementTableProps) {
 	const entries = (data[dataKey] ?? data[`${dataKey}Quarterly`] ?? []) as StatementEntry[];
 
 	if (!entries.length) {
-		return <p className="p-8 text-center font-mono text-sm text-t-text-muted">No data available</p>;
+		return <p className="p-8 text-center font-mono text-sm text-ink-4">No data available</p>;
 	}
 
 	const periods = entries.map((e) => (e.endDate as { fmt?: string })?.fmt ?? "—");
@@ -120,12 +120,12 @@ export function StatementTable({ type, data }: StatementTableProps) {
 		<div className="overflow-x-auto">
 			<table className="w-full text-xs">
 				<thead>
-					<tr className="border-b border-t-border">
-						<th className="px-3 py-2 text-left font-medium text-t-text-secondary" />
+					<tr className="border-b border-rule bg-paper-2">
+						<th className="px-3 py-2 text-left font-medium text-ink-3" />
 						{periods.map((p) => (
 							<th
 								key={p}
-								className="min-w-[110px] px-3 py-2 text-right font-mono font-medium text-t-text-secondary"
+								className="min-w-[110px] px-3 py-2 text-right font-mono font-medium text-ink-3"
 							>
 								{p}
 							</th>
@@ -138,7 +138,7 @@ export function StatementTable({ type, data }: StatementTableProps) {
 							<tr key={`section-${section.section}`}>
 								<td
 									colSpan={periods.length + 1}
-									className="border-b border-t-border bg-t-bg px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider text-t-text-muted"
+									className="border-b border-rule bg-paper-2/60 px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.18em] text-ember-700"
 								>
 									{section.section}
 								</td>
@@ -146,14 +146,14 @@ export function StatementTable({ type, data }: StatementTableProps) {
 							{section.items.map(([field, label]) => (
 								<tr
 									key={field}
-									className="border-b border-t-border transition-colors hover:bg-t-hover"
+									className="border-b border-rule transition-colors hover:bg-paper-2/60"
 								>
-									<td className="px-3 py-1.5 text-t-text-secondary">{label}</td>
+									<td className="px-3 py-1.5 text-ink-3">{label}</td>
 									{entries.map((entry, i) => (
 										<td
 											key={periods[i]}
 											className={`px-3 py-1.5 text-right font-mono ${
-												isNegative(entry, field) ? "text-t-red" : "text-t-text"
+												isNegative(entry, field) ? "text-neg" : "text-ink"
 											}`}
 										>
 											{getFieldValue(entry, field)}

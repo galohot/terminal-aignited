@@ -1,5 +1,5 @@
-import type { HistoryPoint } from "../types/market";
 import type { WyckoffAnalysis, WyckoffPhase, WyckoffSegment } from "../types/flow";
+import type { HistoryPoint } from "../types/market";
 
 /**
  * Efficiency Ratio: measures how "straight" a price move is.
@@ -55,7 +55,8 @@ function pricePosition(
 	fullHigh: number,
 	fullLow: number,
 ): "near_high" | "near_low" | "mid" {
-	const segAvg = data.slice(segStart, segEnd + 1).reduce((s, d) => s + d.close, 0) / (segEnd - segStart + 1);
+	const segAvg =
+		data.slice(segStart, segEnd + 1).reduce((s, d) => s + d.close, 0) / (segEnd - segStart + 1);
 	const fullRange = fullHigh - fullLow;
 	if (fullRange === 0) return "mid";
 	const position = (segAvg - fullLow) / fullRange;
@@ -135,10 +136,7 @@ function computeConfidence(
  * @param data - Daily OHLCV data (oldest first)
  * @param segmentWindow - Minimum bars per segment (default 20)
  */
-export function detectWyckoffPhases(
-	data: HistoryPoint[],
-	segmentWindow = 20,
-): WyckoffAnalysis {
+export function detectWyckoffPhases(data: HistoryPoint[], segmentWindow = 20): WyckoffAnalysis {
 	const minWindow = Math.max(segmentWindow, 2);
 	if (data.length < minWindow * 2) {
 		return { currentPhase: null, phases: [] };

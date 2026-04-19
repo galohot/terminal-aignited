@@ -2,9 +2,9 @@ import { useIdxInsiderTransactions } from "../../hooks/use-idx-company";
 import { Skeleton } from "../ui/loading";
 
 const TYPE_COLORS: Record<string, string> = {
-	director: "border-t-blue/20 bg-t-blue/10 text-t-blue",
-	commissioner: "border-amber-500/20 bg-amber-500/10 text-amber-400",
-	shareholder: "border-t-green/20 bg-t-green/10 text-t-green",
+	director: "border-cyan-400/30 bg-cyan-50 text-cyan-700",
+	commissioner: "border-ember-400/30 bg-ember-50 text-ember-700",
+	shareholder: "border-pos/30 bg-pos/10 text-pos",
 };
 
 export function InsiderTransactionsTable({ kode }: { kode: string }) {
@@ -14,13 +14,12 @@ export function InsiderTransactionsTable({ kode }: { kode: string }) {
 
 	if (error || !data?.insiders?.length) {
 		return (
-			<div className="rounded-2xl border border-dashed border-t-border p-8 text-center text-sm text-t-text-muted">
+			<div className="rounded-[18px] border border-dashed border-rule bg-paper-2/60 p-8 text-center text-sm text-ink-4">
 				Insider data unavailable.
 			</div>
 		);
 	}
 
-	// Deduplicate — API returns repeated entries per period
 	const seen = new Set<string>();
 	const unique = data.insiders.filter((ins) => {
 		const key = `${ins.insider_name}|${ins.insider_type}|${ins.position ?? ""}`;
@@ -31,45 +30,45 @@ export function InsiderTransactionsTable({ kode }: { kode: string }) {
 
 	return (
 		<div>
-			<div className="mb-2 font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted">
+			<div className="mb-2 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4">
 				Insider Positions ({unique.length})
 			</div>
-			<div className="overflow-x-auto rounded-xl border border-white/8">
+			<div className="overflow-x-auto rounded-[18px] border border-rule bg-card">
 				<table className="w-full text-sm">
 					<thead>
-						<tr className="border-b border-white/8 bg-white/[0.03]">
-							<th className="px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted">
+						<tr className="border-b border-rule bg-paper-2">
+							<th className="px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4">
 								Name
 							</th>
-							<th className="px-3 py-2.5 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted">
+							<th className="px-3 py-2.5 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4">
 								Type
 							</th>
-							<th className="hidden px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted sm:table-cell">
+							<th className="hidden px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4 sm:table-cell">
 								Position
 							</th>
-							<th className="px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted">
+							<th className="px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4">
 								%
 							</th>
 						</tr>
 					</thead>
-					<tbody className="divide-y divide-white/5">
+					<tbody className="divide-y divide-rule">
 						{unique.map((ins) => (
 							<tr
 								key={`${ins.insider_name}-${ins.insider_type}`}
-								className="transition-colors hover:bg-white/[0.04]"
+								className="transition-colors hover:bg-paper-2/60"
 							>
-								<td className="max-w-[220px] truncate px-3 py-2 text-t-text">{ins.insider_name}</td>
+								<td className="max-w-[220px] truncate px-3 py-2 text-ink">{ins.insider_name}</td>
 								<td className="px-3 py-2 text-center">
 									<span
-										className={`rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider ${TYPE_COLORS[ins.insider_type] ?? "border-white/10 bg-white/[0.04] text-t-text-muted"}`}
+										className={`rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider ${TYPE_COLORS[ins.insider_type] ?? "border-rule bg-paper-2 text-ink-4"}`}
 									>
 										{ins.insider_type}
 									</span>
 								</td>
-								<td className="hidden max-w-[160px] truncate px-3 py-2 text-xs text-t-text-secondary sm:table-cell">
+								<td className="hidden max-w-[160px] truncate px-3 py-2 text-xs text-ink-2 sm:table-cell">
 									{ins.position ?? "—"}
 								</td>
-								<td className="px-3 py-2 text-right font-mono text-xs text-t-text-secondary">
+								<td className="px-3 py-2 text-right font-mono text-xs text-ink-2">
 									{ins.percentage != null ? `${ins.percentage.toFixed(3)}%` : "—"}
 								</td>
 							</tr>

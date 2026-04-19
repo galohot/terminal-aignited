@@ -1,105 +1,156 @@
+/* Fonts: Fraunces (display serif), Nunito (body), JetBrains Mono (numbers) */
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600;1,9..144,700&family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @theme {
 	/* ---------------------------------------------------------------- */
-	/* Aignited brand palette — navy surfaces, ember primary, cyan cool, */
-	/* spark gold tertiary. Semantic pos/neg stays green/red.            */
+	/* Aignited v2 Light — warm cream paper + navy ink + ember accent.   */
+	/* Light is the default theme; dark is a future task.                */
 	/* ---------------------------------------------------------------- */
 
-	/* Navy surfaces (0 darkest → 5 lightest) */
-	--color-aig-navy-0: #060a18;
-	--color-aig-navy-1: #0a1024;
-	--color-aig-navy-2: #0f1830;
-	--color-aig-navy-3: #16214a;
-	--color-aig-navy-4: #1f2d63;
-	--color-aig-navy-5: #2a3d85;
-	--color-aig-ink: #0b1024;
+	/* Surfaces (warm paper) */
+	--color-paper: #f7f4ee;
+	--color-paper-2: #f2ede4;
+	--color-card: #ffffff;
+	--color-card-2: #fbf8f2;
+	--color-rule: #e7e0d2;
+	--color-rule-2: #d9d0bd;
 
-	/* Ember — primary brand accent */
+	/* Ink (navy text) */
+	--color-ink: #141735;
+	--color-ink-2: #2b2f57;
+	--color-ink-3: #55598a;
+	--color-ink-4: #8b8fb0;
+	--color-ink-5: #b2b4cc;
+
+	/* Ember (primary accent) */
+	--color-ember-100: #ffe6cf;
+	--color-ember-200: #ffc895;
+	--color-ember-400: #ff8a2a;
+	--color-ember-500: #ff6a11;
+	--color-ember-600: #e84e00;
+	--color-ember-700: #b53b00;
+
+	/* Cyan (secondary accent) */
+	--color-cyan-300: #7cb7ff;
+	--color-cyan-500: #1d5fc9;
+	--color-cyan-700: #0e3f90;
+
+	/* Spark (tertiary) */
+	--color-spark: #ffb020;
+
+	/* Semantic (finance only) */
+	--color-pos: #17a568;
+	--color-neg: #d2344a;
+
+	/* ---------------------------------------------------------------- */
+	/* Legacy `aig-*` tokens — remapped to light palette so every page   */
+	/* flips to the new skin automatically without a rewrite.            */
+	/* ---------------------------------------------------------------- */
+
+	/* Navy was the dark surface scale; now remapped to paper/card/rule */
+	--color-aig-navy-0: #f7f4ee; /* darkest → app paper */
+	--color-aig-navy-1: #f2ede4; /* → paper-2 (section wash) */
+	--color-aig-navy-2: #ffffff; /* → card surface */
+	--color-aig-navy-3: #fbf8f2; /* → card-2 (hover) */
+	--color-aig-navy-4: #e7e0d2; /* → rule */
+	--color-aig-navy-5: #d9d0bd; /* → rule-2 */
+	--color-aig-ink: #141735;
+
+	/* Ember — rebalanced to the v2 scale */
 	--color-aig-ember-50: #fff5eb;
-	--color-aig-ember-100: #ffd9a8;
-	--color-aig-ember-300: #ffa04a;
-	--color-aig-ember-500: #ff7a1a;
-	--color-aig-ember-600: #ef5d07;
-	--color-aig-ember-700: #c0410a;
+	--color-aig-ember-100: #ffe6cf;
+	--color-aig-ember-300: #ff8a2a;
+	--color-aig-ember-500: #ff6a11;
+	--color-aig-ember-600: #e84e00;
+	--color-aig-ember-700: #b53b00;
 
-	/* Cyan — secondary accent */
-	--color-aig-cyan-300: #4fb6ff;
-	--color-aig-cyan-500: #1d7fe0;
-	--color-aig-cyan-600: #0f5bb0;
+	/* Cyan — light palette */
+	--color-aig-cyan-300: #7cb7ff;
+	--color-aig-cyan-500: #1d5fc9;
+	--color-aig-cyan-600: #0e3f90;
 
-	/* Spark — tertiary highlight (sun flourish) */
-	--color-aig-spark: #ffc24a;
+	/* Spark */
+	--color-aig-spark: #ffb020;
 
-	/* Semantic (finance) */
-	--color-aig-pos: #2fd39a;
-	--color-aig-neg: #ff5d6c;
+	/* Semantic */
+	--color-aig-pos: #17a568;
+	--color-aig-neg: #d2344a;
 
-	/* Text */
-	--color-aig-text: #eef2ff;
-	--color-aig-text-2: #c0c9e6;
-	--color-aig-text-3: #8390b6;
-	--color-aig-text-4: #5a668a;
+	/* Text — ink scale on light */
+	--color-aig-text: #141735;
+	--color-aig-text-2: #2b2f57;
+	--color-aig-text-3: #55598a;
+	--color-aig-text-4: #8b8fb0;
 
 	/* ---------------------------------------------------------------- */
-	/* Legacy `t-*` tokens — remapped to aignited palette so every page   */
-	/* that still references them picks up the new skin automatically.   */
+	/* Legacy `t-*` tokens — remapped to light palette.                  */
 	/* ---------------------------------------------------------------- */
-	--color-t-bg: #060a18;
-	--color-t-surface: #0f1830;
-	--color-t-hover: #16214a;
-	--color-t-border: #1c2a5c;
-	--color-t-border-active: #2a3d85;
-	--color-t-text: #eef2ff;
-	--color-t-text-secondary: #c0c9e6;
-	--color-t-text-muted: #8390b6;
-	--color-t-green: #2fd39a;
-	--color-t-green-dim: #2fd39a1f;
-	--color-t-red: #ff5d6c;
-	--color-t-red-dim: #ff5d6c22;
-	--color-t-blue: #4fb6ff;
-	--color-t-amber: #ff7a1a;
-	--color-t-purple: #8b7bff;
+	--color-t-bg: #f7f4ee;
+	--color-t-surface: #ffffff;
+	--color-t-hover: #fbf8f2;
+	--color-t-border: #e7e0d2;
+	--color-t-border-active: #d9d0bd;
+	--color-t-text: #141735;
+	--color-t-text-secondary: #2b2f57;
+	--color-t-text-muted: #55598a;
+	--color-t-green: #17a568;
+	--color-t-green-dim: #17a56811;
+	--color-t-red: #d2344a;
+	--color-t-red-dim: #d2344a14;
+	--color-t-blue: #1d5fc9;
+	--color-t-amber: #ff8a2a;
+	--color-t-purple: #7a5cff;
 
+	/* Typography */
+	--font-display: "Fraunces", "Iowan Old Style", Georgia, "Times New Roman", serif;
 	--font-sans: "Nunito", "SF Pro Rounded", system-ui, sans-serif;
 	--font-mono: "JetBrains Mono", ui-monospace, "Consolas", monospace;
 }
 
 /* ====================================================================
-   Non-tokenized aignited variables (gradients, strokes, etc.)
+   Non-tokenized aignited variables (gradients, strokes, shadows)
    ==================================================================== */
 :root {
-	--aig-stroke-1: rgba(146, 170, 255, 0.1);
-	--aig-stroke-2: rgba(146, 170, 255, 0.18);
-	--aig-stroke-ember: rgba(255, 122, 26, 0.35);
+	/* Hairlines & strokes (ink-based alpha on paper) */
+	--aig-stroke-1: rgba(20, 23, 53, 0.08);
+	--aig-stroke-2: rgba(20, 23, 53, 0.14);
+	--aig-stroke-ember: rgba(232, 78, 0, 0.35);
 
-	--aig-grad-flame: linear-gradient(135deg, #1c3a8a 0%, #2a62c6 22%, #ff8a2a 58%, #ff5a07 100%);
-	--aig-grad-ember: linear-gradient(135deg, #ff9a42 0%, #ff5a07 100%);
-	--aig-grad-navy: linear-gradient(160deg, #0e1530 0%, #0a1024 100%);
-	--aig-grad-panel: linear-gradient(180deg, rgba(22, 33, 74, 0.55) 0%, rgba(10, 16, 36, 0.85) 100%);
+	/* Gradients */
+	--aig-grad-flame: linear-gradient(135deg, #153a8f 0%, #1d5fc9 25%, #ff8a2a 62%, #e84e00 100%);
+	--aig-grad-ember: linear-gradient(135deg, #ff8a2a 0%, #e84e00 100%);
+	--aig-grad-navy: linear-gradient(160deg, #141735 0%, #2b2f57 100%);
+	--aig-grad-panel: linear-gradient(180deg, #ffffff 0%, #fbf8f2 100%);
 	--aig-grad-hero:
-		radial-gradient(1200px 500px at 12% -10%, rgba(41, 98, 198, 0.35), transparent 55%),
-		radial-gradient(900px 480px at 95% -20%, rgba(255, 122, 26, 0.32), transparent 55%),
-		linear-gradient(180deg, #0b1230 0%, #07091a 100%);
+		radial-gradient(900px 420px at 88% -10%, rgba(255, 138, 42, 0.2), transparent 60%),
+		radial-gradient(900px 420px at 8% -20%, rgba(29, 95, 201, 0.12), transparent 60%),
+		linear-gradient(180deg, #fbf7ef 0%, #f6f1e6 100%);
+
+	/* Soft paper-weight shadows */
+	--aig-shadow-sm: 0 1px 0 rgba(20, 23, 53, 0.04), 0 1px 2px rgba(20, 23, 53, 0.04);
+	--aig-shadow-md: 0 2px 0 rgba(20, 23, 53, 0.03), 0 10px 30px rgba(20, 23, 53, 0.06);
+
+	color-scheme: light;
 }
 
-/* Accent skin override — ember (default) / blue / spark */
+/* Accent skin overrides */
 body[data-accent="blue"] {
-	--aig-stroke-ember: rgba(42, 123, 239, 0.35);
-	--aig-grad-ember: linear-gradient(135deg, #7fb6ff 0%, #1a5cc0 100%);
+	--aig-stroke-ember: rgba(29, 95, 201, 0.35);
+	--aig-grad-ember: linear-gradient(135deg, #7cb7ff 0%, #1d5fc9 100%);
 }
 body[data-accent="spark"] {
-	--aig-stroke-ember: rgba(255, 176, 32, 0.35);
+	--aig-stroke-ember: rgba(255, 176, 32, 0.4);
 	--aig-grad-ember: linear-gradient(135deg, #ffd577 0%, #ff8a1f 100%);
 }
 
 body {
 	min-height: 100vh;
 	background:
-		radial-gradient(900px 600px at 90% -10%, rgba(255, 122, 26, 0.09), transparent 60%),
-		radial-gradient(1100px 700px at -10% 0%, rgba(41, 98, 198, 0.1), transparent 60%),
-		linear-gradient(180deg, #070a18 0%, #05070f 100%);
-	color: var(--color-aig-text);
+		radial-gradient(1200px 600px at 95% -10%, rgba(255, 138, 42, 0.08), transparent 60%),
+		radial-gradient(1200px 600px at -10% 0%, rgba(29, 95, 201, 0.06), transparent 60%),
+		var(--color-paper);
+	color: var(--color-ink);
 	font-family: var(--font-sans);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
@@ -167,7 +218,7 @@ body {
 	height: 32px;
 	overflow: hidden;
 	border-bottom: 1px solid var(--aig-stroke-1);
-	background: linear-gradient(180deg, rgba(12, 18, 40, 0.9), rgba(8, 12, 28, 0.9));
+	background: linear-gradient(180deg, #ffffff 0%, #fbf8f2 100%);
 }
 .aig-ticker-rail::before,
 .aig-ticker-rail::after {
@@ -181,11 +232,11 @@ body {
 }
 .aig-ticker-rail::before {
 	left: 0;
-	background: linear-gradient(90deg, #060a18, transparent);
+	background: linear-gradient(90deg, #f7f4ee, transparent);
 }
 .aig-ticker-rail::after {
 	right: 0;
-	background: linear-gradient(-90deg, #060a18, transparent);
+	background: linear-gradient(-90deg, #f7f4ee, transparent);
 }
 .aig-ticker-track {
 	display: flex;
@@ -216,9 +267,9 @@ body {
 	gap: 6px;
 	padding: 6px 10px;
 	border-radius: 999px;
-	border: 1px solid var(--aig-stroke-2);
-	background: rgba(11, 16, 36, 0.6);
-	color: var(--color-aig-text-2);
+	border: 1px solid var(--color-rule);
+	background: var(--color-card);
+	color: var(--color-ink-3);
 	font-family: var(--font-mono);
 	font-size: 10px;
 	letter-spacing: 0.22em;
@@ -232,43 +283,44 @@ body {
 	box-shadow: 0 0 10px currentColor;
 }
 .aig-chip-ember {
-	color: var(--color-aig-ember-300);
-	border-color: var(--aig-stroke-ember);
-	background: rgba(255, 122, 26, 0.08);
+	color: var(--color-ember-600);
+	border-color: rgba(232, 78, 0, 0.28);
+	background: rgba(255, 138, 42, 0.1);
 }
 .aig-chip-spark {
-	color: var(--color-aig-spark);
-	border-color: rgba(255, 194, 74, 0.35);
-	background: rgba(255, 194, 74, 0.08);
+	color: #b07400;
+	border-color: rgba(255, 176, 32, 0.35);
+	background: rgba(255, 176, 32, 0.14);
 }
 .aig-chip-pos {
-	color: var(--color-aig-pos);
-	border-color: rgba(47, 211, 154, 0.3);
-	background: rgba(47, 211, 154, 0.08);
+	color: var(--color-pos);
+	border-color: rgba(23, 165, 104, 0.28);
+	background: rgba(23, 165, 104, 0.1);
 }
 .aig-chip-neg {
-	color: var(--color-aig-neg);
-	border-color: rgba(255, 93, 108, 0.3);
-	background: rgba(255, 93, 108, 0.08);
+	color: var(--color-neg);
+	border-color: rgba(210, 52, 74, 0.28);
+	background: rgba(210, 52, 74, 0.08);
 }
 .aig-chip-cy {
-	color: var(--color-aig-cyan-300);
-	border-color: rgba(79, 182, 255, 0.3);
-	background: rgba(79, 182, 255, 0.08);
+	color: var(--color-cyan-700);
+	border-color: rgba(29, 95, 201, 0.28);
+	background: rgba(29, 95, 201, 0.08);
 }
 
 /* ====================================================================
    Section panel — the primary surface container
    ==================================================================== */
 .aig-section {
-	border-radius: 20px;
-	border: 1px solid var(--aig-stroke-1);
-	background: var(--aig-grad-panel);
-	padding: 18px;
+	border-radius: 22px;
+	border: 1px solid var(--color-rule);
+	background: var(--color-card);
+	padding: 22px;
 	position: relative;
+	box-shadow: var(--aig-shadow-sm);
 }
 body[data-density="compact"] .aig-section {
-	padding: 14px;
+	padding: 16px;
 }
 
 /* ====================================================================
@@ -279,9 +331,10 @@ body[data-density="compact"] .aig-section {
 	border-radius: 24px;
 	overflow: hidden;
 	background: var(--aig-grad-hero);
-	border: 1px solid var(--aig-stroke-2);
-	padding: 22px 24px 20px;
+	border: 1px solid var(--color-rule);
+	padding: 24px 28px 22px;
 	isolation: isolate;
+	box-shadow: var(--aig-shadow-sm);
 }
 .aig-hero::before {
 	content: "";
@@ -290,8 +343,8 @@ body[data-density="compact"] .aig-section {
 	z-index: -1;
 	pointer-events: none;
 	background:
-		radial-gradient(600px 240px at 85% 15%, rgba(255, 122, 26, 0.35), transparent 60%),
-		radial-gradient(500px 220px at 10% 100%, rgba(41, 98, 198, 0.22), transparent 60%);
+		radial-gradient(600px 240px at 85% 15%, rgba(255, 138, 42, 0.22), transparent 60%),
+		radial-gradient(500px 220px at 10% 100%, rgba(29, 95, 201, 0.12), transparent 60%);
 }
 .aig-hero::after {
 	content: "";
@@ -300,8 +353,8 @@ body[data-density="compact"] .aig-section {
 	z-index: -1;
 	opacity: 0.35;
 	background-image:
-		linear-gradient(rgba(146, 170, 255, 0.06) 1px, transparent 1px),
-		linear-gradient(90deg, rgba(146, 170, 255, 0.06) 1px, transparent 1px);
+		linear-gradient(rgba(20, 23, 53, 0.05) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(20, 23, 53, 0.05) 1px, transparent 1px);
 	background-size: 32px 32px;
 	mask-image: radial-gradient(ellipse at 50% 0%, #000 40%, transparent 80%);
 }
@@ -313,23 +366,25 @@ body[data-skin="minimal"] .aig-hero::after {
 }
 
 .aig-headline {
-	font-family: var(--font-sans);
-	font-weight: 800;
-	font-size: 40px;
-	line-height: 1.08;
-	letter-spacing: -0.015em;
+	font-family: var(--font-display);
+	font-weight: 600;
+	font-size: 52px;
+	line-height: 1.04;
+	letter-spacing: -0.02em;
 	margin: 4px 0 10px;
 	text-wrap: balance;
+	color: var(--color-ink);
 }
 .aig-headline em {
-	font-style: normal;
+	font-style: italic;
+	font-weight: 600;
 	background: var(--aig-grad-ember);
 	-webkit-background-clip: text;
 	background-clip: text;
 	color: transparent;
 }
 body[data-density="compact"] .aig-headline {
-	font-size: 34px;
+	font-size: 40px;
 }
 
 /* ====================================================================
@@ -342,20 +397,22 @@ body[data-density="compact"] .aig-headline {
 	align-items: center;
 	padding: 12px 14px;
 	border-radius: 14px;
-	border: 1px solid var(--aig-stroke-1);
-	background: linear-gradient(90deg, rgba(22, 33, 74, 0.35), rgba(11, 16, 36, 0.1));
+	border: 1px solid var(--color-rule);
+	background: var(--color-card);
 	text-decoration: none;
 	color: inherit;
 	transition:
 		transform 0.15s ease,
 		border-color 0.2s ease,
-		background 0.2s ease;
+		background 0.2s ease,
+		box-shadow 0.2s ease;
 	cursor: pointer;
 }
 .aig-quote-card:hover {
 	transform: translateY(-1px);
-	border-color: var(--aig-stroke-2);
-	background: linear-gradient(90deg, rgba(22, 33, 74, 0.55), rgba(255, 122, 26, 0.04));
+	border-color: var(--color-rule-2);
+	background: var(--color-card-2);
+	box-shadow: var(--aig-shadow-sm);
 }
 body[data-density="compact"] .aig-quote-card {
 	padding: 10px 12px;
@@ -364,19 +421,19 @@ body[data-density="compact"] .aig-quote-card {
 	width: 4px;
 	align-self: stretch;
 	border-radius: 4px;
-	background: var(--color-aig-cyan-500);
+	background: var(--color-cyan-500);
 }
 .aig-quote-card.tone-local .aig-qc-accent {
-	background: linear-gradient(180deg, var(--color-aig-ember-500), var(--color-aig-ember-700));
+	background: linear-gradient(180deg, var(--color-ember-400), var(--color-ember-700));
 }
 .aig-quote-card.tone-apac .aig-qc-accent {
-	background: linear-gradient(180deg, var(--color-aig-cyan-300), var(--color-aig-cyan-600));
+	background: linear-gradient(180deg, var(--color-cyan-300), var(--color-cyan-700));
 }
 .aig-quote-card.tone-macro .aig-qc-accent {
-	background: linear-gradient(180deg, var(--color-aig-spark), var(--color-aig-ember-600));
+	background: linear-gradient(180deg, var(--color-spark), var(--color-ember-600));
 }
 .aig-quote-card.tone-global .aig-qc-accent {
-	background: linear-gradient(180deg, #8ea7ff, var(--color-aig-navy-5));
+	background: linear-gradient(180deg, #7a5cff, var(--color-ink));
 }
 
 /* ====================================================================
@@ -384,24 +441,25 @@ body[data-density="compact"] .aig-quote-card {
    ==================================================================== */
 .aig-idxcell {
 	border-radius: 12px;
-	border: 1px solid var(--aig-stroke-1);
+	border: 1px solid var(--color-rule);
 	padding: 10px 12px;
-	background: rgba(11, 16, 36, 0.55);
+	background: var(--color-card);
 	position: relative;
 	overflow: hidden;
 	min-height: 70px;
 }
 .aig-idxcell.up {
-	background: linear-gradient(135deg, rgba(47, 211, 154, 0.18), rgba(11, 16, 36, 0.55));
-	border-color: rgba(47, 211, 154, 0.25);
+	background: linear-gradient(135deg, #eafaf2 0%, #ffffff 80%);
+	border-color: #cbe9d8;
 }
 .aig-idxcell.dn {
-	background: linear-gradient(135deg, rgba(255, 93, 108, 0.18), rgba(11, 16, 36, 0.55));
-	border-color: rgba(255, 93, 108, 0.25);
+	background: linear-gradient(135deg, #fdecef 0%, #ffffff 80%);
+	border-color: #fbd0d7;
 }
 body[data-skin="minimal"] .aig-idxcell.up,
 body[data-skin="minimal"] .aig-idxcell.dn {
-	background: rgba(11, 16, 36, 0.55);
+	background: var(--color-card);
+	border-color: var(--color-rule);
 }
 
 /* ====================================================================
@@ -411,7 +469,7 @@ body[data-skin="minimal"] .aig-idxcell.dn {
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
-	padding: 9px 14px;
+	padding: 11px 18px;
 	border-radius: 999px;
 	font-family: var(--font-mono);
 	font-size: 11px;
@@ -421,29 +479,41 @@ body[data-skin="minimal"] .aig-idxcell.dn {
 	cursor: pointer;
 	transition:
 		transform 0.15s ease,
-		background 0.2s ease;
+		background 0.2s ease,
+		box-shadow 0.2s ease;
 	text-decoration: none;
+	font-weight: 600;
 }
 .aig-btn:hover {
 	transform: translateY(-1px);
 }
 .aig-btn-primary {
+	background: var(--color-ink);
+	color: var(--color-paper);
+	border-color: var(--color-ink);
+	box-shadow: var(--aig-shadow-sm);
+}
+.aig-btn-primary:hover {
+	background: var(--color-ink-2);
+	box-shadow: var(--aig-shadow-md);
+}
+.aig-btn-ember {
 	background: var(--aig-grad-ember);
-	color: #1a0b00;
-	border-color: rgba(255, 122, 26, 0.55);
+	color: #ffffff;
+	border-color: rgba(232, 78, 0, 0.55);
 	box-shadow:
-		0 8px 22px rgba(255, 122, 26, 0.28),
-		inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+		0 8px 22px rgba(232, 78, 0, 0.2),
+		inset 0 0 0 1px rgba(255, 255, 255, 0.18);
 	font-weight: 700;
 }
 .aig-btn-ghost {
-	background: rgba(146, 170, 255, 0.06);
-	color: var(--color-aig-text-2);
-	border-color: var(--aig-stroke-1);
+	background: var(--color-card);
+	color: var(--color-ink-2);
+	border-color: var(--color-rule-2);
 }
 .aig-btn-ghost:hover {
-	background: rgba(146, 170, 255, 0.12);
-	color: var(--color-aig-text);
+	background: var(--color-card-2);
+	color: var(--color-ink);
 }
 
 /* ====================================================================
@@ -454,20 +524,33 @@ body[data-skin="minimal"] .aig-idxcell.dn {
 	font-size: 11px;
 	padding: 6px 10px;
 	border-radius: 999px;
-	color: var(--color-aig-text-3);
-	background: rgba(146, 170, 255, 0.04);
-	border: 1px solid var(--aig-stroke-1);
+	color: var(--color-ink-3);
+	background: transparent;
+	border: 1px solid transparent;
 	cursor: pointer;
 	letter-spacing: 0.16em;
 	text-transform: uppercase;
+	transition: all 0.15s ease;
 }
 .aig-tool:hover {
-	color: var(--color-aig-text);
+	color: var(--color-ink);
+	background: var(--color-card-2);
 }
 .aig-tool-active {
-	color: var(--color-aig-ink);
-	background: var(--color-aig-text);
-	border-color: var(--color-aig-text);
+	color: var(--color-ink);
+	background: var(--color-card);
+	border-color: var(--color-rule);
+	box-shadow: var(--aig-shadow-sm);
+}
+
+/* Tool-pill track (wraps a group of tool pills in paper-2 background) */
+.aig-tool-track {
+	display: inline-flex;
+	gap: 4px;
+	padding: 4px;
+	border-radius: 999px;
+	background: var(--color-paper-2);
+	border: 1px solid var(--color-rule);
 }
 
 /* ====================================================================
@@ -479,8 +562,8 @@ body[data-skin="minimal"] .aig-idxcell.dn {
 	background: linear-gradient(
 		90deg,
 		transparent,
-		rgba(255, 122, 26, 0.55),
-		rgba(41, 98, 198, 0.55),
+		rgba(232, 78, 0, 0.55),
+		rgba(29, 95, 201, 0.55),
 		transparent
 	);
 	margin: 4px 0;
@@ -514,29 +597,29 @@ body[data-skin="minimal"] .aig-idxcell.dn {
    Focus ring for keyboard navigation
    ==================================================================== */
 *:focus-visible {
-	outline: 2px solid var(--color-aig-ember-500);
+	outline: 2px solid var(--color-ember-500);
 	outline-offset: 1px;
 }
 
 ::selection {
-	background: rgba(255, 122, 26, 0.28);
-	color: white;
+	background: rgba(255, 138, 42, 0.28);
+	color: var(--color-ink);
 }
 
 /* ====================================================================
    Scrollbar styling
    ==================================================================== */
 ::-webkit-scrollbar {
-	width: 6px;
-	height: 6px;
+	width: 8px;
+	height: 8px;
 }
 ::-webkit-scrollbar-track {
-	background: var(--color-t-bg);
+	background: var(--color-paper);
 }
 ::-webkit-scrollbar-thumb {
-	background: var(--color-aig-navy-4);
-	border-radius: 3px;
+	background: var(--color-rule-2);
+	border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-	background: var(--color-aig-navy-5);
+	background: var(--color-ink-4);
 }

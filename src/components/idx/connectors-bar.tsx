@@ -8,18 +8,18 @@ function barColor(types: string[]): string {
 	const hasCommissioner = types.includes("commissioner");
 	const hasShareholder = types.includes("shareholder");
 	const roleCount = [hasDirector, hasCommissioner, hasShareholder].filter(Boolean).length;
-	if (roleCount > 1) return "#a855f7";
-	if (hasDirector) return "#3b82f6";
-	if (hasCommissioner) return "#f59e0b";
-	if (hasShareholder) return "#22c55e";
-	return "#6b7280";
+	if (roleCount > 1) return "#7a4bc8";
+	if (hasDirector) return "#1d5fc9";
+	if (hasCommissioner) return "#ff8a2a";
+	if (hasShareholder) return "#17a568";
+	return "#8b8fb0";
 }
 
 const LEGEND_ITEMS: { color: string; label: string }[] = [
-	{ color: "#3b82f6", label: "Director" },
-	{ color: "#f59e0b", label: "Commissioner" },
-	{ color: "#22c55e", label: "Shareholder" },
-	{ color: "#a855f7", label: "Multiple roles" },
+	{ color: "#1d5fc9", label: "Director" },
+	{ color: "#ff8a2a", label: "Commissioner" },
+	{ color: "#17a568", label: "Shareholder" },
+	{ color: "#7a4bc8", label: "Multiple roles" },
 ];
 
 export function ConnectorsBar({ connectors }: { connectors: IdxTopConnector[] }) {
@@ -58,11 +58,7 @@ export function ConnectorsBar({ connectors }: { connectors: IdxTopConnector[] })
 
 		const maxCompanies = d3.max(data, (d) => d.companies) ?? 1;
 
-		const xScale = d3
-			.scaleLinear()
-			.domain([0, maxCompanies])
-			.range([0, innerWidth])
-			.nice();
+		const xScale = d3.scaleLinear().domain([0, maxCompanies]).range([0, innerWidth]).nice();
 
 		const yScale = d3
 			.scaleBand()
@@ -74,9 +70,7 @@ export function ConnectorsBar({ connectors }: { connectors: IdxTopConnector[] })
 		sel.selectAll("*").remove();
 		sel.attr("viewBox", `0 0 ${width} ${height}`).attr("width", width).attr("height", height);
 
-		const g = sel
-			.append("g")
-			.attr("transform", `translate(${marginLeft},${marginTop})`);
+		const g = sel.append("g").attr("transform", `translate(${marginLeft},${marginTop})`);
 
 		// Bars
 		const bars = g
@@ -108,7 +102,7 @@ export function ConnectorsBar({ connectors }: { connectors: IdxTopConnector[] })
 			.attr("text-anchor", "end")
 			.attr("font-family", "ui-monospace, monospace")
 			.attr("font-size", "9px")
-			.attr("fill", "#f59e0b")
+			.attr("fill", "#ff8a2a")
 			.attr("pointer-events", "none")
 			.text((d) => (d.entity_group ?? "").split(/[\s_]/)[0]);
 
@@ -123,7 +117,7 @@ export function ConnectorsBar({ connectors }: { connectors: IdxTopConnector[] })
 			.attr("dy", "0.35em")
 			.attr("font-family", "ui-monospace, monospace")
 			.attr("font-size", "10px")
-			.attr("fill", "#9ca3af")
+			.attr("fill", "#55598a")
 			.attr("pointer-events", "none")
 			.text((d) => `${d.companies}`);
 
@@ -139,17 +133,17 @@ export function ConnectorsBar({ connectors }: { connectors: IdxTopConnector[] })
 			.attr("text-anchor", "end")
 			.attr("font-family", "ui-monospace, monospace")
 			.attr("font-size", "10px")
-			.attr("fill", "#9ca3af")
+			.attr("fill", "#55598a")
 			.attr("cursor", "pointer")
 			.text((d) => d.name)
 			.on("click", (_event, d) => {
 				navRef.current(`/idx/insiders?name=${encodeURIComponent(d.name)}`);
 			})
 			.on("mouseover", function () {
-				d3.select(this).attr("fill", "#ffffff");
+				d3.select(this).attr("fill", "#141735");
 			})
 			.on("mouseout", function () {
-				d3.select(this).attr("fill", "#9ca3af");
+				d3.select(this).attr("fill", "#55598a");
 			});
 
 		// Bar hover + click interactions
@@ -166,12 +160,10 @@ export function ConnectorsBar({ connectors }: { connectors: IdxTopConnector[] })
 					entity_group: d.entity_group,
 				});
 			})
-			.on("mousemove", function (event: MouseEvent) {
+			.on("mousemove", (event: MouseEvent) => {
 				const rect = container.getBoundingClientRect();
 				setTooltip((prev) =>
-					prev
-						? { ...prev, x: event.clientX - rect.left, y: event.clientY - rect.top }
-						: null,
+					prev ? { ...prev, x: event.clientX - rect.left, y: event.clientY - rect.top } : null,
 				);
 			})
 			.on("mouseout", function () {
@@ -197,34 +189,32 @@ export function ConnectorsBar({ connectors }: { connectors: IdxTopConnector[] })
 			.call(xAxis);
 
 		xAxisG.select(".domain").remove();
-		xAxisG.selectAll("line").attr("stroke", "#ffffff10");
+		xAxisG.selectAll("line").attr("stroke", "#e7e0d2");
 		xAxisG
 			.selectAll("text")
 			.attr("font-family", "ui-monospace, monospace")
 			.attr("font-size", "9px")
-			.attr("fill", "#6b7280");
+			.attr("fill", "#55598a");
 	}, [data]);
 
 	return (
-		<div className="rounded border border-t-border bg-t-surface">
-			<div className="border-b border-t-border px-3 py-2">
-				<h3 className="text-xs font-medium uppercase tracking-wider text-t-text-secondary">
-					Top Connectors
-				</h3>
-				<p className="mt-0.5 font-mono text-[10px] text-t-text-muted">
+		<div className="rounded-[18px] border border-rule bg-card">
+			<div className="border-b border-rule px-4 py-3">
+				<h3 className="font-mono text-sm font-semibold text-ink">Top Connectors</h3>
+				<p className="mt-0.5 font-mono text-[10px] text-ink-4">
 					most-connected insiders across IDX
 				</p>
 			</div>
 
 			{/* Color legend */}
-			<div className="flex flex-wrap items-center gap-4 border-b border-white/5 px-3 py-2">
+			<div className="flex flex-wrap items-center gap-4 border-b border-rule px-4 py-2">
 				{LEGEND_ITEMS.map((item) => (
 					<span key={item.label} className="flex items-center gap-1.5">
 						<span
 							className="inline-block h-2 w-2 rounded-sm"
-							style={{ backgroundColor: item.color, opacity: 0.8 }}
+							style={{ backgroundColor: item.color, opacity: 0.85 }}
 						/>
-						<span className="font-mono text-[10px] text-t-text-muted">{item.label}</span>
+						<span className="font-mono text-[10px] text-ink-4">{item.label}</span>
 					</span>
 				))}
 			</div>
@@ -233,13 +223,11 @@ export function ConnectorsBar({ connectors }: { connectors: IdxTopConnector[] })
 				<svg ref={svgRef} style={{ background: "transparent", display: "block" }} />
 				{tooltip && (
 					<div
-						className="pointer-events-none absolute z-10 max-w-[220px] rounded border border-white/10 bg-[#0d0d0d]/95 px-2.5 py-1.5 shadow-xl backdrop-blur-sm"
+						className="pointer-events-none absolute z-10 max-w-[220px] rounded-[12px] border border-rule bg-card px-2.5 py-1.5 shadow-[0_10px_30px_rgba(20,23,53,0.12)]"
 						style={{
 							left: Math.min(
 								tooltip.x + 14,
-								containerRef.current
-									? containerRef.current.clientWidth - 230
-									: tooltip.x + 14,
+								containerRef.current ? containerRef.current.clientWidth - 230 : tooltip.x + 14,
 							),
 							top: Math.max(tooltip.y - 10, 4),
 						}}
@@ -257,14 +245,14 @@ export function ConnectorsBar({ connectors }: { connectors: IdxTopConnector[] })
 							{tooltip.companies} companies
 						</p>
 						{tooltip.types.length > 0 && (
-							<p className="mt-1 font-mono leading-snug text-t-text-muted" style={{ fontSize: "10px" }}>
+							<p className="mt-1 font-mono leading-snug text-ink-4" style={{ fontSize: "10px" }}>
 								{tooltip.types.join(", ")}
 							</p>
 						)}
 						{tooltip.entity_group && (
 							<p
 								className="mt-0.5 font-mono leading-snug"
-								style={{ fontSize: "10px", color: "#f59e0b" }}
+								style={{ fontSize: "10px", color: "#ff8a2a" }}
 							>
 								{tooltip.entity_group}
 							</p>

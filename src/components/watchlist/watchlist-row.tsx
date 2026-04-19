@@ -15,7 +15,7 @@ interface WatchlistRowProps {
 export function WatchlistRow({ quote, onRemove, selected = false }: WatchlistRowProps) {
 	const navigate = useNavigate();
 	const isPositive = quote.change >= 0;
-	const changeColor = isPositive ? "text-t-green" : "text-t-red";
+	const changeColor = isPositive ? "text-pos" : "text-neg";
 	const [flash, setFlash] = useState<"up" | "down" | null>(null);
 	const prevPrice = useRef(quote.price);
 
@@ -28,33 +28,33 @@ export function WatchlistRow({ quote, onRemove, selected = false }: WatchlistRow
 		}
 	}, [quote.price]);
 
-	const rowFlash = flash === "up" ? "bg-t-green/10" : flash === "down" ? "bg-t-red/10" : "";
+	const rowFlash = flash === "up" ? "bg-pos/10" : flash === "down" ? "bg-neg/10" : "";
 
 	return (
 		<tr
 			className={clsx(
-				"cursor-pointer border-b border-white/8 transition-colors hover:bg-white/[0.04]",
-				selected && "bg-white/[0.05]",
+				"cursor-pointer border-b border-rule transition-colors hover:bg-paper-2/60",
+				selected && "bg-paper-2",
 				rowFlash,
 			)}
 			onClick={() => navigate(`/stock/${quote.symbol}`)}
 		>
 			<td className="px-4 py-3 align-top">
-				<div className="font-mono text-xs font-semibold text-t-green">{quote.symbol}</div>
-				<div className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-t-text-muted">
+				<div className="font-mono text-xs font-semibold text-ember-600">{quote.symbol}</div>
+				<div className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-4">
 					{quote.exchange || quote.currency || "Market"}
 				</div>
 			</td>
-			<td className="max-w-[260px] px-4 py-3 align-top text-sm text-t-text-secondary">
+			<td className="max-w-[260px] px-4 py-3 align-top text-sm text-ink-3">
 				<div className="truncate">{quote.name}</div>
 			</td>
-			<td className="px-4 py-3 text-right align-top font-mono text-sm text-white">
+			<td className="px-4 py-3 text-right align-top font-mono text-sm text-ink">
 				{formatPrice(quote.price, quote.currency)}
 			</td>
 			<td className={`px-4 py-3 text-right align-top font-mono text-sm ${changeColor}`}>
 				{formatPercent(quote.change_percent)}
 			</td>
-			<td className="px-4 py-3 text-right align-top font-mono text-xs text-t-text-secondary">
+			<td className="px-4 py-3 text-right align-top font-mono text-xs text-ink-3">
 				{quote.volume ? formatVolume(quote.volume) : "—"}
 			</td>
 			<td className="px-4 py-3">
@@ -69,7 +69,7 @@ export function WatchlistRow({ quote, onRemove, selected = false }: WatchlistRow
 						event.stopPropagation();
 						onRemove(quote.symbol);
 					}}
-					className="rounded-full p-1 text-t-text-muted transition-colors hover:bg-white/10 hover:text-t-red"
+					className="rounded-full p-1 text-ink-4 transition-colors hover:bg-neg/10 hover:text-neg"
 				>
 					<X className="h-3.5 w-3.5" />
 				</button>

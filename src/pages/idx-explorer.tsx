@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrokerTable } from "../components/idx/broker-table";
 import { CompanyTable } from "../components/idx/company-table";
 import { IdxNav } from "../components/idx/idx-nav";
-import { SectorGrid } from "../components/idx/sector-grid";
 import { SectorTreemap } from "../components/idx/sector-treemap";
 import { Skeleton } from "../components/ui/loading";
 import { useIdxCompanies } from "../hooks/use-idx-companies";
@@ -25,7 +24,6 @@ export function IdxExplorerPage() {
 	const [offset, setOffset] = useState(0);
 	const searchRef = useRef<HTMLInputElement>(null);
 
-	// Debounce search
 	useEffect(() => {
 		const id = setTimeout(() => {
 			setDebouncedSearch(search);
@@ -51,14 +49,12 @@ export function IdxExplorerPage() {
 		offset,
 	});
 
-	// Client-side board filter (API may not support board param)
 	const filtered = useMemo(() => {
 		if (!data?.companies) return [];
 		if (!board) return data.companies;
 		return data.companies.filter((c) => c.papan_pencatatan === board);
 	}, [data, board]);
 
-	// Extract unique sectors for filter dropdown
 	const allCompanies = useIdxCompanies({ limit: 1000 });
 	const sectors = useMemo(() => {
 		if (!allCompanies.data?.companies) return [];
@@ -83,7 +79,6 @@ export function IdxExplorerPage() {
 		[totalPages],
 	);
 
-	// Keyboard: / to focus search
 	useKeyboardShortcut("/", () => {
 		searchRef.current?.focus();
 	}, []);
@@ -92,8 +87,13 @@ export function IdxExplorerPage() {
 		<div className="mx-auto max-w-[1600px] p-4">
 			<IdxNav />
 			<div className="mb-4">
-				<h1 className="font-mono text-lg font-semibold tracking-wide text-white">IDX Explorer</h1>
-				<p className="mt-1 text-sm text-t-text-secondary">
+				<h1
+					className="break-words text-3xl font-semibold tracking-tight text-ink sm:text-[2.25rem]"
+					style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.015em" }}
+				>
+					IDX Explorer
+				</h1>
+				<p className="mt-2 text-sm leading-6 text-ink-3">
 					Browse all IDX-listed companies and exchange member brokers.
 				</p>
 			</div>
@@ -114,20 +114,20 @@ export function IdxExplorerPage() {
 				<>
 					<div className="mb-4 flex flex-wrap gap-3">
 						<div className="relative min-w-[200px] flex-1">
-							<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-t-text-muted" />
+							<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-4" />
 							<input
 								ref={searchRef}
 								type="text"
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
 								placeholder="Search by name or code... ( / )"
-								className="w-full rounded-lg border border-white/10 bg-white/[0.04] py-2 pl-9 pr-3 font-mono text-sm text-white placeholder-t-text-muted outline-none transition-colors focus:border-t-amber/50 focus:bg-white/[0.06]"
+								className="w-full rounded-[12px] border border-rule bg-paper-2 py-2 pl-9 pr-3 font-mono text-sm text-ink placeholder:text-ink-4 outline-none transition-colors focus:border-ember-500 focus:bg-card focus:ring-2 focus:ring-ember-500/15"
 							/>
 						</div>
 						<select
 							value={sector}
 							onChange={(e) => handleSectorChange(e.target.value)}
-							className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 font-mono text-sm text-t-text-secondary outline-none transition-colors focus:border-t-amber/50"
+							className="rounded-[12px] border border-rule bg-paper-2 px-3 py-2 font-mono text-sm text-ink-2 outline-none transition-colors focus:border-ember-500 focus:ring-2 focus:ring-ember-500/15"
 						>
 							<option value="">All Sectors</option>
 							{sectors.map((s) => (
@@ -139,7 +139,7 @@ export function IdxExplorerPage() {
 						<select
 							value={board}
 							onChange={(e) => handleBoardChange(e.target.value)}
-							className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 font-mono text-sm text-t-text-secondary outline-none transition-colors focus:border-t-amber/50"
+							className="rounded-[12px] border border-rule bg-paper-2 px-3 py-2 font-mono text-sm text-ink-2 outline-none transition-colors focus:border-ember-500 focus:ring-2 focus:ring-ember-500/15"
 						>
 							<option value="">All Boards</option>
 							{boards.map((b) => (
@@ -151,9 +151,9 @@ export function IdxExplorerPage() {
 					</div>
 
 					{isLoading ? (
-						<Skeleton className="h-[400px] w-full rounded-xl" />
+						<Skeleton className="h-[400px] w-full rounded-[18px]" />
 					) : error ? (
-						<div className="rounded-2xl border border-dashed border-t-border p-8 text-center text-sm text-t-text-muted">
+						<div className="rounded-[18px] border border-dashed border-rule bg-paper-2/60 p-8 text-center text-sm text-ink-4">
 							Failed to load company data.
 						</div>
 					) : (
@@ -161,7 +161,7 @@ export function IdxExplorerPage() {
 							<CompanyTable companies={filtered} />
 							{totalPages > 1 && (
 								<div className="mt-4 flex items-center justify-between">
-									<span className="font-mono text-xs text-t-text-muted">
+									<span className="font-mono text-xs text-ink-4">
 										Showing {offset + 1}-{Math.min(offset + PAGE_SIZE, totalItems)} of {totalItems}
 									</span>
 									<div className="flex items-center gap-1">
@@ -175,7 +175,7 @@ export function IdxExplorerPage() {
 											page === "..." ? (
 												<span
 													key={`ellipsis-${page}`}
-													className="px-2 font-mono text-xs text-t-text-muted"
+													className="px-2 font-mono text-xs text-ink-4"
 												>
 													...
 												</span>
@@ -213,10 +213,10 @@ export function IdxExplorerPage() {
 function SectorsTab() {
 	const { data, isLoading, error } = useIdxSectors();
 
-	if (isLoading) return <Skeleton className="h-[400px] w-full rounded-xl" />;
+	if (isLoading) return <Skeleton className="h-[400px] w-full rounded-[18px]" />;
 	if (error || !data) {
 		return (
-			<div className="rounded-2xl border border-dashed border-t-border p-8 text-center text-sm text-t-text-muted">
+			<div className="rounded-[18px] border border-dashed border-rule bg-paper-2/60 p-8 text-center text-sm text-ink-4">
 				Failed to load sector data.
 			</div>
 		);
@@ -248,8 +248,8 @@ function TabButton({
 			className={clsx(
 				"rounded-full border px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] transition-colors",
 				active
-					? "border-white/20 bg-white text-black"
-					: "border-white/10 bg-white/[0.04] text-t-text-secondary hover:bg-white/10 hover:text-white",
+					? "border-ink bg-ink text-paper"
+					: "border-rule bg-card text-ink-3 hover:bg-paper-2 hover:text-ink",
 			)}
 		>
 			{children}
@@ -274,11 +274,11 @@ function PaginationButton({
 			disabled={disabled}
 			onClick={onClick}
 			className={clsx(
-				"min-w-[32px] rounded-lg border px-2 py-1 font-mono text-xs transition-colors",
-				disabled && "cursor-not-allowed opacity-30",
+				"min-w-[32px] rounded-[10px] border px-2 py-1 font-mono text-xs transition-colors",
+				disabled && "cursor-not-allowed opacity-40",
 				active
-					? "border-white/20 bg-white text-black"
-					: "border-white/10 bg-white/[0.04] text-t-text-secondary hover:bg-white/10 hover:text-white",
+					? "border-ink bg-ink text-paper"
+					: "border-rule bg-card text-ink-3 hover:bg-paper-2 hover:text-ink",
 			)}
 		>
 			{children}

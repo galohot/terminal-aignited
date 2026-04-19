@@ -11,7 +11,7 @@ export function ChartToolbar({
 	onSelect,
 }: ChartToolbarProps) {
 	return (
-		<div className="flex flex-wrap items-center gap-1 border-b border-white/8 px-4 py-2">
+		<div className="flex flex-wrap items-center gap-1 border-b border-rule px-4 py-2">
 			{PERIOD_OPTIONS.map((opt, i) => (
 				<button
 					key={opt.label}
@@ -20,8 +20,8 @@ export function ChartToolbar({
 					className={clsx(
 						"rounded-full px-2.5 py-1 font-mono text-xs transition-colors",
 						i === selectedIndex
-							? "bg-white text-black"
-							: "text-t-text-muted hover:bg-t-hover hover:text-t-text-secondary",
+							? "bg-ink text-paper"
+							: "text-ink-4 hover:bg-paper-2 hover:text-ink",
 					)}
 				>
 					{opt.label}

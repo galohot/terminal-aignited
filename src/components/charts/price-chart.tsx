@@ -33,27 +33,27 @@ export function PriceChart({ data, height = 400, realtimePrice }: PriceChartProp
 			width: container.clientWidth,
 			height,
 			layout: {
-				background: { color: "#0a0a0a" },
-				textColor: "#a3a3a3",
+				background: { color: "#ffffff" },
+				textColor: "#55598a",
 				fontFamily: "'JetBrains Mono', monospace",
 				fontSize: 11,
 			},
 			grid: {
-				vertLines: { color: "#1a1a1a" },
-				horzLines: { color: "#1a1a1a" },
+				vertLines: { color: "#f2ede4" },
+				horzLines: { color: "#f2ede4" },
 			},
 			crosshair: { mode: 0 },
-			rightPriceScale: { borderColor: "#262626" },
-			timeScale: { borderColor: "#262626" },
+			rightPriceScale: { borderColor: "#e7e0d2" },
+			timeScale: { borderColor: "#e7e0d2" },
 		});
 		chartRef.current = chart;
 
 		const candleOpts: DeepPartial<CandlestickSeriesOptions> = {
-			upColor: "#22c55e",
-			downColor: "#ef4444",
+			upColor: "#17a568",
+			downColor: "#d2344a",
 			borderVisible: false,
-			wickUpColor: "#22c55e",
-			wickDownColor: "#ef4444",
+			wickUpColor: "#17a568",
+			wickDownColor: "#d2344a",
 		};
 		const candleSeries = chart.addSeries(CandlestickSeries, candleOpts);
 		candleSeries.setData(
@@ -79,7 +79,7 @@ export function PriceChart({ data, height = 400, realtimePrice }: PriceChartProp
 			data.map((d) => ({
 				time: d.date as string,
 				value: d.volume,
-				color: d.close >= d.open ? "#22c55e40" : "#ef444440",
+				color: d.close >= d.open ? "#17a56840" : "#d2344a40",
 			})),
 		);
 		volumeSeriesRef.current = volumeSeries;
@@ -121,7 +121,7 @@ export function PriceChart({ data, height = 400, realtimePrice }: PriceChartProp
 		volumeSeriesRef.current.update({
 			time,
 			value: realtimePrice.volume || lastPoint.volume,
-			color: isUp ? "#22c55e40" : "#ef444440",
+			color: isUp ? "#17a56840" : "#d2344a40",
 		});
 	}, [realtimePrice, data]);
 

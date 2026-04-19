@@ -57,22 +57,22 @@ export function FinancialsPage() {
 
 	return (
 		<div>
-			<div className="flex items-center gap-3 border-b border-t-border bg-t-surface px-4 py-3">
+			<div className="flex items-center gap-3 border-b border-rule bg-card px-4 py-3">
 				<Link
 					to={`/stock/${symbol}`}
-					className="font-mono text-sm text-t-text-muted transition-colors hover:text-t-text-secondary"
+					className="font-mono text-sm text-ink-4 transition-colors hover:text-ember-700"
 				>
 					←
 				</Link>
-				<span className="font-mono text-lg font-medium text-t-green">{symbol}</span>
-				<span className="text-sm text-t-text-secondary">{quote.data?.name ?? ""} — Financials</span>
+				<span className="font-mono text-lg font-semibold text-ember-600">{symbol}</span>
+				<span className="text-sm text-ink-3">{quote.data?.name ?? ""} — Financials</span>
 				{livePrice != null && (
-					<span className="ml-auto font-mono text-sm text-t-text">
+					<span className="ml-auto font-mono text-sm text-ink">
 						{formatPrice(livePrice, quote.data?.currency)}
 					</span>
 				)}
 				{liveChange != null && (
-					<span className={`font-mono text-sm ${liveChange >= 0 ? "text-t-green" : "text-t-red"}`}>
+					<span className={`font-mono text-sm ${liveChange >= 0 ? "text-pos" : "text-neg"}`}>
 						{formatPercent(liveChange)}
 					</span>
 				)}
@@ -90,7 +90,7 @@ export function FinancialsPage() {
 					<Skeleton className="h-[400px] w-full" />
 				</div>
 			) : financials.error ? (
-				<p className="p-8 text-center font-mono text-sm text-t-text-muted">
+				<p className="p-8 text-center font-mono text-sm text-ink-4">
 					Failed to load financial data
 				</p>
 			) : financials.data ? (

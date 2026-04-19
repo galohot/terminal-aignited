@@ -8,7 +8,7 @@ export function DisclosuresFeed({ kode, limit = 15 }: { kode?: string; limit?: n
 
 	if (error || !data?.disclosures?.length) {
 		return (
-			<div className="rounded-2xl border border-dashed border-t-border p-6 text-center text-sm text-t-text-muted">
+			<div className="rounded-[18px] border border-dashed border-rule bg-paper-2/60 p-6 text-center text-sm text-ink-4">
 				No disclosures available.
 			</div>
 		);
@@ -16,22 +16,22 @@ export function DisclosuresFeed({ kode, limit = 15 }: { kode?: string; limit?: n
 
 	return (
 		<div>
-			<div className="mb-2 font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted">
+			<div className="mb-2 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4">
 				Disclosures
 			</div>
-			<div className="space-y-1.5 rounded-xl border border-white/8 p-3">
+			<div className="space-y-1.5 rounded-[18px] border border-rule bg-card p-3">
 				{data.disclosures.map((d) => (
 					<div
 						key={`${d.submitted_date}-${d.kode}-${d.headline.slice(0, 30)}`}
-						className="group flex gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-white/[0.04]"
+						className="group flex gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-paper-2/60"
 					>
-						<div className="shrink-0 pt-0.5 font-mono text-[10px] text-t-text-muted">
+						<div className="shrink-0 pt-0.5 font-mono text-[10px] text-ink-4">
 							{d.submitted_date.slice(0, 10)}
 						</div>
 						<div className="min-w-0 flex-1">
 							<div className="flex items-center gap-2">
 								{d.kode && (
-									<span className="shrink-0 font-mono text-[10px] font-semibold text-t-green">
+									<span className="shrink-0 font-mono text-[10px] font-semibold text-ember-600">
 										{d.kode}
 									</span>
 								)}
@@ -40,16 +40,16 @@ export function DisclosuresFeed({ kode, limit = 15 }: { kode?: string; limit?: n
 										href={d.attachment_url}
 										target="_blank"
 										rel="noreferrer"
-										className="truncate text-xs text-t-text transition-colors group-hover:text-t-blue"
+										className="truncate text-xs text-ink transition-colors group-hover:text-ember-600"
 									>
 										{d.headline}
 									</a>
 								) : (
-									<span className="truncate text-xs text-t-text">{d.headline}</span>
+									<span className="truncate text-xs text-ink">{d.headline}</span>
 								)}
 							</div>
 							{d.source && (
-								<div className="mt-0.5 font-mono text-[9px] text-t-text-muted">{d.source}</div>
+								<div className="mt-0.5 font-mono text-[9px] text-ink-4">{d.source}</div>
 							)}
 						</div>
 					</div>

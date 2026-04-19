@@ -8,14 +8,14 @@ import {
 	type IChartApi,
 } from "lightweight-charts";
 import { useEffect, useRef } from "react";
-import type { HistoryPoint } from "../../types/market";
 import type { WyckoffAnalysis } from "../../types/flow";
+import type { HistoryPoint } from "../../types/market";
 
 const PHASE_COLORS: Record<string, string> = {
-	accumulation: "#3b82f6", // blue
-	markup: "#22c55e",       // green
-	distribution: "#f59e0b", // amber
-	markdown: "#ef4444",     // red
+	accumulation: "#1d5fc9",
+	markup: "#17a568",
+	distribution: "#ff8a2a",
+	markdown: "#d2344a",
 };
 
 interface FlowPriceChartProps {
@@ -36,28 +36,28 @@ export function FlowPriceChart({ data, wyckoff, height = 400 }: FlowPriceChartPr
 			width: container.clientWidth,
 			height,
 			layout: {
-				background: { color: "#0a0a0a" },
-				textColor: "#a3a3a3",
+				background: { color: "#ffffff" },
+				textColor: "#55598a",
 				fontFamily: "'JetBrains Mono', monospace",
 				fontSize: 11,
 			},
 			grid: {
-				vertLines: { color: "#1a1a1a" },
-				horzLines: { color: "#1a1a1a" },
+				vertLines: { color: "#f2ede4" },
+				horzLines: { color: "#f2ede4" },
 			},
 			crosshair: { mode: 0 },
-			rightPriceScale: { borderColor: "#262626" },
-			timeScale: { borderColor: "#262626" },
+			rightPriceScale: { borderColor: "#e7e0d2" },
+			timeScale: { borderColor: "#e7e0d2" },
 		});
 		chartRef.current = chart;
 
 		// Candlestick series
 		const candleOpts: DeepPartial<CandlestickSeriesOptions> = {
-			upColor: "#22c55e",
-			downColor: "#ef4444",
+			upColor: "#17a568",
+			downColor: "#d2344a",
 			borderVisible: false,
-			wickUpColor: "#22c55e",
-			wickDownColor: "#ef4444",
+			wickUpColor: "#17a568",
+			wickDownColor: "#d2344a",
 		};
 		const candleSeries = chart.addSeries(CandlestickSeries, candleOpts);
 		candleSeries.setData(
@@ -89,11 +89,11 @@ export function FlowPriceChart({ data, wyckoff, height = 400 }: FlowPriceChartPr
 		volumeSeries.setData(
 			data.map((d, i) => {
 				const phase = phaseMap.get(i);
-				const baseColor = phase ? PHASE_COLORS[phase] : (d.close >= d.open ? "#22c55e" : "#ef4444");
+				const baseColor = phase ? PHASE_COLORS[phase] : d.close >= d.open ? "#17a568" : "#d2344a";
 				return {
 					time: d.date as string,
 					value: d.volume,
-					color: baseColor + "50", // 30% opacity
+					color: baseColor + "50",
 				};
 			}),
 		);
@@ -103,7 +103,7 @@ export function FlowPriceChart({ data, wyckoff, height = 400 }: FlowPriceChartPr
 			if (seg.startIndex > 0 && seg.startIndex < data.length) {
 				candleSeries.createPriceLine({
 					price: data[seg.startIndex].close,
-					color: (PHASE_COLORS[seg.phase] ?? "#6b7280") + "60",
+					color: (PHASE_COLORS[seg.phase] ?? "#8b8fb0") + "60",
 					lineWidth: 1,
 					lineStyle: 2,
 					axisLabelVisible: false,

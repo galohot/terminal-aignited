@@ -65,14 +65,11 @@ export function StockHeatmap({ stocks }: { stocks: HeatmapStock[] }) {
 			})),
 		};
 
-		const maxAbs = Math.max(
-			...stocks.map((s) => Math.abs(s.change_percent)),
-			1,
-		);
+		const maxAbs = Math.max(...stocks.map((s) => Math.abs(s.change_percent)), 1);
 		const colorScale = d3
 			.scaleLinear<string>()
 			.domain([-maxAbs, 0, maxAbs])
-			.range(["#ef4444", "#262626", "#22c55e"])
+			.range(["#d2344a", "#f2ede4", "#17a568"])
 			.clamp(true);
 
 		const root = d3
@@ -80,26 +77,27 @@ export function StockHeatmap({ stocks }: { stocks: HeatmapStock[] }) {
 			.sum((d) => (d as StockLeafDatum).value ?? 0)
 			.sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
 
-		d3.treemap<TreeDatum>()
-			.size([W, H])
-			.paddingOuter(2)
-			.paddingInner(1)
-			.paddingTop(14)
-			.round(true)(root);
+		d3.treemap<TreeDatum>().size([W, H]).paddingOuter(2).paddingInner(1).paddingTop(14).round(true)(
+			root,
+		);
 
 		const leaves = root.leaves() as d3.HierarchyRectangularNode<StockLeafDatum>[];
 
 		// Draw sector labels
-		const sectorNodes = root.children as d3.HierarchyRectangularNode<SectorGroupDatum>[] | undefined;
+		const sectorNodes = root.children as
+			| d3.HierarchyRectangularNode<SectorGroupDatum>[]
+			| undefined;
 		if (sectorNodes) {
 			svg
-				.selectAll<SVGTextElement, d3.HierarchyRectangularNode<SectorGroupDatum>>("text.sector-label")
+				.selectAll<SVGTextElement, d3.HierarchyRectangularNode<SectorGroupDatum>>(
+					"text.sector-label",
+				)
 				.data(sectorNodes.filter((d) => d.x1 - d.x0 > 40))
 				.join("text")
 				.attr("class", "sector-label")
 				.attr("x", (d) => d.x0 + 3)
 				.attr("y", (d) => d.y0 + 11)
-				.attr("fill", "#6b7280")
+				.attr("fill", "#55598a")
 				.attr("font-size", "9px")
 				.attr("font-family", "ui-monospace, monospace")
 				.attr("pointer-events", "none")
@@ -123,7 +121,7 @@ export function StockHeatmap({ stocks }: { stocks: HeatmapStock[] }) {
 			.attr("width", (d) => Math.max(0, d.x1 - d.x0))
 			.attr("height", (d) => Math.max(0, d.y1 - d.y0))
 			.attr("fill", (d) => colorScale(d.data.stock.change_percent))
-			.attr("stroke", "#0a0a0a")
+			.attr("stroke", "#ffffff")
 			.attr("stroke-width", 0.5)
 			.attr("rx", 2);
 
@@ -143,7 +141,7 @@ export function StockHeatmap({ stocks }: { stocks: HeatmapStock[] }) {
 					.attr("y", cellH / 2 - (cellH > 30 ? 3 : 0))
 					.attr("text-anchor", "middle")
 					.attr("dominant-baseline", "central")
-					.attr("fill", "#ffffffcc")
+					.attr("fill", "#141735")
 					.attr("font-size", cellW > 60 ? "10px" : "8px")
 					.attr("font-weight", "600")
 					.attr("font-family", "ui-monospace, monospace")
@@ -157,7 +155,7 @@ export function StockHeatmap({ stocks }: { stocks: HeatmapStock[] }) {
 						.attr("y", cellH / 2 + 10)
 						.attr("text-anchor", "middle")
 						.attr("dominant-baseline", "central")
-						.attr("fill", change >= 0 ? "#22c55ecc" : "#ef4444cc")
+						.attr("fill", change >= 0 ? "#0b7a4a" : "#a02636")
 						.attr("font-size", "8px")
 						.attr("font-family", "ui-monospace, monospace")
 						.attr("pointer-events", "none")
@@ -168,7 +166,7 @@ export function StockHeatmap({ stocks }: { stocks: HeatmapStock[] }) {
 		// Hover
 		cells
 			.on("mouseover", function (event: MouseEvent, d) {
-				d3.select(this).select("rect").attr("stroke", "#ffffff40").attr("stroke-width", 1.5);
+				d3.select(this).select("rect").attr("stroke", "#141735").attr("stroke-width", 1.5);
 				const rect = containerRef.current?.getBoundingClientRect();
 				if (!rect) return;
 				setTooltip({
@@ -177,7 +175,7 @@ export function StockHeatmap({ stocks }: { stocks: HeatmapStock[] }) {
 					stock: d.data.stock,
 				});
 			})
-			.on("mousemove", function (event: MouseEvent) {
+			.on("mousemove", (event: MouseEvent) => {
 				const rect = containerRef.current?.getBoundingClientRect();
 				if (!rect) return;
 				setTooltip((prev) =>
@@ -185,7 +183,7 @@ export function StockHeatmap({ stocks }: { stocks: HeatmapStock[] }) {
 				);
 			})
 			.on("mouseout", function () {
-				d3.select(this).select("rect").attr("stroke", "#0a0a0a").attr("stroke-width", 0.5);
+				d3.select(this).select("rect").attr("stroke", "#ffffff").attr("stroke-width", 0.5);
 				setTooltip(null);
 			});
 
@@ -195,23 +193,23 @@ export function StockHeatmap({ stocks }: { stocks: HeatmapStock[] }) {
 	}, [stocks, isEmpty]);
 
 	return (
-		<div className="rounded-lg border border-t-border bg-white/[0.02]">
-			<div className="border-b border-t-border px-4 py-3">
-				<h3 className="font-mono text-sm font-semibold text-white">Stock Heatmap</h3>
-				<p className="mt-0.5 font-mono text-[10px] text-t-text-muted">
+		<div className="rounded-[18px] border border-rule bg-card">
+			<div className="border-b border-rule px-4 py-3">
+				<h3 className="font-mono text-sm font-semibold text-ink">Stock Heatmap</h3>
+				<p className="mt-0.5 font-mono text-[10px] text-ink-4">
 					{stocks.length} stocks · Size = market cap · Color = daily change
 				</p>
 			</div>
 			{isEmpty ? (
 				<div className="flex h-[360px] items-center justify-center">
-					<p className="font-mono text-xs text-t-text-muted">No heatmap data available</p>
+					<p className="font-mono text-xs text-ink-4">No heatmap data available</p>
 				</div>
 			) : (
 				<div ref={containerRef} className="relative w-full" style={{ height: 360 }}>
 					<svg ref={svgRef} className="w-full" style={{ height: 360, display: "block" }} />
 					{tooltip && (
 						<div
-							className="pointer-events-none absolute z-10 rounded-lg border border-white/10 bg-black/90 px-3 py-2 shadow-xl"
+							className="pointer-events-none absolute z-10 rounded-[12px] border border-rule bg-card px-3 py-2 shadow-[0_10px_30px_rgba(20,23,53,0.12)]"
 							style={{
 								left: tooltip.x + 12,
 								top: tooltip.y - 10,
@@ -221,19 +219,20 @@ export function StockHeatmap({ stocks }: { stocks: HeatmapStock[] }) {
 										: undefined,
 							}}
 						>
-							<div className="font-mono text-sm font-semibold text-white">
+							<div className="font-mono text-sm font-semibold text-ink">
 								{tooltip.stock.symbol.replace(".JK", "")}
 							</div>
-							<div className="font-mono text-[10px] text-t-text-muted">{tooltip.stock.name}</div>
+							<div className="font-mono text-[10px] text-ink-4">{tooltip.stock.name}</div>
 							<div
 								className={`mt-1 font-mono text-xs font-medium ${
-									tooltip.stock.change_percent >= 0 ? "text-t-green" : "text-t-red"
+									tooltip.stock.change_percent >= 0 ? "text-pos" : "text-neg"
 								}`}
 							>
 								{tooltip.stock.change_percent >= 0 ? "+" : ""}
-								{tooltip.stock.change_percent.toFixed(2)}% · Rp{tooltip.stock.price.toLocaleString()}
+								{tooltip.stock.change_percent.toFixed(2)}% · Rp
+								{tooltip.stock.price.toLocaleString()}
 							</div>
-							<div className="mt-0.5 font-mono text-[10px] text-t-text-muted">
+							<div className="mt-0.5 font-mono text-[10px] text-ink-4">
 								{tooltip.stock.sector} · Vol {(tooltip.stock.volume / 1e6).toFixed(1)}M
 							</div>
 						</div>

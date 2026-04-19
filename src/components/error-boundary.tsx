@@ -25,9 +25,14 @@ export class ErrorBoundary extends Component<Props, State> {
 	render() {
 		if (this.state.hasError) {
 			return (
-				<div className="flex h-screen flex-col items-center justify-center gap-4 bg-t-bg p-8 text-center">
-					<div className="font-mono text-lg font-semibold text-white">Something went wrong</div>
-					<p className="max-w-md text-sm text-t-text-secondary">
+				<div className="flex h-screen flex-col items-center justify-center gap-4 bg-paper p-8 text-center">
+					<div
+						className="text-[clamp(1.5rem,3vw,2rem)] leading-tight text-ink"
+						style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.015em" }}
+					>
+						Something <em className="text-ember-600">went wrong</em>
+					</div>
+					<p className="max-w-md font-mono text-sm text-ink-3">
 						An unexpected error occurred. Try refreshing the page.
 					</p>
 					<button
@@ -36,7 +41,7 @@ export class ErrorBoundary extends Component<Props, State> {
 							this.setState({ hasError: false });
 							window.location.href = "/";
 						}}
-						className="mt-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 font-mono text-xs uppercase tracking-wider text-t-text-secondary transition-colors hover:bg-white/10 hover:text-white"
+						className="mt-2 rounded-full border border-rule bg-card px-4 py-2 font-mono text-xs uppercase tracking-wider text-ink-3 transition-colors hover:border-ember-400/40 hover:bg-ember-50 hover:text-ember-700"
 					>
 						Reload
 					</button>

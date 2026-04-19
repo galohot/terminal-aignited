@@ -99,8 +99,8 @@ export function CommandBar() {
 
 	return (
 		<div ref={containerRef} className="relative min-w-0 flex-1 sm:max-w-[420px]">
-			<div className="flex h-[38px] items-center gap-2 rounded-[10px] border border-aig-navy-3/70 bg-aig-navy-1 px-3 transition-colors focus-within:border-aig-ember-500 focus-within:ring-2 focus-within:ring-aig-ember-500/10">
-				<Search className="h-4 w-4 shrink-0 text-aig-text-4" />
+			<div className="flex h-[40px] items-center gap-2 rounded-full border border-rule bg-paper-2 px-3.5 transition-colors focus-within:border-ember-500 focus-within:bg-card focus-within:ring-2 focus-within:ring-ember-500/15">
+				<Search className="h-4 w-4 shrink-0 text-ink-4" />
 				<input
 					ref={inputRef}
 					type="text"
@@ -112,14 +112,14 @@ export function CommandBar() {
 					onFocus={() => setIsOpen(true)}
 					onKeyDown={handleKeyDown}
 					placeholder="Search ticker, company, or command…"
-					className="w-full bg-transparent font-mono text-xs tracking-[0.04em] text-aig-text placeholder:text-aig-text-4 focus:outline-none"
+					className="w-full bg-transparent font-mono text-xs tracking-[0.04em] text-ink placeholder:text-ink-4 focus:outline-none"
 				/>
-				<kbd className="hidden shrink-0 rounded-md border border-aig-navy-3/70 bg-white/[0.04] px-1.5 py-0.5 font-mono text-[10px] text-aig-text-4 sm:inline">
+				<kbd className="hidden shrink-0 rounded-md border border-rule bg-card px-1.5 py-0.5 font-mono text-[10px] text-ink-4 sm:inline">
 					⌘ K
 				</kbd>
 			</div>
 			{isOpen && (
-				<div className="absolute top-full left-0 z-50 mt-1 w-full rounded-xl border border-aig-navy-3/70 bg-aig-navy-2 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
+				<div className="absolute top-full left-0 z-50 mt-1 w-full rounded-xl border border-rule bg-card shadow-[0_10px_30px_rgba(20,23,53,0.12)]">
 					<SearchResults
 						results={results}
 						recentSearches={recentSearches}

@@ -25,43 +25,43 @@ export function KeyStats({ quote, fundamentals }: KeyStatsProps) {
 	];
 
 	return (
-		<div className="rounded border border-t-border bg-t-surface">
-			<div className="border-b border-t-border px-3 py-2">
-				<h3 className="text-xs font-medium uppercase tracking-wider text-t-text-secondary">
+		<div className="rounded-[18px] border border-rule bg-card">
+			<div className="border-b border-rule px-3 py-2">
+				<h3 className="text-xs font-medium uppercase tracking-wider text-ink-3">
 					Key Stats
 				</h3>
 			</div>
-			<div className="divide-y divide-t-border">
+			<div className="divide-y divide-rule">
 				{stats.map(([label, value]) => (
 					<div key={label} className="flex items-center justify-between px-3 py-1.5">
-						<span className="text-xs text-t-text-muted">{label}</span>
-						<span className="font-mono text-xs text-t-text">{value}</span>
+						<span className="text-xs text-ink-4">{label}</span>
+						<span className="font-mono text-xs text-ink">{value}</span>
 					</div>
 				))}
 			</div>
 			{fundamentals?.earnings && (
 				<>
-					<div className="border-t border-t-border px-3 py-2">
-						<h3 className="text-xs font-medium uppercase tracking-wider text-t-text-secondary">
+					<div className="border-t border-rule px-3 py-2">
+						<h3 className="text-xs font-medium uppercase tracking-wider text-ink-3">
 							Earnings
 						</h3>
 					</div>
-					<div className="divide-y divide-t-border">
+					<div className="divide-y divide-rule">
 						<div className="flex items-center justify-between px-3 py-1.5">
-							<span className="text-xs text-t-text-muted">Next</span>
-							<span className="font-mono text-xs text-t-text">
+							<span className="text-xs text-ink-4">Next</span>
+							<span className="font-mono text-xs text-ink">
 								{fundamentals.earnings.next_date}
 							</span>
 						</div>
 						<div className="flex items-center justify-between px-3 py-1.5">
-							<span className="text-xs text-t-text-muted">EPS Est</span>
-							<span className="font-mono text-xs text-t-text">
+							<span className="text-xs text-ink-4">EPS Est</span>
+							<span className="font-mono text-xs text-ink">
 								{formatPrice(fundamentals.earnings.eps_estimate)}
 							</span>
 						</div>
 						<div className="flex items-center justify-between px-3 py-1.5">
-							<span className="text-xs text-t-text-muted">Rev Est</span>
-							<span className="font-mono text-xs text-t-text">
+							<span className="text-xs text-ink-4">Rev Est</span>
+							<span className="font-mono text-xs text-ink">
 								{formatMarketCap(fundamentals.earnings.revenue_estimate)}
 							</span>
 						</div>

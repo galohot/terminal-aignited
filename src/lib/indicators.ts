@@ -1,4 +1,3 @@
-import type { HistoryPoint } from "../types/market";
 import type {
 	Divergence,
 	DivergenceAnalysis,
@@ -8,6 +7,7 @@ import type {
 	RSIAnalysis,
 	VolumeTrend,
 } from "../types/flow";
+import type { HistoryPoint } from "../types/market";
 
 /**
  * Compute Money Flow Index (MFI) — a volume-weighted RSI.
@@ -200,10 +200,10 @@ export function detectDivergences(
 	const recentCutoff = data.length - 20;
 	const current =
 		divergences.length > 0
-			? divergences.find((d) => {
+			? (divergences.find((d) => {
 					const endIdx = data.findIndex((p) => p.date === d.endDate);
 					return endIdx >= recentCutoff;
-				}) ?? null
+				}) ?? null)
 			: null;
 
 	return { divergences, current };

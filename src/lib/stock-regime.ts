@@ -1,5 +1,5 @@
-import type { HistoryPoint } from "../types/market";
 import type { CapSize, LiquidityTier, StockRegime } from "../types/flow";
+import type { HistoryPoint } from "../types/market";
 
 const CAP_THRESHOLDS: { min: number; size: CapSize; label: string }[] = [
 	{ min: 10_000_000_000_000, size: "large", label: "Large Cap" },
@@ -36,8 +36,11 @@ export function classifyRegime(
 	const cap = marketCap ?? 0;
 	const turnover = avgDailyTurnover ?? 0;
 
-	const capEntry = CAP_THRESHOLDS.find((t) => cap >= t.min) ?? CAP_THRESHOLDS[CAP_THRESHOLDS.length - 1];
-	const liqEntry = LIQUIDITY_THRESHOLDS.find((t) => turnover >= t.min) ?? LIQUIDITY_THRESHOLDS[LIQUIDITY_THRESHOLDS.length - 1];
+	const capEntry =
+		CAP_THRESHOLDS.find((t) => cap >= t.min) ?? CAP_THRESHOLDS[CAP_THRESHOLDS.length - 1];
+	const liqEntry =
+		LIQUIDITY_THRESHOLDS.find((t) => turnover >= t.min) ??
+		LIQUIDITY_THRESHOLDS[LIQUIDITY_THRESHOLDS.length - 1];
 
 	return {
 		capSize: capEntry.size,

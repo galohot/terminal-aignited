@@ -18,10 +18,10 @@ interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
 }
 
 const ROLE_COLORS: Record<string, string> = {
-	director: "#60a5fa",
-	commissioner: "#f59e0b",
-	shareholder: "#22c55e",
-	person: "#a78bfa",
+	director: "#1d5fc9",
+	commissioner: "#ff8a2a",
+	shareholder: "#17a568",
+	person: "#7a4bc8",
 };
 
 export function InsiderNetworkGraph({
@@ -52,10 +52,7 @@ export function InsiderNetworkGraph({
 		color: string;
 	} | null>(null);
 
-	const peersWithNames = useMemo(
-		() => peers.filter((p) => p.names && p.names.length > 0),
-		[peers],
-	);
+	const peersWithNames = useMemo(() => peers.filter((p) => p.names && p.names.length > 0), [peers]);
 
 	useEffect(() => {
 		const svg = svgRef.current;
@@ -163,10 +160,7 @@ export function InsiderNetworkGraph({
 			.attr("y", "-50%")
 			.attr("width", "200%")
 			.attr("height", "200%");
-		glow
-			.append("feGaussianBlur")
-			.attr("stdDeviation", "4")
-			.attr("result", "coloredBlur");
+		glow.append("feGaussianBlur").attr("stdDeviation", "4").attr("result", "coloredBlur");
 		const feMerge = glow.append("feMerge");
 		feMerge.append("feMergeNode").attr("in", "coloredBlur");
 		feMerge.append("feMergeNode").attr("in", "SourceGraphic");
@@ -183,7 +177,7 @@ export function InsiderNetworkGraph({
 			.attr("orient", "auto")
 			.append("path")
 			.attr("d", "M0,-4L8,0L0,4")
-			.attr("fill", "#ffffff18");
+			.attr("fill", "#c9c0a7");
 
 		// Root group (for zoom/pan)
 		const g = sel.append("g").attr("class", "root");
@@ -232,7 +226,7 @@ export function InsiderNetworkGraph({
 			.selectAll<SVGLineElement, GraphLink>("line")
 			.data(links)
 			.join("line")
-			.attr("stroke", "#ffffff18")
+			.attr("stroke", "#d8cfb9")
 			.attr("stroke-width", 1);
 
 		// Drag
@@ -290,7 +284,7 @@ export function InsiderNetworkGraph({
 					.attr("stroke", (l) => {
 						const s = (l.source as GraphNode).id;
 						const t = (l.target as GraphNode).id;
-						return s === d.id || t === d.id ? "#ffffff60" : "#ffffff08";
+						return s === d.id || t === d.id ? "#2b2f57" : "#ece6d6";
 					})
 					.attr("stroke-width", (l) => {
 						const s = (l.source as GraphNode).id;
@@ -305,7 +299,9 @@ export function InsiderNetworkGraph({
 
 				const lines: string[] = [d.fullName];
 				if (d.type === "peer") {
-					lines.push(`${(topPeers.find((p) => p.kode_emiten === d.id)?.shared_insiders ?? 0)} shared insiders`);
+					lines.push(
+						`${topPeers.find((p) => p.kode_emiten === d.id)?.shared_insiders ?? 0} shared insiders`,
+					);
 					lines.push("Click to open profile");
 				} else if (d.type === "person" && d.role) {
 					lines.push(d.role.charAt(0).toUpperCase() + d.role.slice(1));
@@ -316,10 +312,10 @@ export function InsiderNetworkGraph({
 
 				const color =
 					d.type === "company"
-						? "#f59e0b"
+						? "#ff8a2a"
 						: d.type === "peer"
-							? "#60a5fa"
-							: ROLE_COLORS[d.role ?? "person"] ?? "#a78bfa";
+							? "#1d5fc9"
+							: (ROLE_COLORS[d.role ?? "person"] ?? "#7a4bc8");
 
 				setTooltip({ x: mx, y: my, lines, color });
 			})
@@ -328,7 +324,7 @@ export function InsiderNetworkGraph({
 					d3.select(this).select("circle").attr("opacity", 1);
 					d3.select(this).select("text").attr("opacity", 1);
 				});
-				linkSel.attr("stroke", "#ffffff18").attr("stroke-width", 1);
+				linkSel.attr("stroke", "#d8cfb9").attr("stroke-width", 1);
 				setTooltip(null);
 			})
 			.call(drag);
@@ -338,9 +334,9 @@ export function InsiderNetworkGraph({
 			.filter((d) => d.type === "company")
 			.append("circle")
 			.attr("r", 22)
-			.attr("fill", "#f59e0b")
+			.attr("fill", "#ff8a2a")
 			.attr("filter", "url(#glow)")
-			.attr("stroke", "#fbbf24")
+			.attr("stroke", "#ff6a0a")
 			.attr("stroke-width", 2);
 
 		// Circle — peer
@@ -348,9 +344,9 @@ export function InsiderNetworkGraph({
 			.filter((d) => d.type === "peer")
 			.append("circle")
 			.attr("r", 14)
-			.attr("fill", "#1d4ed8")
+			.attr("fill", "#1d5fc9")
 			.attr("fill-opacity", 0.9)
-			.attr("stroke", "#3b82f6")
+			.attr("stroke", "#2a7be3")
 			.attr("stroke-width", 1.5);
 
 		// Circle — person
@@ -374,7 +370,7 @@ export function InsiderNetworkGraph({
 			.attr("font-family", "ui-monospace, monospace")
 			.attr("font-size", "11px")
 			.attr("font-weight", "700")
-			.attr("fill", "#1a1100")
+			.attr("fill", "#ffffff")
 			.attr("pointer-events", "none");
 
 		// Labels — peer (below circle)
@@ -387,7 +383,7 @@ export function InsiderNetworkGraph({
 			.attr("font-family", "ui-monospace, monospace")
 			.attr("font-size", "9px")
 			.attr("font-weight", "600")
-			.attr("fill", "#bfdbfe")
+			.attr("fill", "#ffffff")
 			.attr("pointer-events", "none");
 
 		// Labels — person (name above circle)
@@ -427,44 +423,43 @@ export function InsiderNetworkGraph({
 		1;
 
 	return (
-		<div className="rounded border border-t-border bg-t-surface">
-			<div className="flex flex-wrap items-center justify-between gap-2 border-b border-t-border px-3 py-2">
+		<div className="rounded-[18px] border border-rule bg-card">
+			<div className="flex flex-wrap items-center justify-between gap-2 border-b border-rule px-3 py-2">
 				<div>
-					<h3 className="text-xs font-medium uppercase tracking-wider text-t-text-secondary">
+					<h3 className="text-xs font-medium uppercase tracking-wider text-ink-2">
 						Insider Network
 					</h3>
-					<p className="mt-0.5 font-mono text-[10px] text-t-text-muted">
-						{peersWithNames.slice(0, 20).length} peer companies · ~{totalNodes} nodes · scroll
-						to zoom, drag to pan
+					<p className="mt-0.5 font-mono text-[10px] text-ink-4">
+						{peersWithNames.slice(0, 20).length} peer companies · ~{totalNodes} nodes · scroll to
+						zoom, drag to pan
 					</p>
 				</div>
-				<div className="flex flex-wrap items-center gap-3 font-mono text-[10px] text-t-text-muted">
+				<div className="flex flex-wrap items-center gap-3 font-mono text-[10px] text-ink-4">
 					<span className="flex items-center gap-1.5">
-						<span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-400" />
+						<span className="inline-block h-2.5 w-2.5 rounded-full bg-ember-500" />
 						<span>Current / Commissioner</span>
 					</span>
 					<span className="flex items-center gap-1.5">
-						<span className="inline-block h-2.5 w-2.5 rounded-full bg-blue-500" />
+						<span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: "#1d5fc9" }} />
 						<span>Peer / Director</span>
 					</span>
 					<span className="flex items-center gap-1.5">
-						<span className="inline-block h-2.5 w-2.5 rounded-full bg-green-500" />
+						<span className="inline-block h-2.5 w-2.5 rounded-full bg-pos" />
 						<span>Shareholder</span>
 					</span>
 				</div>
 			</div>
 
 			<div ref={containerRef} className="relative h-[540px] w-full overflow-hidden">
-				<svg
-					ref={svgRef}
-					className="h-full w-full"
-					style={{ background: "transparent" }}
-				/>
+				<svg ref={svgRef} className="h-full w-full" style={{ background: "transparent" }} />
 				{tooltip && (
 					<div
-						className="pointer-events-none absolute z-10 max-w-[200px] rounded border border-white/10 bg-[#0d0d0d]/95 px-2.5 py-1.5 shadow-xl backdrop-blur-sm"
+						className="pointer-events-none absolute z-10 max-w-[200px] rounded border border-rule bg-card/95 px-2.5 py-1.5 shadow-xl backdrop-blur-sm"
 						style={{
-							left: Math.min(tooltip.x + 14, containerRef.current ? containerRef.current.clientWidth - 210 : tooltip.x + 14),
+							left: Math.min(
+								tooltip.x + 14,
+								containerRef.current ? containerRef.current.clientWidth - 210 : tooltip.x + 14,
+							),
 							top: Math.max(tooltip.y - 10, 4),
 						}}
 					>
@@ -474,7 +469,7 @@ export function InsiderNetworkGraph({
 								className="font-mono leading-snug"
 								style={{
 									fontSize: i === 0 ? "11px" : "10px",
-									color: i === 0 ? tooltip.color : "#6b7280",
+									color: i === 0 ? tooltip.color : "#55598a",
 									fontWeight: i === 0 ? 600 : 400,
 								}}
 							>

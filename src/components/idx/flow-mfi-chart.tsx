@@ -1,9 +1,9 @@
 import {
+	createChart,
+	type DeepPartial,
 	type IChartApi,
 	LineSeries,
 	type LineSeriesOptions,
-	createChart,
-	type DeepPartial,
 } from "lightweight-charts";
 import { useEffect, useRef } from "react";
 import type { MFIAnalysis } from "../../types/flow";
@@ -25,22 +25,22 @@ export function FlowMFIChart({ mfi, height = 150 }: FlowMFIChartProps) {
 			width: container.clientWidth,
 			height,
 			layout: {
-				background: { color: "#0a0a0a" },
-				textColor: "#a3a3a3",
+				background: { color: "#ffffff" },
+				textColor: "#55598a",
 				fontFamily: "'JetBrains Mono', monospace",
 				fontSize: 10,
 			},
 			grid: {
-				vertLines: { color: "#1a1a1a" },
-				horzLines: { color: "#1a1a1a" },
+				vertLines: { color: "#f2ede4" },
+				horzLines: { color: "#f2ede4" },
 			},
 			crosshair: { mode: 0 },
 			rightPriceScale: {
-				borderColor: "#262626",
+				borderColor: "#e7e0d2",
 				autoScale: false,
 				scaleMargins: { top: 0.05, bottom: 0.05 },
 			},
-			timeScale: { borderColor: "#262626", visible: false },
+			timeScale: { borderColor: "#e7e0d2", visible: false },
 		});
 		chartRef.current = chart;
 
@@ -50,7 +50,7 @@ export function FlowMFIChart({ mfi, height = 150 }: FlowMFIChartProps) {
 		});
 
 		const lineOpts: DeepPartial<LineSeriesOptions> = {
-			color: "#f59e0b",
+			color: "#ff8a2a",
 			lineWidth: 2,
 			priceFormat: { type: "custom", formatter: (v: number) => v.toFixed(0) },
 		};
@@ -65,15 +65,15 @@ export function FlowMFIChart({ mfi, height = 150 }: FlowMFIChartProps) {
 		// Overbought/oversold reference lines
 		series.createPriceLine({
 			price: 80,
-			color: "#ef444480",
+			color: "#d2344a80",
 			lineWidth: 1,
-			lineStyle: 2, // dashed
+			lineStyle: 2,
 			axisLabelVisible: true,
 			title: "OB",
 		});
 		series.createPriceLine({
 			price: 20,
-			color: "#22c55e80",
+			color: "#17a56880",
 			lineWidth: 1,
 			lineStyle: 2,
 			axisLabelVisible: true,
@@ -81,7 +81,7 @@ export function FlowMFIChart({ mfi, height = 150 }: FlowMFIChartProps) {
 		});
 		series.createPriceLine({
 			price: 50,
-			color: "#ffffff20",
+			color: "#8b8fb060",
 			lineWidth: 1,
 			lineStyle: 2,
 			axisLabelVisible: false,
@@ -105,16 +105,16 @@ export function FlowMFIChart({ mfi, height = 150 }: FlowMFIChartProps) {
 	return (
 		<div>
 			<div className="flex items-center justify-between px-1 pb-1">
-				<span className="font-mono text-[10px] uppercase tracking-wider text-t-text-muted">
+				<span className="font-mono text-[10px] uppercase tracking-wider text-ink-4">
 					MFI (14)
 				</span>
 				<span
 					className={`font-mono text-xs font-medium ${
 						mfi.signal === "overbought"
-							? "text-t-red"
+							? "text-neg"
 							: mfi.signal === "oversold"
-								? "text-t-green"
-								: "text-t-text-secondary"
+								? "text-pos"
+								: "text-ink-2"
 					}`}
 				>
 					{mfi.current.toFixed(0)}

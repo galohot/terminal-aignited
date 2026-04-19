@@ -2,14 +2,14 @@ import { clsx } from "clsx";
 import { Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
+import { IdxNav } from "../components/idx/idx-nav";
 import { INVESTOR_TYPE_COLORS, INVESTOR_TYPE_LABELS } from "../components/ownership/constants";
 import { Badge } from "../components/ownership/ownership-badge";
-import type { InvestorType } from "../components/ownership/types";
-import { IdxNav } from "../components/idx/idx-nav";
 import { OwnershipNav } from "../components/ownership/ownership-nav";
+import type { InvestorType } from "../components/ownership/types";
 import { Skeleton } from "../components/ui/loading";
-import { useKseiInvestors } from "../hooks/use-ksei";
 import { useKeyboardShortcut } from "../hooks/use-keyboard";
+import { useKseiInvestors } from "../hooks/use-ksei";
 import { usePageTitle } from "../hooks/use-page-title";
 
 type SortCol = "company_count" | "investor_name" | "investor_type" | "local_foreign" | "total_pct";
@@ -69,39 +69,43 @@ export function IdxOwnershipInvestorsPage() {
 		<div className="mx-auto max-w-[1600px] p-4">
 			<IdxNav />
 			<OwnershipNav />
-			<div className="mb-4">
-				<h1 className="font-mono text-lg font-semibold tracking-wide text-white">
-					Investors
+			<div className="mb-5">
+				<h1
+					className="text-[clamp(2rem,4vw,2.5rem)] leading-[1.05] text-ink"
+					style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.015em" }}
+				>
+					<em className="text-ember-600">Investors</em>
 				</h1>
-				<p className="mt-1 text-sm text-t-text-secondary">
+				<p className="mt-2 max-w-2xl text-sm text-ink-3">
 					{data?.total ?? "—"} unique investors in the KSEI 1%+ shareholder registry.
 				</p>
 			</div>
 
-			{/* Filters */}
 			<div className="mb-4 flex flex-wrap items-end gap-4">
 				<div className="relative max-w-sm flex-1">
-					<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-t-text-muted" />
+					<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-4" />
 					<input
 						ref={searchRef}
 						type="text"
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
 						placeholder="Search investor... ( / )"
-						className="w-full rounded-lg border border-white/10 bg-white/[0.04] py-2 pl-9 pr-3 font-mono text-sm text-white placeholder-t-text-muted outline-none transition-colors focus:border-t-amber/50 focus:bg-white/[0.06]"
+						className="w-full rounded-lg border border-rule bg-card py-2 pl-9 pr-3 font-mono text-sm text-ink placeholder-ink-4 outline-none transition-colors focus:border-ember-500 focus:ring-2 focus:ring-ember-500/15"
 					/>
 				</div>
 
-				{/* Type filter pills */}
 				<div className="flex flex-wrap gap-1">
 					<button
 						type="button"
-						onClick={() => { setTypeFilter(""); setPage(1); }}
+						onClick={() => {
+							setTypeFilter("");
+							setPage(1);
+						}}
 						className={clsx(
 							"rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider transition-colors",
 							!typeFilter
-								? "border-white/20 bg-white text-black"
-								: "border-white/10 bg-white/[0.04] text-t-text-secondary hover:bg-white/10",
+								? "border-ink bg-ink text-paper"
+								: "border-rule bg-card text-ink-3 hover:bg-paper-2 hover:text-ink",
 						)}
 					>
 						All
@@ -110,12 +114,15 @@ export function IdxOwnershipInvestorsPage() {
 						<button
 							key={t}
 							type="button"
-							onClick={() => { setTypeFilter(typeFilter === t ? "" : t); setPage(1); }}
+							onClick={() => {
+								setTypeFilter(typeFilter === t ? "" : t);
+								setPage(1);
+							}}
 							className={clsx(
 								"rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider transition-colors",
 								typeFilter === t
-									? "border-white/20 bg-white text-black"
-									: "border-white/10 bg-white/[0.04] text-t-text-secondary hover:bg-white/10",
+									? "border-ink bg-ink text-paper"
+									: "border-rule bg-card text-ink-3 hover:bg-paper-2 hover:text-ink",
 							)}
 						>
 							{t}
@@ -123,7 +130,6 @@ export function IdxOwnershipInvestorsPage() {
 					))}
 				</div>
 
-				{/* L/F filter */}
 				<div className="flex gap-1">
 					{[
 						{ val: "", label: "All" },
@@ -133,12 +139,15 @@ export function IdxOwnershipInvestorsPage() {
 						<button
 							key={opt.val}
 							type="button"
-							onClick={() => { setLfFilter(opt.val); setPage(1); }}
+							onClick={() => {
+								setLfFilter(opt.val);
+								setPage(1);
+							}}
 							className={clsx(
 								"rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider transition-colors",
 								lfFilter === opt.val
-									? "border-white/20 bg-white text-black"
-									: "border-white/10 bg-white/[0.04] text-t-text-secondary hover:bg-white/10",
+									? "border-ink bg-ink text-paper"
+									: "border-rule bg-card text-ink-3 hover:bg-paper-2 hover:text-ink",
 							)}
 						>
 							{opt.label}
@@ -151,55 +160,55 @@ export function IdxOwnershipInvestorsPage() {
 				<Skeleton className="h-[500px] w-full rounded-xl" />
 			) : data ? (
 				<>
-					<div className="overflow-x-auto rounded-xl border border-white/8">
+					<div className="overflow-x-auto rounded-[18px] border border-rule bg-card">
 						<table className="w-full text-sm">
 							<thead>
-								<tr className="border-b border-white/8 bg-white/[0.03]">
+								<tr className="border-b border-rule bg-paper-2">
 									<th
-										className="cursor-pointer px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted hover:text-t-text-secondary"
+										className="cursor-pointer px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4 hover:text-ink-2"
 										onClick={() => toggleSort("investor_name")}
 									>
 										Name{sortIcon("investor_name")}
 									</th>
 									<th
-										className="cursor-pointer px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted hover:text-t-text-secondary"
+										className="cursor-pointer px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4 hover:text-ink-2"
 										onClick={() => toggleSort("investor_type")}
 									>
 										Type{sortIcon("investor_type")}
 									</th>
 									<th
-										className="cursor-pointer px-3 py-2.5 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted hover:text-t-text-secondary"
+										className="cursor-pointer px-3 py-2.5 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4 hover:text-ink-2"
 										onClick={() => toggleSort("local_foreign")}
 									>
 										L/F{sortIcon("local_foreign")}
 									</th>
-									<th className="hidden px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted sm:table-cell">
+									<th className="hidden px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4 sm:table-cell">
 										Domicile
 									</th>
 									<th
-										className="cursor-pointer px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted hover:text-t-text-secondary"
+										className="cursor-pointer px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4 hover:text-ink-2"
 										onClick={() => toggleSort("company_count")}
 									>
 										Companies{sortIcon("company_count")}
 									</th>
 									<th
-										className="cursor-pointer px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-t-text-muted hover:text-t-text-secondary"
+										className="cursor-pointer px-3 py-2.5 text-right font-mono text-[10px] uppercase tracking-[0.22em] text-ink-4 hover:text-ink-2"
 										onClick={() => toggleSort("total_pct")}
 									>
 										Total %{sortIcon("total_pct")}
 									</th>
 								</tr>
 							</thead>
-							<tbody className="divide-y divide-white/5">
+							<tbody className="divide-y divide-rule">
 								{data.investors.map((inv) => (
 									<tr
 										key={`${inv.investor_name}-${inv.investor_type}`}
-										className="transition-colors hover:bg-white/[0.04]"
+										className="transition-colors hover:bg-paper-2/60"
 									>
 										<td className="max-w-[320px] truncate px-3 py-2">
 											<Link
 												to={`/idx/ownership/investor/${encodeURIComponent(inv.investor_name)}`}
-												className="font-mono text-xs font-medium text-t-text hover:text-t-amber hover:underline"
+												className="font-mono text-xs font-medium text-ink hover:text-ember-600 hover:underline"
 											>
 												{inv.investor_name}
 											</Link>
@@ -212,22 +221,26 @@ export function IdxOwnershipInvestorsPage() {
 												className={clsx(
 													"rounded-full border px-2 py-0.5 font-mono text-[10px]",
 													inv.local_foreign === "L"
-														? "border-t-green/30 bg-t-green/10 text-t-green"
+														? "border-pos/30 bg-pos/10 text-pos"
 														: inv.local_foreign === "A"
-															? "border-t-blue/30 bg-t-blue/10 text-t-blue"
-															: "border-white/10 bg-white/[0.04] text-t-text-muted",
+															? "border-cyan-400/30 bg-cyan-50 text-cyan-700"
+															: "border-rule bg-paper-2 text-ink-4",
 												)}
 											>
-												{inv.local_foreign === "L" ? "Local" : inv.local_foreign === "A" ? "Foreign" : "—"}
+												{inv.local_foreign === "L"
+													? "Local"
+													: inv.local_foreign === "A"
+														? "Foreign"
+														: "—"}
 											</span>
 										</td>
-										<td className="hidden px-3 py-2 text-xs text-t-text-secondary sm:table-cell">
+										<td className="hidden px-3 py-2 text-xs text-ink-2 sm:table-cell">
 											{inv.domicile || "—"}
 										</td>
-										<td className="px-3 py-2 text-right font-mono text-xs font-medium tabular-nums text-t-amber">
+										<td className="px-3 py-2 text-right font-mono text-xs font-medium tabular-nums text-ember-700">
 											{inv.company_count}
 										</td>
-										<td className="px-3 py-2 text-right font-mono text-xs tabular-nums text-t-text-secondary">
+										<td className="px-3 py-2 text-right font-mono text-xs tabular-nums text-ink-2">
 											{inv.total_pct.toFixed(1)}%
 										</td>
 									</tr>
@@ -238,7 +251,7 @@ export function IdxOwnershipInvestorsPage() {
 
 					{totalPages > 1 && (
 						<div className="mt-4 flex items-center justify-between">
-							<span className="font-mono text-[11px] text-t-text-muted">
+							<span className="font-mono text-[11px] text-ink-4">
 								Page {page} of {totalPages} ({data.total} investors)
 							</span>
 							<div className="flex gap-2">
@@ -246,7 +259,7 @@ export function IdxOwnershipInvestorsPage() {
 									type="button"
 									disabled={page <= 1}
 									onClick={() => setPage((p) => p - 1)}
-									className="rounded border border-white/10 bg-white/[0.04] px-3 py-1 font-mono text-[11px] text-t-text-secondary transition-colors hover:bg-white/10 disabled:opacity-30"
+									className="rounded border border-rule bg-card px-3 py-1 font-mono text-[11px] text-ink-2 transition-colors hover:bg-paper-2 hover:text-ink disabled:opacity-30"
 								>
 									Prev
 								</button>
@@ -254,7 +267,7 @@ export function IdxOwnershipInvestorsPage() {
 									type="button"
 									disabled={page >= totalPages}
 									onClick={() => setPage((p) => p + 1)}
-									className="rounded border border-white/10 bg-white/[0.04] px-3 py-1 font-mono text-[11px] text-t-text-secondary transition-colors hover:bg-white/10 disabled:opacity-30"
+									className="rounded border border-rule bg-card px-3 py-1 font-mono text-[11px] text-ink-2 transition-colors hover:bg-paper-2 hover:text-ink disabled:opacity-30"
 								>
 									Next
 								</button>

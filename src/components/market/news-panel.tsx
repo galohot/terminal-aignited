@@ -31,18 +31,18 @@ export function NewsPanel() {
 	if (!isLoading && items.length === 0) return null;
 
 	return (
-		<div className="rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(16,22,22,0.96),rgba(9,12,12,0.98))] p-4 shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
-			<div className="flex flex-col gap-3 border-b border-white/8 pb-4 sm:flex-row sm:items-end sm:justify-between">
+		<div className="aig-section">
+			<div className="flex flex-col gap-3 border-rule border-b pb-4 sm:flex-row sm:items-end sm:justify-between">
 				<div className="min-w-0">
-					<div className="mb-2 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-t-amber">
+					<div className="mb-2 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.24em] text-ember-600">
 						<Newspaper className="h-3.5 w-3.5" />
 						Market News
 					</div>
-					<p className="break-words text-sm leading-6 text-t-text-secondary">
+					<p className="break-words text-sm leading-6 text-ink-3">
 						Curated market-moving stories from the latest news pipeline window.
 					</p>
 				</div>
-				<div className="font-mono text-xs text-t-text-muted">Items {itemCountLabel}</div>
+				<div className="font-mono text-xs text-ink-4">Items {itemCountLabel}</div>
 			</div>
 
 			<div className="mt-4 flex flex-wrap gap-2">
@@ -54,8 +54,8 @@ export function NewsPanel() {
 						className={clsx(
 							"rounded-full border px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] transition-colors",
 							category === cat
-								? "border-white/20 bg-white text-black"
-								: "border-white/10 bg-white/[0.04] text-t-text-secondary hover:bg-white/10 hover:text-white",
+								? "border-ink bg-ink text-paper"
+								: "border-rule bg-card text-ink-3 hover:bg-paper-2 hover:text-ink",
 						)}
 					>
 						{formatCategory(cat)}
@@ -67,7 +67,7 @@ export function NewsPanel() {
 				{isLoading ? (
 					Array.from({ length: 4 }).map((_, index) => (
 						// biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholders
-						<div key={index} className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+						<div key={index} className="rounded-[18px] border border-rule bg-paper-2 p-4">
 							<Skeleton className="mb-3 h-4 w-28 rounded-full" />
 							<Skeleton className="mb-3 h-8 w-full rounded-xl" />
 							<Skeleton className="mb-2 h-16 w-full rounded-xl" />
@@ -99,13 +99,13 @@ export function StockNewsSection({ ticker }: { ticker: string }) {
 	if (isLoading) {
 		return (
 			<div id="news-section" className="space-y-3">
-				<div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-t-amber">
+				<div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.24em] text-ember-600">
 					<Newspaper className="h-3.5 w-3.5" />
 					Related News
 				</div>
 				{Array.from({ length: 3 }).map((_, i) => (
 					// biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholders
-					<div key={i} className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
+					<div key={i} className="rounded-xl border border-rule bg-paper-2 p-3">
 						<Skeleton className="mb-2 h-4 w-3/4 rounded-full" />
 						<Skeleton className="h-3 w-1/2 rounded-full" />
 					</div>
@@ -118,7 +118,7 @@ export function StockNewsSection({ ticker }: { ticker: string }) {
 
 	return (
 		<div id="news-section" className="space-y-3">
-			<div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-t-amber">
+			<div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.24em] text-ember-600">
 				<Newspaper className="h-3.5 w-3.5" />
 				Related News
 			</div>
@@ -128,18 +128,21 @@ export function StockNewsSection({ ticker }: { ticker: string }) {
 					href={`https://thedailycatalyst.site/article/${item.daily_catalyst_slug}`}
 					target="_blank"
 					rel="noreferrer"
-					className="group block rounded-xl border border-white/8 bg-white/[0.03] p-3 transition-colors hover:bg-white/[0.06]"
+					className="group block rounded-xl border border-rule bg-card p-3 transition-colors hover:bg-card-2"
 				>
 					<div className="flex items-center gap-2">
 						<Chip tone={sentimentTone(item.sentiment)}>{item.sentiment}</Chip>
-						<span className="font-mono text-[11px] text-t-text-muted">
+						<span className="font-mono text-[11px] text-ink-4">
 							{formatAge(item.published_at)}
 						</span>
 					</div>
-					<h4 className="mt-2 text-sm font-medium leading-5 text-white group-hover:text-t-amber">
+					<h4
+						className="mt-2 text-[16px] font-semibold leading-5 text-ink group-hover:text-ember-600"
+						style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.01em" }}
+					>
 						{item.title}
 					</h4>
-					<p className="mt-1 line-clamp-2 text-xs leading-5 text-t-text-secondary">
+					<p className="mt-1 line-clamp-2 text-xs leading-5 text-ink-3">
 						{item.summary}
 					</p>
 				</a>
@@ -152,19 +155,22 @@ function NewsCard({ item }: { item: NewsArticle }) {
 	const link = `https://thedailycatalyst.site/article/${item.daily_catalyst_slug}`;
 
 	return (
-		<article className="min-w-0 rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+		<article className="min-w-0 rounded-[18px] border border-rule bg-card p-4 shadow-[0_1px_2px_rgba(20,23,53,0.04)]">
 			<div className="flex flex-wrap items-center gap-2">
 				<Chip>{formatCategory(item.category)}</Chip>
 				<Chip tone={sentimentTone(item.sentiment)}>{item.sentiment}</Chip>
-				<span className="font-mono text-[11px] text-t-text-muted">
+				<span className="font-mono text-[11px] text-ink-4">
 					{formatAge(item.published_at)}
 				</span>
 			</div>
 
-			<h3 className="mt-3 break-words text-base font-semibold leading-6 text-white">
+			<h3
+				className="mt-3 break-words text-[20px] font-semibold leading-[1.2] text-ink"
+				style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.01em" }}
+			>
 				{item.title}
 			</h3>
-			<p className="mt-2 break-words text-sm leading-6 text-t-text-secondary">{item.summary}</p>
+			<p className="mt-2 break-words text-sm leading-6 text-ink-3">{item.summary}</p>
 
 			{(item.related_tickers.length > 0 || item.related_sectors.length > 0) && (
 				<div className="mt-3 flex flex-wrap gap-2">
@@ -178,12 +184,12 @@ function NewsCard({ item }: { item: NewsArticle }) {
 			)}
 
 			<div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-				<div className="min-w-0 break-words text-xs text-t-text-muted">{item.source_name}</div>
+				<div className="min-w-0 break-words text-xs text-ink-4">{item.source_name}</div>
 				<a
 					href={link}
 					target="_blank"
 					rel="noreferrer"
-					className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-t-text-secondary transition-colors hover:bg-white/10 hover:text-white"
+					className="inline-flex items-center gap-1.5 rounded-full border border-rule bg-paper-2 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-ember-600 transition-colors hover:bg-card"
 				>
 					Read <ExternalLink className="h-3 w-3" />
 				</a>
@@ -194,12 +200,12 @@ function NewsCard({ item }: { item: NewsArticle }) {
 
 function NewsStateCard({ body, title }: { body: string; title: string }) {
 	return (
-		<div className="flex min-h-[220px] items-center justify-center rounded-[22px] border border-dashed border-white/10 bg-white/[0.03] p-6 text-center lg:col-span-2">
+		<div className="flex min-h-[220px] items-center justify-center rounded-[18px] border border-dashed border-rule bg-paper-2/60 p-6 text-center lg:col-span-2">
 			<div className="max-w-md">
-				<div className="font-mono text-[11px] uppercase tracking-[0.22em] text-t-amber">
+				<div className="font-mono text-[11px] uppercase tracking-[0.24em] text-ember-600">
 					{title}
 				</div>
-				<p className="mt-3 break-words text-sm leading-6 text-t-text-secondary">{body}</p>
+				<p className="mt-3 break-words text-sm leading-6 text-ink-3">{body}</p>
 			</div>
 		</div>
 	);
@@ -214,16 +220,16 @@ function Chip({
 }) {
 	const classes =
 		tone === "green"
-			? "border-t-green/30 bg-t-green/10 text-t-green"
+			? "border-[rgba(23,165,104,0.28)] bg-[rgba(23,165,104,0.1)] text-pos"
 			: tone === "red"
-				? "border-t-red/30 bg-t-red/10 text-t-red"
+				? "border-[rgba(210,52,74,0.28)] bg-[rgba(210,52,74,0.08)] text-neg"
 				: tone === "yellow"
-					? "border-t-amber/30 bg-t-amber/10 text-t-amber"
-					: "border-white/10 bg-white/[0.04] text-t-text-secondary";
+					? "border-ember-200 bg-ember-100/60 text-ember-700"
+					: "border-rule bg-paper-2 text-ink-3";
 
 	return (
 		<span
-			className={`rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] ${classes}`}
+			className={`rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.22em] ${classes}`}
 		>
 			{children}
 		</span>
@@ -232,7 +238,7 @@ function Chip({
 
 function Tag({ children }: { children: string }) {
 	return (
-		<span className="rounded-full border border-white/8 bg-black/15 px-2.5 py-1 font-mono text-[10px] text-t-text-secondary">
+		<span className="rounded-full border border-rule bg-paper-2 px-2.5 py-1 font-mono text-[10px] text-ink-3">
 			{children}
 		</span>
 	);

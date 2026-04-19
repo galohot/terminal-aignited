@@ -4,9 +4,9 @@ import { useNavigate } from "react-router";
 import type { IdxEntityHolding } from "../../types/market";
 
 function dotColor(pct: number): string {
-	if (pct >= 50) return "#f59e0b";
-	if (pct >= 20) return "#3b82f6";
-	return "#6b7280";
+	if (pct >= 50) return "#ff8a2a";
+	if (pct >= 20) return "#1d5fc9";
+	return "#8b8fb0";
 }
 
 export function HoldingsLollipop({ holdings }: { holdings: IdxEntityHolding[] }) {
@@ -60,9 +60,7 @@ export function HoldingsLollipop({ holdings }: { holdings: IdxEntityHolding[] })
 		sel.selectAll("*").remove();
 		sel.attr("viewBox", `0 0 ${width} ${height}`).attr("width", width).attr("height", height);
 
-		const g = sel
-			.append("g")
-			.attr("transform", `translate(${marginLeft},${marginTop})`);
+		const g = sel.append("g").attr("transform", `translate(${marginLeft},${marginTop})`);
 
 		// Reference line at 50%
 		g.append("line")
@@ -70,7 +68,7 @@ export function HoldingsLollipop({ holdings }: { holdings: IdxEntityHolding[] })
 			.attr("x2", xScale(50))
 			.attr("y1", 0)
 			.attr("y2", innerHeight)
-			.attr("stroke", "#ffffff25")
+			.attr("stroke", "#d8cfb9")
 			.attr("stroke-width", 1)
 			.attr("stroke-dasharray", "4,3");
 
@@ -79,7 +77,7 @@ export function HoldingsLollipop({ holdings }: { holdings: IdxEntityHolding[] })
 			.attr("y", -2)
 			.attr("font-family", "ui-monospace, monospace")
 			.attr("font-size", "9px")
-			.attr("fill", "#ffffff40")
+			.attr("fill", "#8b8fb0")
 			.text("50%");
 
 		// Sticks (lines from 0 to percentage)
@@ -92,7 +90,7 @@ export function HoldingsLollipop({ holdings }: { holdings: IdxEntityHolding[] })
 			.attr("x2", (d) => xScale(d.total_percentage ?? 0))
 			.attr("y1", (d) => (yScale(d.kode_emiten) ?? 0) + yScale.bandwidth() / 2)
 			.attr("y2", (d) => (yScale(d.kode_emiten) ?? 0) + yScale.bandwidth() / 2)
-			.attr("stroke", "#ffffff10")
+			.attr("stroke", "#e7e0d2")
 			.attr("stroke-width", 1.5);
 
 		// Dots
@@ -134,17 +132,17 @@ export function HoldingsLollipop({ holdings }: { holdings: IdxEntityHolding[] })
 			.attr("text-anchor", "end")
 			.attr("font-family", "ui-monospace, monospace")
 			.attr("font-size", "10px")
-			.attr("fill", "#9ca3af")
+			.attr("fill", "#55598a")
 			.attr("cursor", "pointer")
 			.text((d) => d.kode_emiten)
 			.on("click", (_event, d) => {
 				navRef.current(`/idx/${d.kode_emiten}`);
 			})
 			.on("mouseover", function () {
-				d3.select(this).attr("fill", "#ffffff");
+				d3.select(this).attr("fill", "#141735");
 			})
 			.on("mouseout", function () {
-				d3.select(this).attr("fill", "#9ca3af");
+				d3.select(this).attr("fill", "#55598a");
 			});
 
 		// Dot hover + click interactions
@@ -161,12 +159,10 @@ export function HoldingsLollipop({ holdings }: { holdings: IdxEntityHolding[] })
 					via_entities: d.via_entities,
 				});
 			})
-			.on("mousemove", function (event: MouseEvent) {
+			.on("mousemove", (event: MouseEvent) => {
 				const rect = container.getBoundingClientRect();
 				setTooltip((prev) =>
-					prev
-						? { ...prev, x: event.clientX - rect.left, y: event.clientY - rect.top }
-						: null,
+					prev ? { ...prev, x: event.clientX - rect.left, y: event.clientY - rect.top } : null,
 				);
 			})
 			.on("mouseout", function () {
@@ -191,37 +187,31 @@ export function HoldingsLollipop({ holdings }: { holdings: IdxEntityHolding[] })
 			.call(xAxis);
 
 		xAxisG.select(".domain").remove();
-		xAxisG
-			.selectAll("line")
-			.attr("stroke", "#ffffff10");
+		xAxisG.selectAll("line").attr("stroke", "#ffffff10");
 		xAxisG
 			.selectAll("text")
 			.attr("font-family", "ui-monospace, monospace")
 			.attr("font-size", "9px")
-			.attr("fill", "#6b7280");
+			.attr("fill", "#55598a");
 	}, [sorted]);
 
 	return (
-		<div className="rounded border border-t-border bg-t-surface">
-			<div className="border-b border-t-border px-3 py-2">
-				<h3 className="text-xs font-medium uppercase tracking-wider text-t-text-secondary">
+		<div className="rounded-[18px] border border-rule bg-card">
+			<div className="border-b border-rule px-3 py-2">
+				<h3 className="text-xs font-medium uppercase tracking-wider text-ink-2">
 					Ownership Stakes
 				</h3>
-				<p className="mt-0.5 font-mono text-[10px] text-t-text-muted">
-					{sorted.length} companies
-				</p>
+				<p className="mt-0.5 font-mono text-[10px] text-ink-4">{sorted.length} companies</p>
 			</div>
 			<div ref={containerRef} className="relative overflow-hidden">
 				<svg ref={svgRef} style={{ background: "transparent", display: "block" }} />
 				{tooltip && (
 					<div
-						className="pointer-events-none absolute z-10 max-w-[220px] rounded border border-white/10 bg-[#0d0d0d]/95 px-2.5 py-1.5 shadow-xl backdrop-blur-sm"
+						className="pointer-events-none absolute z-10 max-w-[220px] rounded border border-rule bg-card/95 px-2.5 py-1.5 shadow-xl backdrop-blur-sm"
 						style={{
 							left: Math.min(
 								tooltip.x + 14,
-								containerRef.current
-									? containerRef.current.clientWidth - 230
-									: tooltip.x + 14,
+								containerRef.current ? containerRef.current.clientWidth - 230 : tooltip.x + 14,
 							),
 							top: Math.max(tooltip.y - 10, 4),
 						}}
@@ -232,7 +222,10 @@ export function HoldingsLollipop({ holdings }: { holdings: IdxEntityHolding[] })
 						>
 							{tooltip.kode}
 						</p>
-						<p className="mt-0.5 font-mono leading-snug text-t-text-muted" style={{ fontSize: "10px" }}>
+						<p
+							className="mt-0.5 font-mono leading-snug text-ink-4"
+							style={{ fontSize: "10px" }}
+						>
 							{tooltip.company_name}
 						</p>
 						<p
@@ -242,14 +235,14 @@ export function HoldingsLollipop({ holdings }: { holdings: IdxEntityHolding[] })
 							{tooltip.percentage.toFixed(2)}%
 						</p>
 						{tooltip.via_entities.length > 0 && (
-							<div className="mt-1 border-t border-white/10 pt-1">
-								<p className="font-mono text-t-text-muted" style={{ fontSize: "9px" }}>
+							<div className="mt-1 border-t border-rule pt-1">
+								<p className="font-mono text-ink-4" style={{ fontSize: "9px" }}>
 									Via:
 								</p>
 								{tooltip.via_entities.map((e) => (
 									<p
 										key={e}
-										className="font-mono leading-snug text-t-text-muted"
+										className="font-mono leading-snug text-ink-4"
 										style={{ fontSize: "9px" }}
 									>
 										{e}
