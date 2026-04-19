@@ -2,6 +2,7 @@
 // Runs a tool-use loop: LLM -> tool_use? -> dispatch -> feed results -> repeat
 // Max 8 iterations, max 3 order-mutating calls per conversation.
 
+import { appendMessage } from "./agent-threads";
 import { callLLM, type Message } from "./llm";
 import { dispatchTool, type ToolCtx, toolsForTier } from "./tools";
 
@@ -69,6 +70,15 @@ export interface AgentRunOpts {
 	history?: Message[];
 	ctx: ToolCtx;
 	llmEnv: { MINIMAX_API_KEY?: string; KIMI_API_KEY?: string; OPENROUTER_API_KEY?: string };
+	// Optional system-prompt override — persona picker sends one.
+	systemPrompt?: string;
+	// Optional persistence. When set, each completed turn (user, assistant, tool-results user)
+	// is written to the thread so a client disconnect doesn't drop the conversation.
+	persist?: {
+		threadId: string;
+		dbUrl: string;
+		userAlreadyPersisted?: boolean; // set true if caller already wrote the user row (e.g. to create the thread)
+	};
 }
 
 export function runAgent(opts: AgentRunOpts): Response {
@@ -99,16 +109,22 @@ export function runAgent(opts: AgentRunOpts): Response {
 
 async function runLoop(opts: AgentRunOpts, sse: SSEClient): Promise<void> {
 	const tools = toolsForTier(opts.ctx.tier);
+	const systemPrompt = opts.systemPrompt ?? SYSTEM_PROMPT;
 	const messages: Message[] = [
 		...(opts.history ?? []),
 		{ role: "user", content: opts.userMessage },
 	];
 
+	// Persist the triggering user message (unless caller already did so, e.g. as part of createThread).
+	if (opts.persist && !opts.persist.userAlreadyPersisted) {
+		await appendMessage(opts.persist.dbUrl, opts.persist.threadId, "user", opts.userMessage);
+	}
+
 	let orderCalls = 0;
 
 	for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
 		const response = await callLLM(opts.llmEnv, {
-			system: SYSTEM_PROMPT,
+			system: systemPrompt,
 			messages,
 			tools,
 		});
@@ -125,6 +141,9 @@ async function runLoop(opts: AgentRunOpts, sse: SSEClient): Promise<void> {
 		}
 
 		messages.push({ role: "assistant", content: response.content });
+		if (opts.persist) {
+			await appendMessage(opts.persist.dbUrl, opts.persist.threadId, "assistant", response.content);
+		}
 
 		if (response.stop_reason !== "tool_use") return;
 
@@ -173,6 +192,9 @@ async function runLoop(opts: AgentRunOpts, sse: SSEClient): Promise<void> {
 		}
 
 		messages.push({ role: "user", content: toolResults });
+		if (opts.persist) {
+			await appendMessage(opts.persist.dbUrl, opts.persist.threadId, "user", toolResults);
+		}
 	}
 
 	sse.send("error", { message: `Stopped after ${MAX_ITERATIONS} iterations without final answer` });

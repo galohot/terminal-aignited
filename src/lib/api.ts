@@ -431,7 +431,13 @@ async function postWorker<T>(path: string, body?: unknown): Promise<T> {
 }
 
 export const research = {
-	list: (params?: { type?: ResearchType; ticker?: string; tag?: string; limit?: number; offset?: number }) =>
+	list: (params?: {
+		type?: ResearchType;
+		ticker?: string;
+		tag?: string;
+		limit?: number;
+		offset?: number;
+	}) =>
 		fetchWorker<{ items: ResearchArticle[]; total: number }>(
 			"/api/research/list",
 			params
@@ -447,11 +453,20 @@ export const research = {
 			`/api/research/article/${encodeURIComponent(slug)}`,
 		),
 	adminDrafts: () => fetchWorker<{ items: ResearchArticle[] }>("/api/admin/research/drafts"),
-	adminUpsert: (input: Partial<ResearchArticle> & { slug: string; type: ResearchType; title: string; summary: string; body_md: string }) =>
-		postWorker<{ article: ResearchArticle }>("/api/admin/research/upsert", input),
+	adminUpsert: (
+		input: Partial<ResearchArticle> & {
+			slug: string;
+			type: ResearchType;
+			title: string;
+			summary: string;
+			body_md: string;
+		},
+	) => postWorker<{ article: ResearchArticle }>("/api/admin/research/upsert", input),
 	adminPublish: (id: string) => postWorker<{ ok: boolean }>(`/api/admin/research/publish/${id}`),
 	adminGenerateAmBrief: () =>
-		postWorker<{ ok: boolean; slug?: string; error?: string }>("/api/admin/research/generate-am-brief"),
+		postWorker<{ ok: boolean; slug?: string; error?: string }>(
+			"/api/admin/research/generate-am-brief",
+		),
 	getSubscription: () =>
 		fetchWorker<{ user_id: string; email_enabled: boolean; types: ResearchType[] }>(
 			"/api/research/subscriptions",
@@ -532,7 +547,52 @@ export const journal = {
 	}) => postWorker<{ entry: JournalEntry }>("/api/journal/entries", input),
 	update: (
 		id: string,
-		patch: { body_md?: string; kind?: JournalKind; tags?: string[]; research_article_id?: string | null },
+		patch: {
+			body_md?: string;
+			kind?: JournalKind;
+			tags?: string[];
+			research_article_id?: string | null;
+		},
 	) => patchWorker<{ entry: JournalEntry }>(`/api/journal/entries/${id}`, patch),
 	remove: (id: string) => deleteWorker<{ ok: boolean }>(`/api/journal/entries/${id}`),
+};
+
+// --- Agent: persistent threads + personas ---
+
+export interface AgentPersona {
+	id: string;
+	name: string;
+	description: string;
+}
+
+export interface AgentThread {
+	id: string;
+	user_id: string;
+	title: string;
+	persona_id: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface AgentStoredMessage {
+	id: string;
+	thread_id: string;
+	role: "user" | "assistant";
+	content: unknown;
+	created_at: string;
+}
+
+export const agent = {
+	listPersonas: () => fetchWorker<{ personas: AgentPersona[] }>("/api/agent/personas"),
+	listThreads: () => fetchWorker<{ threads: AgentThread[] }>("/api/agent/threads"),
+	createThread: (input: { personaId?: string | null; title?: string } = {}) =>
+		postWorker<{ thread: AgentThread }>("/api/agent/threads", input),
+	getThread: (id: string) =>
+		fetchWorker<{ thread: AgentThread; messages: AgentStoredMessage[] }>(
+			`/api/agent/thread/${encodeURIComponent(id)}`,
+		),
+	updateThread: (id: string, patch: { title?: string; personaId?: string | null }) =>
+		patchWorker<{ thread: AgentThread }>(`/api/agent/thread/${encodeURIComponent(id)}`, patch),
+	deleteThread: (id: string) =>
+		deleteWorker<{ ok: boolean }>(`/api/agent/thread/${encodeURIComponent(id)}`),
 };

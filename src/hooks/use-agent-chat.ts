@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import type { AgentStoredMessage } from "../lib/api";
 
 // Matches worker/agent.ts event shape.
 export type ChatTurn =
@@ -34,45 +35,106 @@ interface SSEEvent {
 	data: unknown;
 }
 
-// Parse `event: xxx\ndata: {...}\n\n` into events as they arrive.
-function* parseSSE(buffer: string): Generator<{ events: SSEEvent[]; rest: string }> {
-	let rest = buffer;
-	while (true) {
-		const sep = rest.indexOf("\n\n");
-		if (sep === -1) {
-			yield { events: [], rest };
-			return;
-		}
-		const raw = rest.slice(0, sep);
-		rest = rest.slice(sep + 2);
-		let event = "message";
-		let data = "";
-		for (const line of raw.split("\n")) {
-			if (line.startsWith("event:")) event = line.slice(6).trim();
-			else if (line.startsWith("data:")) data += line.slice(5).trim();
-		}
-		let parsed: unknown = null;
-		try {
-			parsed = data ? JSON.parse(data) : null;
-		} catch {
-			parsed = data;
-		}
-		yield { events: [{ event, data: parsed }], rest };
-	}
-}
-
 function nextId(): string {
 	return `t_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function useAgentChat() {
+// Convert stored Anthropic-shaped messages into the Turn[] the UI renders.
+// user+string = user turn; user+array (tool_results) = hydrate prior assistant's tool blocks;
+// assistant+array = assistant turn with text + tool blocks.
+export function storedMessagesToTurns(stored: AgentStoredMessage[]): ChatTurn[] {
+	const turns: ChatTurn[] = [];
+	for (const msg of stored) {
+		if (msg.role === "user") {
+			if (typeof msg.content === "string") {
+				turns.push({ role: "user", text: msg.content, id: msg.id });
+				continue;
+			}
+			if (Array.isArray(msg.content)) {
+				for (const raw of msg.content as Array<Record<string, unknown>>) {
+					if (raw?.type !== "tool_result") continue;
+					const id = raw.tool_use_id as string | undefined;
+					const isError = raw.is_error === true;
+					let parsed: unknown = raw.content;
+					if (typeof parsed === "string") {
+						try {
+							parsed = JSON.parse(parsed);
+						} catch {
+							/* leave as string */
+						}
+					}
+					for (let i = turns.length - 1; i >= 0; i--) {
+						const t = turns[i];
+						if (t.role !== "assistant") continue;
+						const idx = t.blocks.findIndex((b) => b.type === "tool" && b.id === id);
+						if (idx < 0) continue;
+						const existing = t.blocks[idx] as Extract<AssistantBlock, { type: "tool" }>;
+						t.blocks[idx] = {
+							...existing,
+							status: isError ? "error" : "ok",
+							output: isError ? undefined : parsed,
+							errorCode:
+								isError && parsed && typeof parsed === "object"
+									? ((parsed as { error?: string }).error ?? undefined)
+									: undefined,
+							errorMessage:
+								isError && parsed && typeof parsed === "object"
+									? ((parsed as { message?: string }).message ?? undefined)
+									: undefined,
+						};
+						break;
+					}
+				}
+			}
+			continue;
+		}
+		if (msg.role === "assistant") {
+			const blocks: AssistantBlock[] = [];
+			if (Array.isArray(msg.content)) {
+				for (const raw of msg.content as Array<Record<string, unknown>>) {
+					if (raw?.type === "text") {
+						const text = (raw.text as string) ?? "";
+						if (text.trim()) blocks.push({ type: "text", text });
+					} else if (raw?.type === "tool_use") {
+						blocks.push({
+							type: "tool",
+							id: (raw.id as string) ?? nextId(),
+							name: (raw.name as string) ?? "tool",
+							input: (raw.input as Record<string, unknown>) ?? {},
+							status: "running",
+						});
+					}
+				}
+			}
+			turns.push({ role: "assistant", id: msg.id, blocks });
+		}
+	}
+	return turns;
+}
+
+export interface UseAgentChatOptions {
+	threadId?: string | null;
+}
+
+export function useAgentChat(options: UseAgentChatOptions = {}) {
+	const { threadId } = options;
 	const [turns, setTurns] = useState<ChatTurn[]>([]);
 	const [streaming, setStreaming] = useState(false);
 	const [error, setError] = useState<ChatError | null>(null);
 	const abortRef = useRef<AbortController | null>(null);
 
+	const hydrate = useCallback((next: ChatTurn[]) => {
+		setTurns(next);
+		setError(null);
+	}, []);
+
+	const clear = useCallback(() => {
+		setTurns([]);
+		setError(null);
+	}, []);
+
 	const sendMessage = useCallback(
-		async (text: string) => {
+		async (text: string, overrideThreadId?: string) => {
 			if (!text.trim() || streaming) return;
 
 			const userTurn: ChatTurn = { role: "user", text, id: nextId() };
@@ -85,11 +147,14 @@ export function useAgentChat() {
 			abortRef.current = ac;
 
 			try {
+				const payload: Record<string, unknown> = { message: text };
+				const effectiveThreadId = overrideThreadId ?? threadId;
+				if (effectiveThreadId) payload.thread_id = effectiveThreadId;
 				const res = await fetch("/api/agent/chat", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					credentials: "include",
-					body: JSON.stringify({ message: text }),
+					body: JSON.stringify(payload),
 					signal: ac.signal,
 				});
 
@@ -126,7 +191,7 @@ export function useAgentChat() {
 				abortRef.current = null;
 			}
 		},
-		[streaming],
+		[streaming, threadId],
 	);
 
 	const stop = useCallback(() => {
@@ -139,7 +204,7 @@ export function useAgentChat() {
 		setError(null);
 	}, [stop]);
 
-	return { turns, streaming, error, sendMessage, stop, reset };
+	return { turns, streaming, error, sendMessage, stop, reset, hydrate, clear };
 }
 
 function parseOne(raw: string): SSEEvent | null {

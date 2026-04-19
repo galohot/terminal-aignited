@@ -1,15 +1,16 @@
 import { neon } from "@neondatabase/serverless";
 import { runAgent } from "./agent";
-import { autoPublishStaleAmBriefs, generateAmBrief } from "./am-brief";
 import {
-	type CreateInput as JournalCreate,
-	type JournalKind,
-	type UpdateInput as JournalUpdate,
-	createEntry as journalCreate,
-	deleteEntry as journalDelete,
-	listEntries as journalList,
-	updateEntry as journalUpdate,
-} from "./journal";
+	createThread as agentCreateThread,
+	deleteThread as agentDeleteThread,
+	getPersona as agentGetPersona,
+	getThread as agentGetThread,
+	toLlmHistory as agentHistoryToLlm,
+	listPersonas as agentListPersonas,
+	listThreads as agentListThreads,
+	updateThread as agentUpdateThread,
+} from "./agent-threads";
+import { autoPublishStaleAmBriefs, generateAmBrief } from "./am-brief";
 import {
 	clearSessionCookie,
 	parseCookie,
@@ -20,6 +21,15 @@ import {
 	verifyJwt,
 } from "./auth";
 import { createCheckout, handleWebhook, TIERS, type Tier } from "./billing";
+import {
+	type CreateInput as JournalCreate,
+	type JournalKind,
+	type UpdateInput as JournalUpdate,
+	createEntry as journalCreate,
+	deleteEntry as journalDelete,
+	listEntries as journalList,
+	updateEntry as journalUpdate,
+} from "./journal";
 import {
 	type ArticleInput,
 	type ArticleType,
@@ -159,8 +169,7 @@ async function handleProxy(
 	if (userId) upstreamHeaders["X-User-Id"] = userId;
 
 	// Only GET, non-paper, cache-ruled requests use the edge cache path.
-	const cacheTtl =
-		!isPaper && request.method === "GET" ? matchCacheTTL(subpath) : null;
+	const cacheTtl = !isPaper && request.method === "GET" ? matchCacheTTL(subpath) : null;
 
 	if (cacheTtl === null) {
 		// Pass-through (paper, mutations, or uncached GETs)
@@ -360,6 +369,14 @@ async function handleAuthLogout(): Promise<Response> {
 interface AgentChatBody {
 	message: string;
 	history?: Array<{ role: "user" | "assistant"; content: unknown }>;
+	thread_id?: string;
+}
+
+const TIER_RANK: Record<string, number> = { starter: 1, pro: 2, institutional: 3 };
+
+function tierAtLeast(tier: string | null | undefined, min: "pro" | "institutional"): boolean {
+	if (!tier) return false;
+	return (TIER_RANK[tier] ?? 0) >= TIER_RANK[min];
 }
 
 async function handleAgentChat(request: Request, env: Env): Promise<Response> {
@@ -394,16 +411,142 @@ async function handleAgentChat(request: Request, env: Env): Promise<Response> {
 		authDbUrl: env.AUTH_DATABASE_URL,
 	};
 
+	const llmEnv = {
+		MINIMAX_API_KEY: env.MINIMAX_API_KEY,
+		KIMI_API_KEY: env.KIMI_API_KEY,
+		OPENROUTER_API_KEY: env.OPENROUTER_API_KEY,
+	};
+
+	// Threaded path — persist + load history + apply persona system prompt.
+	if (body.thread_id) {
+		if (!tierAtLeast(tier, "pro")) {
+			return jsonResponse({ error: "UPGRADE_REQUIRED", required: "pro" }, { status: 403 });
+		}
+		const existing = await agentGetThread(env.AUTH_DATABASE_URL, session.userId, body.thread_id);
+		if (!existing) return jsonResponse({ error: "THREAD_NOT_FOUND" }, { status: 404 });
+		const history = agentHistoryToLlm(existing.messages);
+		let systemPrompt: string | undefined;
+		if (existing.thread.persona_id) {
+			const persona = await agentGetPersona(env.AUTH_DATABASE_URL, existing.thread.persona_id);
+			if (persona) systemPrompt = persona.system_prompt;
+		}
+		// Auto-title placeholder threads on first user message.
+		if (history.length === 0 && existing.thread.title === "New chat") {
+			const trimmed = body.message.trim().replace(/\s+/g, " ");
+			const title = trimmed.length <= 50 ? trimmed : `${trimmed.slice(0, 47)}…`;
+			await agentUpdateThread(env.AUTH_DATABASE_URL, session.userId, body.thread_id, { title });
+		}
+		return runAgent({
+			userMessage: body.message,
+			history,
+			ctx,
+			llmEnv,
+			systemPrompt,
+			persist: { threadId: body.thread_id, dbUrl: env.AUTH_DATABASE_URL },
+		});
+	}
+
+	// Ephemeral path (existing behavior).
 	return runAgent({
 		userMessage: body.message,
 		history: (body.history ?? []) as Parameters<typeof runAgent>[0]["history"],
 		ctx,
-		llmEnv: {
-			MINIMAX_API_KEY: env.MINIMAX_API_KEY,
-			KIMI_API_KEY: env.KIMI_API_KEY,
-			OPENROUTER_API_KEY: env.OPENROUTER_API_KEY,
-		},
+		llmEnv,
 	});
+}
+
+// --- Agent threads + personas ---
+
+async function handleAgentPersonas(request: Request, env: Env): Promise<Response> {
+	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method !== "GET") {
+		return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
+	}
+	const session = await getSession(request, env);
+	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
+	const personas = await agentListPersonas(env.AUTH_DATABASE_URL);
+	// Strip system_prompt — callers only need to identify + describe, not reveal internals.
+	return jsonResponse({
+		personas: personas.map((p) => ({ id: p.id, name: p.name, description: p.description })),
+	});
+}
+
+async function requireProForThreads(
+	request: Request,
+	env: Env,
+): Promise<{ userId: string } | Response> {
+	const session = await getSession(request, env);
+	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
+	const sub = await getActiveSubscription(env, session.userId, session.email);
+	if (!tierAtLeast(sub?.tier ?? null, "pro")) {
+		return jsonResponse({ error: "UPGRADE_REQUIRED", required: "pro" }, { status: 403 });
+	}
+	return { userId: session.userId };
+}
+
+async function handleAgentThreadsList(request: Request, env: Env): Promise<Response> {
+	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method === "GET") {
+		const auth = await requireProForThreads(request, env);
+		if (auth instanceof Response) return auth;
+		const threads = await agentListThreads(env.AUTH_DATABASE_URL, auth.userId, 30);
+		return jsonResponse({ threads });
+	}
+	if (request.method === "POST") {
+		const auth = await requireProForThreads(request, env);
+		if (auth instanceof Response) return auth;
+		let body: { personaId?: string | null; title?: string } = {};
+		try {
+			body = (await request.json()) as typeof body;
+		} catch {
+			/* empty body ok */
+		}
+		const title = (body.title ?? "").trim() || "New chat";
+		const thread = await agentCreateThread(
+			env.AUTH_DATABASE_URL,
+			auth.userId,
+			title,
+			body.personaId ?? null,
+		);
+		return jsonResponse({ thread }, { status: 201 });
+	}
+	return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
+}
+
+async function handleAgentThreadItem(
+	request: Request,
+	env: Env,
+	threadId: string,
+): Promise<Response> {
+	if (request.method === "OPTIONS") return corsResponse();
+	const auth = await requireProForThreads(request, env);
+	if (auth instanceof Response) return auth;
+
+	if (request.method === "GET") {
+		const result = await agentGetThread(env.AUTH_DATABASE_URL, auth.userId, threadId);
+		if (!result) return jsonResponse({ error: "THREAD_NOT_FOUND" }, { status: 404 });
+		return jsonResponse(result);
+	}
+	if (request.method === "PATCH" || request.method === "PUT") {
+		let body: { title?: string; personaId?: string | null } = {};
+		try {
+			body = (await request.json()) as typeof body;
+		} catch {
+			return jsonResponse({ error: "INVALID_JSON" }, { status: 400 });
+		}
+		const updated = await agentUpdateThread(env.AUTH_DATABASE_URL, auth.userId, threadId, {
+			title: body.title,
+			persona_id: body.personaId,
+		});
+		if (!updated) return jsonResponse({ error: "THREAD_NOT_FOUND" }, { status: 404 });
+		return jsonResponse({ thread: updated });
+	}
+	if (request.method === "DELETE") {
+		const ok = await agentDeleteThread(env.AUTH_DATABASE_URL, auth.userId, threadId);
+		if (!ok) return jsonResponse({ error: "THREAD_NOT_FOUND" }, { status: 404 });
+		return jsonResponse({ ok: true });
+	}
+	return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
 }
 
 // --- Billing ---
@@ -573,16 +716,13 @@ async function handleResearchList(request: Request, env: Env): Promise<Response>
 	return jsonResponse(result);
 }
 
-async function handleResearchArticle(
-	request: Request,
-	env: Env,
-	slug: string,
-): Promise<Response> {
+async function handleResearchArticle(request: Request, env: Env, slug: string): Promise<Response> {
 	const session = await getSession(request, env);
 	const viewerTier = session
-		? (await getActiveSubscription(env, session.userId, session.email))?.tier ?? null
+		? ((await getActiveSubscription(env, session.userId, session.email))?.tier ?? null)
 		: null;
-	const tierForRead = session && isFounder(session.email) ? "institutional" : (viewerTier as Tier | null);
+	const tierForRead =
+		session && isFounder(session.email) ? "institutional" : (viewerTier as Tier | null);
 
 	const result = await getArticleBySlug(env.AUTH_DATABASE_URL, slug, tierForRead);
 	if (!result) return jsonResponse({ error: "not_found" }, { status: 404 });
@@ -763,6 +903,12 @@ export default {
 
 		// Agent
 		if (path === "/api/agent/chat") return handleAgentChat(request, env);
+		if (path === "/api/agent/personas") return handleAgentPersonas(request, env);
+		if (path === "/api/agent/threads") return handleAgentThreadsList(request, env);
+		if (path.startsWith("/api/agent/thread/")) {
+			const id = path.replace("/api/agent/thread/", "");
+			return handleAgentThreadItem(request, env, id);
+		}
 
 		// Billing
 		if (path === "/api/billing/checkout") return handleBillingCheckout(request, env);
@@ -794,7 +940,8 @@ export default {
 		}
 		if (path === "/api/admin/research/drafts") return handleAdminResearchDrafts(request, env);
 		if (path === "/api/admin/research/upsert") return handleAdminResearchUpsert(request, env);
-		if (path === "/api/admin/research/generate-am-brief") return handleAdminGenerateAmBrief(request, env);
+		if (path === "/api/admin/research/generate-am-brief")
+			return handleAdminGenerateAmBrief(request, env);
 		if (path.startsWith("/api/admin/research/publish/")) {
 			const id = path.replace("/api/admin/research/publish/", "");
 			return handleAdminResearchPublish(request, env, id);
