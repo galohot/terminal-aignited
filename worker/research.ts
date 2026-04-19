@@ -74,7 +74,85 @@ async function ensureSchema(sql: Sql): Promise<void> {
 			PRIMARY KEY (user_id, article_id)
 		)
 	`;
+	await sql`
+		CREATE TABLE IF NOT EXISTS terminal_research_subscriptions (
+			user_id TEXT PRIMARY KEY REFERENCES terminal_users(id) ON DELETE CASCADE,
+			email_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+			types TEXT[] NOT NULL DEFAULT ARRAY['am_brief']::TEXT[],
+			created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+			updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+		)
+	`;
+	await sql`CREATE INDEX IF NOT EXISTS idx_tr_subs_email_enabled ON terminal_research_subscriptions (email_enabled) WHERE email_enabled = TRUE`;
 	schemaReady = true;
+}
+
+// ---- Subscriptions ----------------------------------------------------
+
+export interface Subscription {
+	user_id: string;
+	email_enabled: boolean;
+	types: ArticleType[];
+}
+
+export async function getSubscription(
+	dbUrl: string,
+	userId: string,
+): Promise<Subscription> {
+	const sql = neon(dbUrl);
+	await ensureSchema(sql);
+	const rows = (await sql`
+		SELECT user_id, email_enabled, types
+		FROM terminal_research_subscriptions
+		WHERE user_id = ${userId}
+	`) as Subscription[];
+	return rows[0] ?? { user_id: userId, email_enabled: false, types: ["am_brief"] };
+}
+
+export async function upsertSubscription(
+	dbUrl: string,
+	userId: string,
+	patch: { email_enabled?: boolean; types?: ArticleType[] },
+): Promise<Subscription> {
+	const sql = neon(dbUrl);
+	await ensureSchema(sql);
+	const rows = (await sql`
+		INSERT INTO terminal_research_subscriptions (user_id, email_enabled, types)
+		VALUES (
+			${userId},
+			${patch.email_enabled ?? false},
+			${patch.types ?? ["am_brief"]}
+		)
+		ON CONFLICT (user_id) DO UPDATE SET
+			email_enabled = COALESCE(${patch.email_enabled ?? null}, terminal_research_subscriptions.email_enabled),
+			types = COALESCE(${patch.types ?? null}, terminal_research_subscriptions.types),
+			updated_at = now()
+		RETURNING user_id, email_enabled, types
+	`) as Subscription[];
+	return rows[0];
+}
+
+// Returns list of {user_id, email} for users opted-in to email delivery for a given type.
+// Joins users → subscriptions → subscriptions.status to ensure only Pro+ get gated content.
+export async function listEmailSubscribersForType(
+	dbUrl: string,
+	type: ArticleType,
+): Promise<Array<{ user_id: string; email: string; name: string | null }>> {
+	const sql = neon(dbUrl);
+	await ensureSchema(sql);
+	const rows = (await sql`
+		SELECT u.id AS user_id, u.email, u.name
+		FROM terminal_research_subscriptions s
+		JOIN terminal_users u ON u.id = s.user_id
+		LEFT JOIN terminal_subscriptions sub
+			ON sub.user_id = u.id
+			AND sub.status = 'active'
+			AND (sub.expires_at IS NULL OR sub.expires_at > now())
+		WHERE s.email_enabled = TRUE
+		  AND ${type} = ANY(s.types)
+		  AND (sub.tier IN ('pro','institutional') OR u.email IN ('irwndedi@gmail.com','rivsyah@gmail.com','biroumumkemlu@gmail.com'))
+	`) as Array<{ user_id: string; email: string; name: string | null }>;
+	return rows;
 }
 
 // Tier ordering for gate checks.

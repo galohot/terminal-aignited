@@ -452,4 +452,17 @@ export const research = {
 	adminPublish: (id: string) => postWorker<{ ok: boolean }>(`/api/admin/research/publish/${id}`),
 	adminGenerateAmBrief: () =>
 		postWorker<{ ok: boolean; slug?: string; error?: string }>("/api/admin/research/generate-am-brief"),
+	getSubscription: () =>
+		fetchWorker<{ user_id: string; email_enabled: boolean; types: ResearchType[] }>(
+			"/api/research/subscriptions",
+		),
+	updateSubscription: (patch: { email_enabled?: boolean; types?: ResearchType[] }) =>
+		postWorker<{ user_id: string; email_enabled: boolean; types: ResearchType[] }>(
+			"/api/research/subscriptions",
+			patch,
+		),
 };
+
+// Public handle for the Telegram research channel. Update when a username is set.
+// TODO: wire via env var from the worker once the channel has a public @ handle.
+export const TELEGRAM_CHANNEL_URL: string | null = null;

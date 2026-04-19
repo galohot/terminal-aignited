@@ -15,11 +15,13 @@ import {
 	type ArticleInput,
 	type ArticleType,
 	getArticleBySlug,
+	getSubscription,
 	listArticles,
 	listDrafts,
 	markRead,
 	publishArticle,
 	upsertArticle,
+	upsertSubscription,
 } from "./research";
 import type { ToolCtx } from "./tools";
 import { authenticateWithCode, buildAuthorizeUrl, displayName, type WorkOSUser } from "./workos";
@@ -41,6 +43,9 @@ interface Env {
 	OPENROUTER_API_KEY?: string;
 	MAYAR_API_KEY?: string;
 	MAYAR_WEBHOOK_TOKEN?: string;
+	RESEND_API_KEY?: string;
+	TELEGRAM_NEWSLETTER_BOT_TOKEN?: string;
+	TELEGRAM_NEWSLETTER_CHAT_ID?: string;
 }
 
 const CORS_HEADERS = {
@@ -625,6 +630,33 @@ async function handleAdminResearchPublish(
 	return jsonResponse({ ok: true });
 }
 
+async function handleResearchSubscriptions(request: Request, env: Env): Promise<Response> {
+	if (request.method === "OPTIONS") return corsResponse();
+	const session = await getSession(request, env);
+	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
+
+	if (request.method === "GET") {
+		const sub = await getSubscription(env.AUTH_DATABASE_URL, session.userId);
+		return jsonResponse(sub);
+	}
+
+	if (request.method === "POST") {
+		let body: { email_enabled?: boolean; types?: ArticleType[] };
+		try {
+			body = (await request.json()) as { email_enabled?: boolean; types?: ArticleType[] };
+		} catch {
+			return jsonResponse({ error: "INVALID_JSON" }, { status: 400 });
+		}
+		const sub = await upsertSubscription(env.AUTH_DATABASE_URL, session.userId, {
+			email_enabled: body.email_enabled,
+			types: body.types,
+		});
+		return jsonResponse(sub);
+	}
+
+	return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
+}
+
 async function handleAdminGenerateAmBrief(request: Request, env: Env): Promise<Response> {
 	if (request.method === "OPTIONS") return corsResponse();
 	const session = await getSession(request, env);
@@ -660,6 +692,7 @@ export default {
 
 		// Research
 		if (path === "/api/research/list") return handleResearchList(request, env);
+		if (path === "/api/research/subscriptions") return handleResearchSubscriptions(request, env);
 		if (path.startsWith("/api/research/article/")) {
 			const slug = path.replace("/api/research/article/", "");
 			return handleResearchArticle(request, env, slug);

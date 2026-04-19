@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clsx } from "clsx";
-import { BookOpen, Briefcase, Building2, Calendar, Globe2, Lock, Newspaper, TrendingUp } from "lucide-react";
+import { Bell, BookOpen, Briefcase, Building2, Calendar, Globe2, Loader2, Lock, Mail, Newspaper, Send, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
-import { research, type ResearchArticle, type ResearchType } from "../lib/api";
+import { useAuth } from "../contexts/auth";
+import { research, type ResearchArticle, type ResearchType, TELEGRAM_CHANNEL_URL } from "../lib/api";
 
 const TYPE_META: Record<ResearchType, { label: string; icon: typeof BookOpen; accent: string }> = {
 	am_brief: { label: "AM Brief", icon: Newspaper, accent: "text-ember-600" },
@@ -107,7 +108,124 @@ export function ResearchPage() {
 					))}
 				</section>
 			)}
+
+			<SubscriptionPanel />
 		</div>
+	);
+}
+
+function SubscriptionPanel() {
+	const { state } = useAuth();
+	const qc = useQueryClient();
+	const subQ = useQuery({
+		queryKey: ["research", "subscription"],
+		queryFn: () => research.getSubscription(),
+		enabled: state.status === "auth",
+		staleTime: 60_000,
+	});
+	const update = useMutation({
+		mutationFn: (patch: { email_enabled?: boolean; types?: ResearchType[] }) =>
+			research.updateSubscription(patch),
+		onSuccess: (data) => {
+			qc.setQueryData(["research", "subscription"], data);
+		},
+	});
+
+	if (state.status !== "auth") {
+		return (
+			<section className="mt-12 rounded-[20px] border border-rule bg-paper-2 p-6 sm:p-8">
+				<div className="flex items-center gap-2 font-mono text-[11px] text-ember-600 uppercase tracking-[0.28em]">
+					<Bell className="h-3.5 w-3.5" /> Get the daily brief
+				</div>
+				<h3 className="mt-2 font-extrabold text-[20px] text-ink" style={{ fontFamily: "var(--font-display)" }}>
+					Delivered at 06:40 WIB
+				</h3>
+				<p className="mt-2 text-[14px] text-ink-3">
+					Sign in to opt into email delivery and join our Telegram channel.
+				</p>
+			</section>
+		);
+	}
+
+	const sub = subQ.data;
+	const emailOn = sub?.email_enabled ?? false;
+
+	return (
+		<section className="mt-12 rounded-[20px] border border-rule bg-paper-2 p-6 sm:p-8">
+			<div className="flex items-center gap-2 font-mono text-[11px] text-ember-600 uppercase tracking-[0.28em]">
+				<Bell className="h-3.5 w-3.5" /> Delivery preferences
+			</div>
+			<h3 className="mt-2 font-extrabold text-[20px] text-ink" style={{ fontFamily: "var(--font-display)" }}>
+				Get the AM brief at 06:40 WIB
+			</h3>
+
+			<div className="mt-5 grid gap-3 sm:grid-cols-2">
+				<button
+					type="button"
+					disabled={subQ.isLoading || update.isPending}
+					onClick={() => update.mutate({ email_enabled: !emailOn })}
+					className={clsx(
+						"flex items-center justify-between rounded-xl border p-4 text-left transition-colors",
+						emailOn ? "border-ember-600 bg-ember-50" : "border-rule bg-card hover:bg-paper",
+					)}
+				>
+					<div className="flex items-start gap-3">
+						<Mail className={clsx("mt-0.5 h-4 w-4", emailOn ? "text-ember-600" : "text-ink-3")} />
+						<div>
+							<div className="font-mono text-[11px] text-ink-3 uppercase tracking-[0.18em]">Email</div>
+							<div className="mt-0.5 font-semibold text-[14px] text-ink">
+								{emailOn ? "On — you're subscribed" : "Off"}
+							</div>
+							<div className="mt-1 text-[12px] text-ink-3">
+								{state.status === "auth" ? state.user.email : ""}
+							</div>
+						</div>
+					</div>
+					<div
+						className={clsx(
+							"ml-2 h-5 w-9 rounded-full p-0.5 transition-colors",
+							emailOn ? "bg-ember-600" : "bg-ink-5",
+						)}
+					>
+						<div
+							className={clsx(
+								"h-4 w-4 rounded-full bg-white transition-transform",
+								emailOn ? "translate-x-4" : "translate-x-0",
+							)}
+						/>
+					</div>
+				</button>
+
+				<a
+					href={TELEGRAM_CHANNEL_URL ?? "#"}
+					target={TELEGRAM_CHANNEL_URL ? "_blank" : undefined}
+					rel={TELEGRAM_CHANNEL_URL ? "noreferrer" : undefined}
+					onClick={(e) => {
+						if (!TELEGRAM_CHANNEL_URL) e.preventDefault();
+					}}
+					className={clsx(
+						"flex items-center justify-between rounded-xl border border-rule bg-card p-4 transition-colors",
+						TELEGRAM_CHANNEL_URL ? "hover:bg-paper" : "opacity-60 cursor-not-allowed",
+					)}
+				>
+					<div className="flex items-start gap-3">
+						<Send className="mt-0.5 h-4 w-4 text-ink-3" />
+						<div>
+							<div className="font-mono text-[11px] text-ink-3 uppercase tracking-[0.18em]">Telegram</div>
+							<div className="mt-0.5 font-semibold text-[14px] text-ink">
+								{TELEGRAM_CHANNEL_URL ? "Join the channel" : "Channel link coming soon"}
+							</div>
+							<div className="mt-1 text-[12px] text-ink-3">Broadcast post at publish time.</div>
+						</div>
+					</div>
+					{update.isPending && <Loader2 className="h-4 w-4 animate-spin text-ink-3" />}
+				</a>
+			</div>
+
+			{update.isError && (
+				<p className="mt-3 font-mono text-[11px] text-neg">Failed to update — try again.</p>
+			)}
+		</section>
 	);
 }
 

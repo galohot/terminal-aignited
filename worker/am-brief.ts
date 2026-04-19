@@ -4,9 +4,17 @@
 // auto-publishes any AM brief still in draft (per plan: 10-min grace).
 
 import { callLLM, type LLMEnv } from "./llm";
-import { listDrafts, publishArticle, upsertArticle } from "./research";
+import { broadcastToTelegram, fanoutEmails, type NotificationsEnv } from "./notifications";
+import {
+	getArticleBySlug,
+	listDrafts,
+	listEmailSubscribersForType,
+	publishArticle,
+	upsertArticle,
+} from "./research";
+import type { Tool } from "./tools";
 
-interface BriefEnv extends LLMEnv {
+interface BriefEnv extends LLMEnv, NotificationsEnv {
 	API_BASE_URL: string;
 	API_KEY: string;
 	TERMINAL_API_KEY?: string;
@@ -46,7 +54,7 @@ const SYSTEM_PROMPT = `You are AIgnited Research, writing the daily AM Brief for
 
 Style: tight, factual, hedged where appropriate. Lead with positive indicators when present, then risks. No filler, no clichés ("market participants will be watching"), no generic disclaimers. Use short paragraphs and concrete numbers from the source data.
 
-Length: 800-1200 words. 4-6 sections. Use markdown headings (##) and tight paragraphs.
+Length: 800-1200 words. 4-6 sections. Use markdown headings (##) and tight paragraphs. DO NOT include code blocks (triple backticks) anywhere in body_md — this is a financial brief, not technical content.
 
 Required sections:
 1. **The Setup** — overnight context, what to watch open
@@ -55,16 +63,7 @@ Required sections:
 4. **Sectors** — what worked / didn't
 5. **The Day Ahead** — 2-3 things to watch
 
-Output STRICT JSON in a fenced code block:
-\`\`\`json
-{
-  "title": "...",
-  "summary": "1-2 sentence dek",
-  "body_md": "## The Setup\\n\\n...full markdown body...",
-  "tickers": ["BBCA", "BBRI"],
-  "tags": ["am_brief", "ihsg"]
-}
-\`\`\`
+You MUST call the submit_brief tool exactly once with the complete brief. Do not respond with text — only the tool call.
 
 Tickers MUST be 4-letter IDX codes you actually mentioned in the body (no .JK suffix). Tags are lowercase, snake_case.`;
 
@@ -76,22 +75,46 @@ interface ParsedBrief {
 	tags: string[];
 }
 
-function extractJson(text: string): ParsedBrief | null {
-	const fence = /```(?:json)?\s*([\s\S]*?)```/i.exec(text);
-	const candidate = fence ? fence[1] : text;
-	try {
-		const parsed = JSON.parse(candidate.trim()) as ParsedBrief;
-		if (
-			typeof parsed.title === "string" &&
-			typeof parsed.summary === "string" &&
-			typeof parsed.body_md === "string" &&
-			Array.isArray(parsed.tickers) &&
-			Array.isArray(parsed.tags)
-		) {
-			return parsed;
-		}
-	} catch {
-		return null;
+const SUBMIT_BRIEF_TOOL: Tool = {
+	name: "submit_brief",
+	description: "Submit the completed AM Brief. Call exactly once with all fields populated.",
+	input_schema: {
+		type: "object",
+		properties: {
+			title: { type: "string", description: "Headline, e.g. 'IDX Morning Brief — Apr 19, 2026'" },
+			summary: { type: "string", description: "1-2 sentence dek for paywall preview" },
+			body_md: {
+				type: "string",
+				description: "Full markdown body, 800-1200 words, with ## section headings. No code blocks.",
+			},
+			tickers: {
+				type: "array",
+				items: { type: "string" },
+				description: "4-letter IDX codes mentioned in body, e.g. ['BBCA','BBRI']",
+			},
+			tags: {
+				type: "array",
+				items: { type: "string" },
+				description: "Lowercase snake_case tags, e.g. ['am_brief','ihsg']",
+			},
+		},
+		required: ["title", "summary", "body_md", "tickers", "tags"],
+	},
+	dispatch: async () => ({ ok: true, data: null }),
+};
+
+function extractBriefFromToolUse(content: Array<{ type: string; [k: string]: unknown }>): ParsedBrief | null {
+	const tu = content.find((b) => b.type === "tool_use" && b.name === "submit_brief");
+	if (!tu) return null;
+	const input = tu.input as Partial<ParsedBrief>;
+	if (
+		typeof input.title === "string" &&
+		typeof input.summary === "string" &&
+		typeof input.body_md === "string" &&
+		Array.isArray(input.tickers) &&
+		Array.isArray(input.tags)
+	) {
+		return input as ParsedBrief;
 	}
 	return null;
 }
@@ -115,29 +138,24 @@ export async function generateAmBrief(env: BriefEnv): Promise<{ ok: boolean; slu
 		return { ok: false, error: `source_fetch: ${e instanceof Error ? e.message : String(e)}` };
 	}
 
-	const userMessage = `Today's source data (JSON):\n\n${JSON.stringify(sources, null, 2)}\n\nGenerate the AM Brief now.`;
+	const userMessage = `Today's source data (JSON):\n\n${JSON.stringify(sources, null, 2)}\n\nGenerate the AM Brief now by calling submit_brief.`;
 
 	let llm;
 	try {
 		llm = await callLLM(env, {
 			system: SYSTEM_PROMPT,
 			messages: [{ role: "user", content: userMessage }],
-			tools: [],
-			maxTokens: 4000,
+			tools: [SUBMIT_BRIEF_TOOL],
+			maxTokens: 8000,
 			temperature: 0.4,
 		});
 	} catch (e) {
 		return { ok: false, error: `llm: ${e instanceof Error ? e.message : String(e)}` };
 	}
 
-	const text = llm.content
-		.filter((b): b is { type: "text"; text: string } => b.type === "text")
-		.map((b) => b.text)
-		.join("\n");
-
-	const brief = extractJson(text);
+	const brief = extractBriefFromToolUse(llm.content as Array<{ type: string; [k: string]: unknown }>);
 	if (!brief) {
-		return { ok: false, error: "llm output did not contain valid JSON brief" };
+		return { ok: false, error: "llm did not call submit_brief tool with valid arguments" };
 	}
 
 	try {
@@ -162,10 +180,15 @@ export async function generateAmBrief(env: BriefEnv): Promise<{ ok: boolean; slu
 }
 
 // Auto-publish drafts older than 9 minutes (10-min grace per plan).
-export async function autoPublishStaleAmBriefs(env: BriefEnv): Promise<{ published: number }> {
+// On publish, fan out to email subscribers + Telegram channel.
+export async function autoPublishStaleAmBriefs(
+	env: BriefEnv,
+): Promise<{ published: number; emailed: number; telegram: boolean }> {
 	const drafts = await listDrafts(env.AUTH_DATABASE_URL);
 	const now = Date.now();
 	let published = 0;
+	let emailed = 0;
+	let telegram = false;
 	for (const a of drafts) {
 		if (a.type !== "am_brief") continue;
 		if (a.status !== "draft") continue;
@@ -174,9 +197,31 @@ export async function autoPublishStaleAmBriefs(env: BriefEnv): Promise<{ publish
 		try {
 			await publishArticle(env.AUTH_DATABASE_URL, a.id, "auto-publish@aignited.id");
 			published++;
-		} catch {
-			// best-effort; will retry next tick
+
+			// Re-fetch to get published_at + canonical row for the fan-out payload.
+			const result = await getArticleBySlug(env.AUTH_DATABASE_URL, a.slug, "institutional");
+			if (!result) continue;
+			const article = result.article;
+
+			// Telegram first (single call, fast).
+			const tg = await broadcastToTelegram(env, article);
+			if (tg.ok) telegram = true;
+			else console.warn(`[am-brief] telegram failed: ${tg.error}`);
+
+			// Email fan-out.
+			const subs = await listEmailSubscribersForType(env.AUTH_DATABASE_URL, "am_brief");
+			if (subs.length > 0) {
+				const out = await fanoutEmails(
+					env,
+					article,
+					subs.map((s) => ({ email: s.email, name: s.name })),
+				);
+				emailed += out.sent;
+				console.log(`[am-brief] email fan-out: ${out.sent} sent, ${out.failed} failed`);
+			}
+		} catch (e) {
+			console.warn(`[am-brief] publish/fanout failed for ${a.slug}: ${e instanceof Error ? e.message : String(e)}`);
 		}
 	}
-	return { published };
+	return { published, emailed, telegram };
 }
