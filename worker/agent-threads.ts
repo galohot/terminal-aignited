@@ -55,6 +55,7 @@ You help retail investors research IDX-listed companies and — for users on pai
 - Call tools proactively — the user cannot see raw data unless you fetch it.
 - For a "how's X doing" question: get_quote + get_price_history.
 - For "should I buy": get_quote + get_financials + get_broker_flow (make no recommendation, just surface data).
+- For a fast conviction read: get_idx_score (composite 0–100), get_idx_patterns (technical signals), get_idx_flow_bias (classified foreign-flow) — run these before deeper fundamental/flow work since they are cheap and opinionated.
 - Before place_order: always get_quote first to confirm the user sees current price.
 - For portfolio questions: get_portfolio, get_pnl.
 
@@ -152,7 +153,8 @@ Follow universal IDX rules.`,
 - **Volume:** Price moves on high volume confirm; on low volume don't. Use get_price_history for volume context.
 
 ## Workflow
-- Foreign flow first (get_foreign_flow, 30d).
+- Start with get_idx_flow_bias for a classified 5-level read (StrongBuy/Buy/Neutral/Sell/StrongSell over 20d). Cheap, opinionated.
+- Then get_foreign_flow (30d) for the raw daily series if you need to narrate the shape.
 - Then broker summary (get_broker_flow) to see who specifically.
 - Cross-check with insiders (get_insiders) for alignment with tape.
 - Only then quote + fundamentals for price-based context.

@@ -3,8 +3,8 @@
 // schemas at the GLM adapter layer in worker/llm.ts.
 
 import {
-	createEntry as journalCreate,
 	type JournalKind,
+	createEntry as journalCreate,
 	searchEntries as journalSearch,
 } from "./journal";
 import { type ArticleType, searchArticles } from "./research";
@@ -201,6 +201,101 @@ const researchTools: Tool[] = [
 		},
 	},
 	{
+		name: "get_idx_score",
+		description:
+			"Composite 0–100 scorecard for an IDX ticker (blends fundamentals, momentum, flow, quality). Cheap signal — call this first for a quick conviction read before deciding whether to go deeper. Returns overall score + component breakdown + grade.",
+		input_schema: {
+			type: "object",
+			properties: { ticker: { type: "string" } },
+			required: ["ticker"],
+		},
+		dispatch: (args, ctx) => {
+			const raw = requireString(args, "ticker").toUpperCase().replace(/\.JK$/, "");
+			return marketApiFetch("GET", `/api/v1/idx/score/${encodeURIComponent(raw)}`, ctx);
+		},
+	},
+	{
+		name: "get_idx_patterns",
+		description:
+			"Technical patterns detected on recent price action for an IDX ticker: golden/death cross, RSI extremes, volume climax, support/resistance proximity, trend strength. Each match has direction (bullish/bearish/neutral) and confidence 0–1. Ignore patterns with confidence < 0.5 unless the user explicitly wants weak signals. Note: with ~28 bars of history, only RSI + volume climax fire reliably today.",
+		input_schema: {
+			type: "object",
+			properties: { ticker: { type: "string" } },
+			required: ["ticker"],
+		},
+		dispatch: (args, ctx) => {
+			const raw = requireString(args, "ticker").toUpperCase().replace(/\.JK$/, "");
+			return marketApiFetch("GET", `/api/v1/idx/patterns/${encodeURIComponent(raw)}`, ctx);
+		},
+	},
+	{
+		name: "get_idx_flow_bias",
+		description:
+			"Classified foreign-flow bias for an IDX ticker over a recent window. Sums foreign buy/sell values and returns a 5-level label (StrongBuy / Buy / Neutral / Sell / StrongSell) using ratio thresholds 0.3 / 0.1. Use as a fast read of institutional sentiment. Prefer over get_foreign_flow when you just need the signal, not raw daily flows.",
+		input_schema: {
+			type: "object",
+			properties: {
+				ticker: { type: "string" },
+				days: { type: "integer", description: "Lookback days, default 20" },
+			},
+			required: ["ticker"],
+		},
+		dispatch: async (args, ctx) => {
+			const raw = requireString(args, "ticker").toUpperCase().replace(/\.JK$/, "");
+			const days = optionalNumber(args, "days") ?? 20;
+			const res = await marketApiFetch(
+				"GET",
+				`/api/v1/idx/foreign-flow/${encodeURIComponent(raw)}`,
+				ctx,
+				{ query: { days } },
+			);
+			if (!res.ok) return res;
+			const payload = res.data as {
+				kode?: string;
+				history?: Array<{ foreign_buy?: number; foreign_sell?: number }>;
+			} | null;
+			const history = payload?.history ?? [];
+			if (history.length === 0) {
+				return {
+					ok: true,
+					data: { kode: raw, bias: null, days: 0, note: "no foreign flow history available" },
+				};
+			}
+			let buyValue = 0;
+			let sellValue = 0;
+			for (const entry of history) {
+				buyValue += Number(entry.foreign_buy) || 0;
+				sellValue += Number(entry.foreign_sell) || 0;
+			}
+			const netValue = buyValue - sellValue;
+			if (buyValue <= 0) {
+				return {
+					ok: true,
+					data: { kode: raw, bias: null, days: history.length, note: "no buy volume in window" },
+				};
+			}
+			const ratio = netValue / buyValue;
+			let bias: "StrongBuy" | "Buy" | "Neutral" | "Sell" | "StrongSell";
+			if (ratio > 0.3) bias = "StrongBuy";
+			else if (ratio > 0.1) bias = "Buy";
+			else if (ratio > -0.1) bias = "Neutral";
+			else if (ratio > -0.3) bias = "Sell";
+			else bias = "StrongSell";
+			return {
+				ok: true,
+				data: {
+					kode: raw,
+					bias,
+					ratio: Number(ratio.toFixed(4)),
+					buyValue,
+					sellValue,
+					netValue,
+					days: history.length,
+				},
+			};
+		},
+	},
+	{
 		name: "get_insiders",
 		description:
 			"Insider/commissioner/director holdings for an IDX company. Use when you want to see ownership concentration or recent insider transactions.",
@@ -303,7 +398,7 @@ const researchTools: Tool[] = [
 	{
 		name: "research_search",
 		description:
-			"Search AIgnited Research articles (AM briefs, deep dives, sector notes, earnings previews). Use BEFORE making fundamental claims so your answer can cite recent in-house research. Returns the hits with slugs the user can open at /research/<slug>. Filter by `query` (free text across title/summary/body), `tickers` (e.g. [\"BBCA\",\"BBRI\"]), `sectors`, or `type`. Each hit has a `gated` flag — gated=true means the user's current tier can't read the full body.",
+			'Search AIgnited Research articles (AM briefs, deep dives, sector notes, earnings previews). Use BEFORE making fundamental claims so your answer can cite recent in-house research. Returns the hits with slugs the user can open at /research/<slug>. Filter by `query` (free text across title/summary/body), `tickers` (e.g. ["BBCA","BBRI"]), `sectors`, or `type`. Each hit has a `gated` flag — gated=true means the user\'s current tier can\'t read the full body.',
 		input_schema: {
 			type: "object",
 			properties: {
@@ -315,7 +410,8 @@ const researchTools: Tool[] = [
 				tickers: {
 					type: "array",
 					items: { type: "string" },
-					description: "Ticker symbols to filter on (match ANY). Bare kode like 'BBCA', not 'BBCA.JK'.",
+					description:
+						"Ticker symbols to filter on (match ANY). Bare kode like 'BBCA', not 'BBCA.JK'.",
 				},
 				sectors: {
 					type: "array",
