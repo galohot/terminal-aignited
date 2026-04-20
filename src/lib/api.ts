@@ -36,6 +36,7 @@ import type {
 	IdxIndicesResponse,
 	IdxInsiderSearchResponse,
 	IdxInsiderTransactionsResponse,
+	IdxPatternsResponse,
 	IdxPeersResponse,
 	IdxScoreCard,
 	IdxScreenerParams,
@@ -248,6 +249,7 @@ export const api = {
 			days ? { days: String(days) } : undefined,
 		),
 	idxScore: (ticker: string) => fetchAPI<IdxScoreCard>(`/idx/score/${ticker}`),
+	idxPatterns: (ticker: string) => fetchAPI<IdxPatternsResponse>(`/idx/patterns/${ticker}`),
 	idxDisclosures: (params?: { kode?: string; limit?: number }) =>
 		fetchAPI<IdxDisclosuresResponse>(
 			"/idx/disclosures",

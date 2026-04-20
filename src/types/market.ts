@@ -741,3 +741,20 @@ export interface IdxScoreCard {
 	has_fundamentals: boolean;
 	has_foreign_flow: boolean;
 }
+
+export type IdxPatternDirection = "Bullish" | "Bearish" | "Neutral";
+
+export interface IdxPattern {
+	name: string;
+	description: string;
+	direction: IdxPatternDirection;
+	confidence: number;
+}
+
+export interface IdxPatternsResponse {
+	ticker: string;
+	evaluated_at: string;
+	history_bars: number;
+	patterns: IdxPattern[];
+	warnings: string[];
+}
