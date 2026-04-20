@@ -1,14 +1,16 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router";
+import { RequireAuth } from "./components/auth/require-auth";
 import { ErrorBoundary } from "./components/error-boundary";
 import { AppShell } from "./components/layout/app-shell";
 import { PageLoading } from "./components/ui/loading";
-import { AuthProvider } from "./contexts/auth";
+import { AuthProvider, useAuth } from "./contexts/auth";
 import type { ApiError } from "./lib/api";
 import { AgentPage } from "./pages/agent";
 import { ChartsPage } from "./pages/charts";
 import { DashboardPage } from "./pages/dashboard";
+import { LandingPage } from "./pages/landing";
 import { FinancialsPage } from "./pages/financials";
 import { IdxCompanyPage } from "./pages/idx-company";
 import { IdxEntitiesPage } from "./pages/idx-entities";
@@ -65,6 +67,13 @@ const queryClient = new QueryClient({
 	},
 });
 
+function Home() {
+	const { state } = useAuth();
+	if (state.status === "loading") return <PageLoading />;
+	if (state.status === "unauth") return <LandingPage />;
+	return <DashboardPage />;
+}
+
 export function App() {
 	return (
 		<ErrorBoundary>
@@ -73,74 +82,188 @@ export function App() {
 					<BrowserRouter>
 						<AppShell>
 							<Routes>
-								<Route path="/" element={<DashboardPage />} />
+								<Route path="/" element={<Home />} />
+
+								{/* Public — no sign-in required */}
 								<Route path="/stock/:symbol" element={<StockPage />} />
 								<Route path="/stock/:symbol/financials" element={<FinancialsPage />} />
-								<Route path="/idx" element={<IdxExplorerPage />} />
-								<Route path="/idx/insiders" element={<IdxInsidersPage />} />
-								<Route path="/idx/screener" element={<IdxScreenerPage />} />
-								<Route path="/idx/movers" element={<IdxMoversPage />} />
-								<Route path="/idx/flow" element={<IdxFlowPage />} />
+								<Route path="/research" element={<ResearchPage />} />
+								<Route path="/research/:slug" element={<ResearchArticlePage />} />
+								<Route path="/pricing" element={<PricingPage />} />
+
+								{/* Auth-gated */}
+								<Route
+									path="/idx"
+									element={
+										<RequireAuth featureName="IDX Explorer">
+											<IdxExplorerPage />
+										</RequireAuth>
+									}
+								/>
+								<Route
+									path="/idx/insiders"
+									element={
+										<RequireAuth featureName="Insiders">
+											<IdxInsidersPage />
+										</RequireAuth>
+									}
+								/>
+								<Route
+									path="/idx/screener"
+									element={
+										<RequireAuth featureName="Screener">
+											<IdxScreenerPage />
+										</RequireAuth>
+									}
+								/>
+								<Route
+									path="/idx/movers"
+									element={
+										<RequireAuth featureName="Movers">
+											<IdxMoversPage />
+										</RequireAuth>
+									}
+								/>
+								<Route
+									path="/idx/flow"
+									element={
+										<RequireAuth featureName="Flow">
+											<IdxFlowPage />
+										</RequireAuth>
+									}
+								/>
 								<Route
 									path="/idx/ownership"
 									element={
-										<Suspense fallback={<PageLoading />}>
-											<IdxOwnershipPage />
-										</Suspense>
+										<RequireAuth featureName="Ownership">
+											<Suspense fallback={<PageLoading />}>
+												<IdxOwnershipPage />
+											</Suspense>
+										</RequireAuth>
 									}
 								/>
 								<Route
 									path="/idx/ownership/network"
 									element={
-										<Suspense fallback={<PageLoading />}>
-											<IdxOwnershipNetworkPage />
-										</Suspense>
+										<RequireAuth featureName="Ownership Network">
+											<Suspense fallback={<PageLoading />}>
+												<IdxOwnershipNetworkPage />
+											</Suspense>
+										</RequireAuth>
 									}
 								/>
 								<Route
 									path="/idx/ownership/companies"
 									element={
-										<Suspense fallback={<PageLoading />}>
-											<IdxOwnershipCompaniesPage />
-										</Suspense>
+										<RequireAuth featureName="Ownership by Company">
+											<Suspense fallback={<PageLoading />}>
+												<IdxOwnershipCompaniesPage />
+											</Suspense>
+										</RequireAuth>
 									}
 								/>
 								<Route
 									path="/idx/ownership/investors"
 									element={
-										<Suspense fallback={<PageLoading />}>
-											<IdxOwnershipInvestorsPage />
-										</Suspense>
+										<RequireAuth featureName="Ownership by Investor">
+											<Suspense fallback={<PageLoading />}>
+												<IdxOwnershipInvestorsPage />
+											</Suspense>
+										</RequireAuth>
 									}
 								/>
 								<Route
 									path="/idx/ownership/investor/:name"
 									element={
-										<Suspense fallback={<PageLoading />}>
-											<IdxOwnershipInvestorPage />
-										</Suspense>
+										<RequireAuth featureName="Investor Profile">
+											<Suspense fallback={<PageLoading />}>
+												<IdxOwnershipInvestorPage />
+											</Suspense>
+										</RequireAuth>
 									}
 								/>
 								<Route
 									path="/idx/macro"
 									element={
-										<Suspense fallback={<PageLoading />}>
-											<IdxMacroPage />
-										</Suspense>
+										<RequireAuth featureName="Macro">
+											<Suspense fallback={<PageLoading />}>
+												<IdxMacroPage />
+											</Suspense>
+										</RequireAuth>
 									}
 								/>
-								<Route path="/idx/entities" element={<IdxEntitiesPage />} />
-								<Route path="/idx/:kode" element={<IdxCompanyPage />} />
-								<Route path="/watchlist" element={<WatchlistPage />} />
-								<Route path="/charts" element={<ChartsPage />} />
-								<Route path="/signals" element={<SignalsPage />} />
-								<Route path="/agent" element={<AgentPage />} />
-								<Route path="/portfolio" element={<PortfolioPage />} />
-								<Route path="/portfolio/analytics" element={<PortfolioAnalyticsPage />} />
-								<Route path="/pricing" element={<PricingPage />} />
-								<Route path="/research" element={<ResearchPage />} />
-								<Route path="/research/:slug" element={<ResearchArticlePage />} />
-								<Route path="/admin/research" element={<AdminResearchPage />} />
+								<Route
+									path="/idx/entities"
+									element={
+										<RequireAuth featureName="Power Map">
+											<IdxEntitiesPage />
+										</RequireAuth>
+									}
+								/>
+								<Route
+									path="/idx/:kode"
+									element={
+										<RequireAuth featureName="IDX Company">
+											<IdxCompanyPage />
+										</RequireAuth>
+									}
+								/>
+								<Route
+									path="/watchlist"
+									element={
+										<RequireAuth featureName="Watchlist">
+											<WatchlistPage />
+										</RequireAuth>
+									}
+								/>
+								<Route
+									path="/charts"
+									element={
+										<RequireAuth featureName="Charts">
+											<ChartsPage />
+										</RequireAuth>
+									}
+								/>
+								<Route
+									path="/signals"
+									element={
+										<RequireAuth featureName="Signals">
+											<SignalsPage />
+										</RequireAuth>
+									}
+								/>
+								<Route
+									path="/agent"
+									element={
+										<RequireAuth featureName="Agent">
+											<AgentPage />
+										</RequireAuth>
+									}
+								/>
+								<Route
+									path="/portfolio"
+									element={
+										<RequireAuth featureName="Portfolio">
+											<PortfolioPage />
+										</RequireAuth>
+									}
+								/>
+								<Route
+									path="/portfolio/analytics"
+									element={
+										<RequireAuth featureName="Portfolio Analytics">
+											<PortfolioAnalyticsPage />
+										</RequireAuth>
+									}
+								/>
+								<Route
+									path="/admin/research"
+									element={
+										<RequireAuth featureName="Admin · Research">
+											<AdminResearchPage />
+										</RequireAuth>
+									}
+								/>
 								<Route path="*" element={<NotFoundPage />} />
 							</Routes>
 						</AppShell>
