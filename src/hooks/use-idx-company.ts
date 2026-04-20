@@ -53,3 +53,12 @@ export function useIdxDisclosures(kode?: string, limit = 20) {
 		staleTime: 300_000,
 	});
 }
+
+export function useIdxPeersScored(kode: string, limit = 10) {
+	return useQuery({
+		queryKey: ["idx-peers-scored", kode, limit],
+		queryFn: () => api.idxPeersScored(kode, limit),
+		enabled: kode.length > 0,
+		staleTime: 300_000,
+	});
+}

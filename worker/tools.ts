@@ -296,6 +296,29 @@ const researchTools: Tool[] = [
 		},
 	},
 	{
+		name: "get_idx_peers_scored",
+		description:
+			"Sector peer ranking for an IDX ticker, each scored on the same 4-axis scorecard (valuation/momentum/quality/risk + overall 0–10). Peers are drawn from the same sub-sector if ≥3 exist, else from the same sector. Returns base ticker + ranked peers (overall desc). Use to answer 'is this cheap/strong relative to its peers' — much faster than pulling fundamentals for each peer individually.",
+		input_schema: {
+			type: "object",
+			properties: {
+				ticker: { type: "string" },
+				limit: { type: "integer", description: "Max peers (excluding base), default 10, cap 20" },
+			},
+			required: ["ticker"],
+		},
+		dispatch: (args, ctx) => {
+			const raw = requireString(args, "ticker").toUpperCase().replace(/\.JK$/, "");
+			const limit = optionalNumber(args, "limit");
+			return marketApiFetch(
+				"GET",
+				`/api/v1/idx/peers/${encodeURIComponent(raw)}/scored`,
+				ctx,
+				limit ? { query: { limit } } : undefined,
+			);
+		},
+	},
+	{
 		name: "get_insiders",
 		description:
 			"Insider/commissioner/director holdings for an IDX company. Use when you want to see ownership concentration or recent insider transactions.",

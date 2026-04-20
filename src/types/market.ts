@@ -758,3 +758,21 @@ export interface IdxPatternsResponse {
 	patterns: IdxPattern[];
 	warnings: string[];
 }
+
+export interface IdxPeerScoredEntry {
+	kode_emiten: string;
+	name: string | null;
+	score: IdxScoreCard;
+}
+
+export interface IdxPeersScoredResponse {
+	base: {
+		kode_emiten: string;
+		name: string | null;
+		sector: string | null;
+		sub_sector: string | null;
+		score: IdxScoreCard;
+	};
+	peers: IdxPeerScoredEntry[];
+	basis: "sub_sector" | "sector" | "none";
+}

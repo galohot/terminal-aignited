@@ -8,6 +8,7 @@ import { KeyStats } from "../components/quote/key-stats";
 import { QuoteHeader } from "../components/quote/quote-header";
 import { FlowBiasBadge } from "../components/stock/flow-bias-badge";
 import { PatternsStrip } from "../components/stock/patterns-strip";
+import { PeerScoreTable } from "../components/stock/peer-score-table";
 import { ScorecardStrip } from "../components/stock/scorecard-strip";
 import { Skeleton } from "../components/ui/loading";
 import { WatchlistButton } from "../components/watchlist/watchlist-button";
@@ -124,6 +125,11 @@ export function StockPage() {
 							<FundamentalsPanel data={fundamentals.data} />
 						) : null}
 					</div>
+					{isJK && (
+						<div className="mt-4">
+							<PeerScoreTable symbol={symbol} />
+						</div>
+					)}
 					<div className="mt-4">
 						<StockNewsSection ticker={symbol} />
 					</div>

@@ -38,6 +38,7 @@ import type {
 	IdxInsiderTransactionsResponse,
 	IdxPatternsResponse,
 	IdxPeersResponse,
+	IdxPeersScoredResponse,
 	IdxScoreCard,
 	IdxScreenerParams,
 	IdxScreenerResponse,
@@ -249,6 +250,11 @@ export const api = {
 			days ? { days: String(days) } : undefined,
 		),
 	idxScore: (ticker: string) => fetchAPI<IdxScoreCard>(`/idx/score/${ticker}`),
+	idxPeersScored: (ticker: string, limit?: number) =>
+		fetchAPI<IdxPeersScoredResponse>(
+			`/idx/peers/${ticker}/scored`,
+			limit ? { limit: String(limit) } : undefined,
+		),
 	idxPatterns: (ticker: string) => fetchAPI<IdxPatternsResponse>(`/idx/patterns/${ticker}`),
 	idxDisclosures: (params?: { kode?: string; limit?: number }) =>
 		fetchAPI<IdxDisclosuresResponse>(
