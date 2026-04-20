@@ -319,6 +319,66 @@ const researchTools: Tool[] = [
 		},
 	},
 	{
+		name: "get_idx_concentration",
+		description:
+			"Broker tape concentration for an IDX ticker on the most recent trading day. Classifies activity as concentrated / moderate / diffuse based on top-broker and top-3 shares of total value. Use to read 'who's really pushing this tape today' — concentrated tape often precedes outsized moves. Note: this is a concentration proxy, not true accumulation/distribution (that requires buy/sell split not yet in our DB).",
+		input_schema: {
+			type: "object",
+			properties: { ticker: { type: "string" } },
+			required: ["ticker"],
+		},
+		dispatch: async (args, ctx) => {
+			const raw = requireString(args, "ticker").toUpperCase().replace(/\.JK$/, "");
+			const res = await marketApiFetch(
+				"GET",
+				`/api/v1/idx/broker-summary/${encodeURIComponent(raw)}`,
+				ctx,
+			);
+			if (!res.ok) return res;
+			const payload = res.data as {
+				kode_emiten?: string;
+				date?: string;
+				brokers?: Array<{ broker_code: string; broker_name?: string; value?: number }>;
+			} | null;
+			const brokers = payload?.brokers ?? [];
+			if (brokers.length === 0) {
+				return {
+					ok: true,
+					data: { kode: raw, kind: null, note: "no broker summary available" },
+				};
+			}
+			const totalValue = brokers.reduce((s, b) => s + (Number(b.value) || 0), 0);
+			if (totalValue <= 0) {
+				return {
+					ok: true,
+					data: { kode: raw, kind: null, note: "zero total value" },
+				};
+			}
+			const sorted = [...brokers].sort(
+				(a, b) => (Number(b.value) || 0) - (Number(a.value) || 0),
+			);
+			const top = sorted[0];
+			const topPct = (Number(top.value) || 0) / totalValue;
+			const top3Pct =
+				sorted.slice(0, 3).reduce((s, b) => s + (Number(b.value) || 0), 0) / totalValue;
+			let kind: "concentrated" | "moderate" | "diffuse";
+			if (topPct > 0.3 || top3Pct > 0.6) kind = "concentrated";
+			else if (topPct < 0.2 && top3Pct < 0.45) kind = "diffuse";
+			else kind = "moderate";
+			return {
+				ok: true,
+				data: {
+					kode: raw,
+					date: payload?.date,
+					kind,
+					topBroker: { code: top.broker_code, name: top.broker_name, pct: Number(topPct.toFixed(4)) },
+					top3Pct: Number(top3Pct.toFixed(4)),
+					brokerCount: brokers.length,
+				},
+			};
+		},
+	},
+	{
 		name: "get_insiders",
 		description:
 			"Insider/commissioner/director holdings for an IDX company. Use when you want to see ownership concentration or recent insider transactions.",

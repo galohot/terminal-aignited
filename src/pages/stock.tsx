@@ -6,6 +6,7 @@ import { StockNewsSection } from "../components/market/news-panel";
 import { FundamentalsPanel } from "../components/quote/fundamentals";
 import { KeyStats } from "../components/quote/key-stats";
 import { QuoteHeader } from "../components/quote/quote-header";
+import { ConcentrationBadge } from "../components/stock/concentration-badge";
 import { FlowBiasBadge } from "../components/stock/flow-bias-badge";
 import { PatternsStrip } from "../components/stock/patterns-strip";
 import { PeerScoreTable } from "../components/stock/peer-score-table";
@@ -109,6 +110,7 @@ export function StockPage() {
 			<QuoteHeader quote={liveQuote} />
 			<ScorecardStrip symbol={symbol} />
 			<FlowBiasBadge symbol={symbol} />
+			<ConcentrationBadge symbol={symbol} />
 			<PatternsStrip symbol={symbol} />
 			<div className="grid grid-cols-1 gap-4 p-4 xl:grid-cols-[1fr_280px]">
 				<div>
