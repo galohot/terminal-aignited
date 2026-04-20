@@ -6,6 +6,7 @@ import { StockNewsSection } from "../components/market/news-panel";
 import { FundamentalsPanel } from "../components/quote/fundamentals";
 import { KeyStats } from "../components/quote/key-stats";
 import { QuoteHeader } from "../components/quote/quote-header";
+import { FlowBiasBadge } from "../components/stock/flow-bias-badge";
 import { PatternsStrip } from "../components/stock/patterns-strip";
 import { ScorecardStrip } from "../components/stock/scorecard-strip";
 import { Skeleton } from "../components/ui/loading";
@@ -106,6 +107,7 @@ export function StockPage() {
 		<div>
 			<QuoteHeader quote={liveQuote} />
 			<ScorecardStrip symbol={symbol} />
+			<FlowBiasBadge symbol={symbol} />
 			<PatternsStrip symbol={symbol} />
 			<div className="grid grid-cols-1 gap-4 p-4 xl:grid-cols-[1fr_280px]">
 				<div>
