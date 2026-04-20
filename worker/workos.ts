@@ -5,6 +5,7 @@ const WORKOS_API = "https://api.workos.com";
 export interface WorkOSUser {
 	id: string;
 	email: string;
+	email_verified?: boolean;
 	first_name?: string | null;
 	last_name?: string | null;
 	profile_picture_url?: string | null;

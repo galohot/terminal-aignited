@@ -19,7 +19,7 @@ export function trackPageView(path: string) {
 	// Fire-and-forget — don't block UI
 	fetch("/api/analytics/event", {
 		method: "POST",
-		headers: { "Content-Type": "application/json" },
+		headers: { "Content-Type": "application/json", "X-Requested-With": "terminal" },
 		body: JSON.stringify(body),
 	}).catch(() => {
 		// Silent fail — analytics should never break the app

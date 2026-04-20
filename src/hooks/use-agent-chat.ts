@@ -198,7 +198,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}) {
 				if (effectiveThreadId) payload.thread_id = effectiveThreadId;
 				const res = await fetch("/api/agent/chat", {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
+					headers: { "Content-Type": "application/json", "X-Requested-With": "terminal" },
 					credentials: "include",
 					body: JSON.stringify(payload),
 					signal: ac.signal,

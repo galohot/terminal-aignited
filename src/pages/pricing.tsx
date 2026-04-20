@@ -103,7 +103,7 @@ export function PricingPage() {
 			const res = await fetch("/api/billing/checkout", {
 				method: "POST",
 				credentials: "include",
-				headers: { "Content-Type": "application/json" },
+				headers: { "Content-Type": "application/json", "X-Requested-With": "terminal" },
 				body: JSON.stringify({ tier }),
 			});
 			if (!res.ok) {

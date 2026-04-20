@@ -1,4 +1,5 @@
 import { Building2, Globe, Mail } from "lucide-react";
+import { safeUrl } from "../../lib/safe-url";
 import type { IdxCompanyDetail } from "../../types/market";
 
 export function CompanyHeader({ company }: { company: IdxCompanyDetail }) {
@@ -41,11 +42,13 @@ export function CompanyHeader({ company }: { company: IdxCompanyDetail }) {
 					)}
 					{company.website && (
 						<a
-							href={
-								company.website.startsWith("http") ? company.website : `https://${company.website}`
-							}
+							href={safeUrl(
+								company.website.startsWith("http")
+									? company.website
+									: `https://${company.website}`,
+							)}
 							target="_blank"
-							rel="noreferrer"
+							rel="noopener noreferrer"
 							className="flex items-center gap-1 transition-colors hover:text-ink-2"
 						>
 							<Globe className="h-3 w-3" />

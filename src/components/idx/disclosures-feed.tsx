@@ -1,4 +1,5 @@
 import { useIdxDisclosures } from "../../hooks/use-idx-company";
+import { safeUrl } from "../../lib/safe-url";
 import { Skeleton } from "../ui/loading";
 
 export function DisclosuresFeed({ kode, limit = 15 }: { kode?: string; limit?: number }) {
@@ -37,9 +38,9 @@ export function DisclosuresFeed({ kode, limit = 15 }: { kode?: string; limit?: n
 								)}
 								{d.attachment_url ? (
 									<a
-										href={d.attachment_url}
+										href={safeUrl(d.attachment_url)}
 										target="_blank"
-										rel="noreferrer"
+										rel="noopener noreferrer"
 										className="truncate text-xs text-ink transition-colors group-hover:text-ember-600"
 									>
 										{d.headline}

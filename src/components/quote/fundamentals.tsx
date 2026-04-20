@@ -1,3 +1,4 @@
+import { safeUrl } from "../../lib/safe-url";
 import type { Fundamentals as FundamentalsType } from "../../types/market";
 
 export function FundamentalsPanel({ data }: { data: FundamentalsType }) {
@@ -19,7 +20,7 @@ export function FundamentalsPanel({ data }: { data: FundamentalsType }) {
 					<div className="flex justify-between">
 						<span className="text-ink-4">Website</span>
 						<a
-							href={data.website}
+							href={safeUrl(data.website)}
 							target="_blank"
 							rel="noopener noreferrer"
 							className="font-mono text-ember-600 hover:text-ember-700 hover:underline"

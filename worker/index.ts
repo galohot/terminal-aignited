@@ -50,6 +50,8 @@ import {
 } from "./research";
 import type { ToolCtx } from "./tools";
 import { authenticateWithCode, buildAuthorizeUrl, displayName, type WorkOSUser } from "./workos";
+import { signUser } from "./lib/sign";
+import { ensureRateBucketTable, gcRateBuckets, takeAgentToken } from "./lib/rate-limit";
 
 interface Env {
 	ASSETS: Fetcher;
@@ -57,6 +59,7 @@ interface Env {
 	API_KEY: string;
 	TERMINAL_API_KEY?: string;
 	WORKER_AUTH_SECRET?: string;
+	WORKER_SIGNING_SECRET?: string;
 	DATABASE_URL: string; // analytics Neon DB (sessions, page_views)
 	AUTH_DATABASE_URL: string; // auth/billing Neon DB (terminal_users, terminal_subscriptions)
 	WORKOS_CLIENT_ID: string;
@@ -73,21 +76,48 @@ interface Env {
 	TELEGRAM_NEWSLETTER_CHAT_ID?: string;
 }
 
-const CORS_HEADERS = {
-	"Access-Control-Allow-Origin": "*",
-	"Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
-	"Access-Control-Allow-Headers": "Content-Type",
-};
+const ALLOWED_ORIGINS = new Set([
+	"https://terminal.aignited.id",
+	"http://localhost:5173",
+	"http://localhost:4173",
+]);
 
-function corsResponse() {
-	return new Response(null, { headers: CORS_HEADERS });
+// Echo Origin only when allowlisted. Same-origin requests don't need ACAO;
+// cross-origin requests from unknown hosts get no header and are blocked by
+// the browser. Credentials=true requires an explicit origin (not "*").
+function applyCors(h: Headers, request: Request): void {
+	const origin = request.headers.get("Origin");
+	if (origin && ALLOWED_ORIGINS.has(origin)) {
+		h.set("Access-Control-Allow-Origin", origin);
+		h.set("Access-Control-Allow-Credentials", "true");
+		h.set("Vary", "Origin");
+	}
 }
 
-function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
+function corsResponse(request: Request): Response {
+	const h = new Headers({
+		"Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
+		"Access-Control-Allow-Headers": "Content-Type, X-Requested-With",
+		"Access-Control-Max-Age": "600",
+	});
+	applyCors(h, request);
+	return new Response(null, { headers: h });
+}
+
+function jsonResponse(body: unknown, init: ResponseInit = {}, request?: Request): Response {
 	const headers = new Headers(init.headers);
 	headers.set("Content-Type", "application/json");
-	headers.set("Access-Control-Allow-Origin", "*");
+	if (request) applyCors(headers, request);
 	return new Response(JSON.stringify(body), { ...init, headers });
+}
+
+// CSRF: mutations must carry an unforgeable-cross-origin custom header.
+// Same-origin fetch() trivially adds it; cross-origin fetch() cannot add a
+// non-safelisted header without triggering a preflight, which our CORS denies.
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+function csrfOk(request: Request): boolean {
+	if (SAFE_METHODS.has(request.method.toUpperCase())) return true;
+	return request.headers.get("X-Requested-With") === "terminal";
 }
 
 // --- API Proxy: /api/proxy/* -> backend /api/v1/* ---
@@ -147,7 +177,15 @@ async function handleProxy(
 	ctx: ExecutionContext,
 	subpath: string,
 ): Promise<Response> {
-	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method === "OPTIONS") return corsResponse(request);
+	if (!csrfOk(request)) {
+		return jsonResponse({ error: "CSRF_BLOCKED" }, { status: 403 }, request);
+	}
+
+	// Reject traversal / absolute / URL-encoded slashes in proxy subpath.
+	if (subpath.startsWith("/") || subpath.includes("..") || /%2f/i.test(subpath)) {
+		return jsonResponse({ error: "BAD_PATH" }, { status: 400 }, request);
+	}
 
 	const isPaper = subpath.startsWith("paper/");
 	let userId: string | null = null;
@@ -172,7 +210,14 @@ async function handleProxy(
 	if (env.WORKER_AUTH_SECRET) {
 		upstreamHeaders["X-Worker-Auth"] = env.WORKER_AUTH_SECRET;
 	}
-	if (userId) upstreamHeaders["X-User-Id"] = userId;
+	if (userId) {
+		upstreamHeaders["X-User-Id"] = userId;
+		if (env.WORKER_SIGNING_SECRET) {
+			const { ts, sig } = await signUser(env.WORKER_SIGNING_SECRET, userId);
+			upstreamHeaders["X-User-Timestamp"] = String(ts);
+			upstreamHeaders["X-User-Signature"] = sig;
+		}
+	}
 
 	// Only GET, non-paper, cache-ruled requests use the edge cache path.
 	const cacheTtl = !isPaper && request.method === "GET" ? matchCacheTTL(subpath) : null;
@@ -185,7 +230,7 @@ async function handleProxy(
 			body: hasBody ? request.body : undefined,
 		});
 		const outHeaders = new Headers(response.headers);
-		outHeaders.set("Access-Control-Allow-Origin", "*");
+		applyCors(outHeaders, request);
 		outHeaders.set("Cache-Control", isPaper ? "no-store" : "public, max-age=10");
 		outHeaders.set("X-Edge-Cache", "BYPASS");
 		return new Response(response.body, { status: response.status, headers: outHeaders });
@@ -199,7 +244,7 @@ async function handleProxy(
 	const cached = await cache.match(cacheKey);
 	if (cached) {
 		const h = new Headers(cached.headers);
-		h.set("Access-Control-Allow-Origin", "*");
+		applyCors(h, request);
 		h.set("X-Edge-Cache", "HIT");
 		return new Response(cached.body, { status: cached.status, headers: h });
 	}
@@ -230,7 +275,7 @@ async function handleProxy(
 
 	const originResponse = await pending;
 	const outHeaders = new Headers(originResponse.headers);
-	outHeaders.set("Access-Control-Allow-Origin", "*");
+	applyCors(outHeaders, request);
 	outHeaders.set("X-Edge-Cache", coalesced ? "COALESCED" : "MISS");
 	// Clone body — multiple coalesced callers read from the same buffered Response.
 	return new Response(originResponse.clone().body, {
@@ -244,6 +289,7 @@ async function handleProxy(
 interface Session {
 	userId: string;
 	email: string;
+	emailVerified: boolean;
 }
 
 async function getSession(request: Request, env: Env): Promise<Session | null> {
@@ -251,7 +297,11 @@ async function getSession(request: Request, env: Env): Promise<Session | null> {
 	if (!token) return null;
 	const payload = await verifyJwt(token, env.JWT_SIGNING_SECRET);
 	if (!payload) return null;
-	return { userId: payload.sub, email: payload.email };
+	return {
+		userId: payload.sub,
+		email: payload.email,
+		emailVerified: payload.email_verified === true,
+	};
 }
 
 // Founders / staff with unconditional institutional access. Checked by email
@@ -266,8 +316,9 @@ async function getActiveSubscription(
 	env: Env,
 	userId: string,
 	email: string,
+	emailVerified = false,
 ): Promise<{ tier: string; status: string; expires_at: string | null } | null> {
-	if (FOUNDER_EMAILS.has(email.toLowerCase())) {
+	if (emailVerified && FOUNDER_EMAILS.has(email.toLowerCase())) {
 		return { tier: "institutional", status: "active", expires_at: null };
 	}
 	const sql = neon(env.AUTH_DATABASE_URL);
@@ -333,7 +384,10 @@ async function handleAuthCallback(request: Request, env: Env): Promise<Response>
 			updated_at = now()
 	`;
 
-	const jwt = await signJwt({ sub: user.id, email: user.email }, env.JWT_SIGNING_SECRET);
+	const jwt = await signJwt(
+		{ sub: user.id, email: user.email, email_verified: user.email_verified === true },
+		env.JWT_SIGNING_SECRET,
+	);
 
 	const headers = new Headers();
 	headers.append("Set-Cookie", setSessionCookie(jwt, 604800));
@@ -352,7 +406,7 @@ async function handleAuthMe(request: Request, env: Env): Promise<Response> {
 	`) as { id: string; email: string; name: string | null; picture: string | null }[];
 	if (!userRows[0]) return jsonResponse({ authenticated: false });
 
-	const sub = await getActiveSubscription(env, session.userId, session.email);
+	const sub = await getActiveSubscription(env, session.userId, session.email, session.emailVerified);
 	return jsonResponse({
 		authenticated: true,
 		user: userRows[0],
@@ -360,14 +414,10 @@ async function handleAuthMe(request: Request, env: Env): Promise<Response> {
 	});
 }
 
-async function handleAuthLogout(): Promise<Response> {
-	return new Response(null, {
-		status: 204,
-		headers: {
-			"Set-Cookie": clearSessionCookie(),
-			"Access-Control-Allow-Origin": "*",
-		},
-	});
+async function handleAuthLogout(request: Request): Promise<Response> {
+	const h = new Headers({ "Set-Cookie": clearSessionCookie() });
+	applyCors(h, request);
+	return new Response(null, { status: 204, headers: h });
 }
 
 // --- Agent ---
@@ -386,7 +436,7 @@ function tierAtLeast(tier: string | null | undefined, min: "pro" | "institutiona
 }
 
 async function handleAgentChat(request: Request, env: Env): Promise<Response> {
-	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method === "OPTIONS") return corsResponse(request);
 	if (request.method !== "POST") {
 		return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
 	}
@@ -403,9 +453,29 @@ async function handleAgentChat(request: Request, env: Env): Promise<Response> {
 	if (!body.message || typeof body.message !== "string") {
 		return jsonResponse({ error: "MESSAGE_REQUIRED" }, { status: 400 });
 	}
+	if (body.message.length > 4096) {
+		return jsonResponse(
+			{ error: "BAD_REQUEST", message: "message must be ≤ 4096 chars" },
+			{ status: 400 },
+		);
+	}
 
-	const sub = await getActiveSubscription(env, session.userId, session.email);
+	const sub = await getActiveSubscription(env, session.userId, session.email, session.emailVerified);
 	const tier = (sub?.tier ?? null) as ToolCtx["tier"];
+
+	const rateSql = neon(env.AUTH_DATABASE_URL);
+	const gate = await takeAgentToken(rateSql, session.userId, tier ?? "starter");
+	if (!gate.ok) {
+		return jsonResponse(
+			{
+				error: "RATE_LIMITED",
+				message: `Agent limit ${gate.limit}/hr exceeded`,
+				retry_after: gate.resetSec,
+			},
+			{ status: 429, headers: { "Retry-After": String(gate.resetSec) } },
+			request,
+		);
+	}
 
 	const ctx: ToolCtx = {
 		userId: session.userId,
@@ -464,7 +534,7 @@ async function handleAgentChat(request: Request, env: Env): Promise<Response> {
 // --- Agent threads + personas ---
 
 async function handleAgentPersonas(request: Request, env: Env): Promise<Response> {
-	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method === "OPTIONS") return corsResponse(request);
 	if (request.method !== "GET") {
 		return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
 	}
@@ -483,7 +553,7 @@ async function requireProForThreads(
 ): Promise<{ userId: string } | Response> {
 	const session = await getSession(request, env);
 	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
-	const sub = await getActiveSubscription(env, session.userId, session.email);
+	const sub = await getActiveSubscription(env, session.userId, session.email, session.emailVerified);
 	if (!tierAtLeast(sub?.tier ?? null, "pro")) {
 		return jsonResponse({ error: "UPGRADE_REQUIRED", required: "pro" }, { status: 403 });
 	}
@@ -491,7 +561,7 @@ async function requireProForThreads(
 }
 
 async function handleAgentThreadsList(request: Request, env: Env): Promise<Response> {
-	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method === "OPTIONS") return corsResponse(request);
 	if (request.method === "GET") {
 		const auth = await requireProForThreads(request, env);
 		if (auth instanceof Response) return auth;
@@ -524,7 +594,7 @@ async function handleAgentThreadItem(
 	env: Env,
 	threadId: string,
 ): Promise<Response> {
-	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method === "OPTIONS") return corsResponse(request);
 	const auth = await requireProForThreads(request, env);
 	if (auth instanceof Response) return auth;
 
@@ -558,7 +628,7 @@ async function handleAgentThreadItem(
 // --- Billing ---
 
 async function handleBillingCheckout(request: Request, env: Env): Promise<Response> {
-	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method === "OPTIONS") return corsResponse(request);
 	if (request.method !== "POST") {
 		return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
 	}
@@ -650,7 +720,7 @@ interface EventBody {
 }
 
 async function handleAnalyticsEvent(request: Request, env: Env): Promise<Response> {
-	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method === "OPTIONS") return corsResponse(request);
 
 	try {
 		const body = (await request.json()) as EventBody;
@@ -706,8 +776,9 @@ async function handleAnalyticsStats(env: Env): Promise<Response> {
 
 // --- Research ---
 
-function isFounder(email: string | undefined): boolean {
-	return !!email && FOUNDER_EMAILS.has(email.toLowerCase());
+function isFounder(session: Session | null | undefined): boolean {
+	if (!session || !session.emailVerified) return false;
+	return FOUNDER_EMAILS.has(session.email.toLowerCase());
 }
 
 async function handleResearchList(request: Request, env: Env): Promise<Response> {
@@ -725,10 +796,10 @@ async function handleResearchList(request: Request, env: Env): Promise<Response>
 async function handleResearchArticle(request: Request, env: Env, slug: string): Promise<Response> {
 	const session = await getSession(request, env);
 	const viewerTier = session
-		? ((await getActiveSubscription(env, session.userId, session.email))?.tier ?? null)
+		? ((await getActiveSubscription(env, session.userId, session.email, session.emailVerified))?.tier ?? null)
 		: null;
 	const tierForRead =
-		session && isFounder(session.email) ? "institutional" : (viewerTier as Tier | null);
+		session && isFounder(session) ? "institutional" : (viewerTier as Tier | null);
 
 	const result = await getArticleBySlug(env.AUTH_DATABASE_URL, slug, tierForRead);
 	if (!result) return jsonResponse({ error: "not_found" }, { status: 404 });
@@ -743,7 +814,7 @@ async function handleResearchArticle(request: Request, env: Env, slug: string): 
 
 async function handleAdminResearchDrafts(request: Request, env: Env): Promise<Response> {
 	const session = await getSession(request, env);
-	if (!session || !isFounder(session.email)) {
+	if (!session || !isFounder(session)) {
 		return jsonResponse({ error: "forbidden" }, { status: 403 });
 	}
 	const items = await listDrafts(env.AUTH_DATABASE_URL);
@@ -751,9 +822,9 @@ async function handleAdminResearchDrafts(request: Request, env: Env): Promise<Re
 }
 
 async function handleAdminResearchUpsert(request: Request, env: Env): Promise<Response> {
-	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method === "OPTIONS") return corsResponse(request);
 	const session = await getSession(request, env);
-	if (!session || !isFounder(session.email)) {
+	if (!session || !isFounder(session)) {
 		return jsonResponse({ error: "forbidden" }, { status: 403 });
 	}
 	let body: ArticleInput;
@@ -777,9 +848,9 @@ async function handleAdminResearchPublish(
 	env: Env,
 	id: string,
 ): Promise<Response> {
-	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method === "OPTIONS") return corsResponse(request);
 	const session = await getSession(request, env);
-	if (!session || !isFounder(session.email)) {
+	if (!session || !isFounder(session)) {
 		return jsonResponse({ error: "forbidden" }, { status: 403 });
 	}
 	await publishArticle(env.AUTH_DATABASE_URL, id, session.email);
@@ -811,7 +882,7 @@ async function handleJournalList(request: Request, env: Env): Promise<Response> 
 }
 
 async function handleJournalCreate(request: Request, env: Env): Promise<Response> {
-	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method === "OPTIONS") return corsResponse(request);
 	const session = await getSession(request, env);
 	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
 
@@ -829,7 +900,7 @@ async function handleJournalCreate(request: Request, env: Env): Promise<Response
 }
 
 async function handleJournalUpdate(request: Request, env: Env, id: string): Promise<Response> {
-	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method === "OPTIONS") return corsResponse(request);
 	const session = await getSession(request, env);
 	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
 
@@ -845,7 +916,7 @@ async function handleJournalUpdate(request: Request, env: Env, id: string): Prom
 }
 
 async function handleJournalDelete(request: Request, env: Env, id: string): Promise<Response> {
-	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method === "OPTIONS") return corsResponse(request);
 	const session = await getSession(request, env);
 	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
 
@@ -855,7 +926,7 @@ async function handleJournalDelete(request: Request, env: Env, id: string): Prom
 }
 
 async function handleResearchSubscriptions(request: Request, env: Env): Promise<Response> {
-	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method === "OPTIONS") return corsResponse(request);
 	const session = await getSession(request, env);
 	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
 
@@ -882,9 +953,9 @@ async function handleResearchSubscriptions(request: Request, env: Env): Promise<
 }
 
 async function handleAdminGenerateAmBrief(request: Request, env: Env): Promise<Response> {
-	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method === "OPTIONS") return corsResponse(request);
 	const session = await getSession(request, env);
-	if (!session || !isFounder(session.email)) {
+	if (!session || !isFounder(session)) {
 		return jsonResponse({ error: "forbidden" }, { status: 403 });
 	}
 	const result = await generateAmBrief(env);
@@ -892,9 +963,9 @@ async function handleAdminGenerateAmBrief(request: Request, env: Env): Promise<R
 }
 
 async function handleAdminGenerateDeepDive(request: Request, env: Env): Promise<Response> {
-	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method === "OPTIONS") return corsResponse(request);
 	const session = await getSession(request, env);
-	if (!session || !isFounder(session.email)) {
+	if (!session || !isFounder(session)) {
 		return jsonResponse({ error: "forbidden" }, { status: 403 });
 	}
 	let body: { ticker?: string } = {};
@@ -914,9 +985,9 @@ async function handleAdminGenerateEarningsPreview(
 	request: Request,
 	env: Env,
 ): Promise<Response> {
-	if (request.method === "OPTIONS") return corsResponse();
+	if (request.method === "OPTIONS") return corsResponse(request);
 	const session = await getSession(request, env);
-	if (!session || !isFounder(session.email)) {
+	if (!session || !isFounder(session)) {
 		return jsonResponse({ error: "forbidden" }, { status: 403 });
 	}
 	let body: { ticker?: string } = {};
@@ -939,13 +1010,20 @@ export default {
 		const url = new URL(request.url);
 		const path = url.pathname;
 
+		// CSRF guard: mutations on /api/* must carry X-Requested-With: terminal.
+		// Exempt external webhook ingress — callers can't set custom headers.
+		const CSRF_EXEMPT = new Set(["/api/billing/webhook", "/api/auth/callback"]);
+		if (path.startsWith("/api/") && !CSRF_EXEMPT.has(path) && !csrfOk(request)) {
+			return jsonResponse({ error: "CSRF_BLOCKED" }, { status: 403 }, request);
+		}
+
 		// Auth
 		if (path === "/api/auth/login") return handleAuthLogin(env);
 		if (path === "/api/auth/callback") return handleAuthCallback(request, env);
 		if (path === "/api/auth/me") return handleAuthMe(request, env);
 		if (path === "/api/auth/logout") {
-			if (request.method === "OPTIONS") return corsResponse();
-			return handleAuthLogout();
+			if (request.method === "OPTIONS") return corsResponse(request);
+			return handleAuthLogout(request);
 		}
 
 		// Agent
@@ -965,7 +1043,7 @@ export default {
 		if (path === "/api/journal/entries") {
 			if (request.method === "GET") return handleJournalList(request, env);
 			if (request.method === "POST") return handleJournalCreate(request, env);
-			if (request.method === "OPTIONS") return corsResponse();
+			if (request.method === "OPTIONS") return corsResponse(request);
 			return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
 		}
 		if (path.startsWith("/api/journal/entries/")) {
@@ -974,7 +1052,7 @@ export default {
 				return handleJournalUpdate(request, env, id);
 			}
 			if (request.method === "DELETE") return handleJournalDelete(request, env, id);
-			if (request.method === "OPTIONS") return corsResponse();
+			if (request.method === "OPTIONS") return corsResponse(request);
 			return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
 		}
 
@@ -1009,7 +1087,7 @@ export default {
 			return handleAnalyticsEvent(request, env);
 		}
 		if (path === "/api/analytics/stats") {
-			if (request.method === "OPTIONS") return corsResponse();
+			if (request.method === "OPTIONS") return corsResponse(request);
 			return handleAnalyticsStats(env);
 		}
 
@@ -1054,6 +1132,14 @@ export default {
 				autoPublishStaleDrafts(env).then((r) => {
 					console.log(`[auto-publish] all-types: ${JSON.stringify(r)}`);
 				}),
+			);
+			ctx.waitUntil(
+				(async () => {
+					const sql = neon(env.AUTH_DATABASE_URL);
+					await ensureRateBucketTable(sql);
+					const deleted = await gcRateBuckets(sql);
+					console.log(`[rate-bucket-gc] deleted=${deleted}`);
+				})().catch((e) => console.error(`[rate-bucket-gc] ${e}`)),
 			);
 		}
 	},

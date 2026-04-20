@@ -102,10 +102,12 @@ async function fetchAPI<T>(path: string, params?: Record<string, string>): Promi
 
 async function mutateAPI<T>(method: "POST" | "DELETE", path: string, body?: unknown): Promise<T> {
 	const url = new URL(`${BASE}${path}`, window.location.origin);
+	const headers: Record<string, string> = { "X-Requested-With": "terminal" };
+	if (body) headers["Content-Type"] = "application/json";
 	const res = await fetch(url.toString(), {
 		method,
 		credentials: "include",
-		headers: body ? { "Content-Type": "application/json" } : undefined,
+		headers,
 		body: body ? JSON.stringify(body) : undefined,
 	});
 	if (!res.ok) {
@@ -425,10 +427,12 @@ async function fetchWorker<T>(path: string, params?: Record<string, string>): Pr
 }
 
 async function postWorker<T>(path: string, body?: unknown): Promise<T> {
+	const headers: Record<string, string> = { "X-Requested-With": "terminal" };
+	if (body) headers["Content-Type"] = "application/json";
 	const res = await fetch(path, {
 		method: "POST",
 		credentials: "include",
-		headers: body ? { "Content-Type": "application/json" } : undefined,
+		headers,
 		body: body ? JSON.stringify(body) : undefined,
 	});
 	if (!res.ok) {
@@ -519,7 +523,11 @@ export interface JournalEntry {
 }
 
 async function deleteWorker<T>(path: string): Promise<T> {
-	const res = await fetch(path, { method: "DELETE", credentials: "include" });
+	const res = await fetch(path, {
+		method: "DELETE",
+		credentials: "include",
+		headers: { "X-Requested-With": "terminal" },
+	});
 	if (!res.ok) {
 		const err = await res.json().catch(() => ({ error: "unknown" }));
 		const error = new Error((err as { message?: string }).message || `API error ${res.status}`);
@@ -533,7 +541,7 @@ async function patchWorker<T>(path: string, body: unknown): Promise<T> {
 	const res = await fetch(path, {
 		method: "PATCH",
 		credentials: "include",
-		headers: { "Content-Type": "application/json" },
+		headers: { "Content-Type": "application/json", "X-Requested-With": "terminal" },
 		body: JSON.stringify(body),
 	});
 	if (!res.ok) {

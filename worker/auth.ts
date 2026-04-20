@@ -31,12 +31,13 @@ async function hmacKey(secret: string): Promise<CryptoKey> {
 export interface JwtPayload {
 	sub: string;
 	email: string;
+	email_verified?: boolean;
 	iat: number;
 	exp: number;
 }
 
 export async function signJwt(
-	payload: { sub: string; email: string },
+	payload: { sub: string; email: string; email_verified?: boolean },
 	secret: string,
 	ttlSeconds = 604800,
 ): Promise<string> {

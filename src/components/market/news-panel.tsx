@@ -2,6 +2,7 @@ import { clsx } from "clsx";
 import { ExternalLink, Newspaper } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNews, useNewsCategories } from "../../hooks/use-news";
+import { safeUrl } from "../../lib/safe-url";
 import type { NewsArticle, NewsSentiment } from "../../types/market";
 import { Skeleton } from "../ui/loading";
 
@@ -125,9 +126,9 @@ export function StockNewsSection({ ticker }: { ticker: string }) {
 			{items.map((item) => (
 				<a
 					key={item.id}
-					href={`https://thedailycatalyst.site/article/${item.daily_catalyst_slug}`}
+					href={safeUrl(`https://thedailycatalyst.site/article/${item.daily_catalyst_slug}`)}
 					target="_blank"
-					rel="noreferrer"
+					rel="noopener noreferrer"
 					className="group block rounded-xl border border-rule bg-card p-3 transition-colors hover:bg-card-2"
 				>
 					<div className="flex items-center gap-2">
@@ -186,9 +187,9 @@ function NewsCard({ item }: { item: NewsArticle }) {
 			<div className="mt-4 flex flex-wrap items-center justify-between gap-3">
 				<div className="min-w-0 break-words text-xs text-ink-4">{item.source_name}</div>
 				<a
-					href={link}
+					href={safeUrl(link)}
 					target="_blank"
-					rel="noreferrer"
+					rel="noopener noreferrer"
 					className="inline-flex items-center gap-1.5 rounded-full border border-rule bg-paper-2 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-ember-600 transition-colors hover:bg-card"
 				>
 					Read <ExternalLink className="h-3 w-3" />

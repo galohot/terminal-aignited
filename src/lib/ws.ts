@@ -15,7 +15,10 @@ async function getTicket(): Promise<string> {
 		return cachedTicket.ticket;
 	}
 
-	const res = await fetch("/api/proxy/ws-ticket", { method: "POST" });
+	const res = await fetch("/api/proxy/ws-ticket", {
+		method: "POST",
+		headers: { "X-Requested-With": "terminal" },
+	});
 	if (!res.ok) {
 		cachedTicket = null;
 		throw Object.assign(new Error(`Failed to get WS ticket (${res.status})`), {
