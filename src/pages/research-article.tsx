@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Lock, Newspaper } from "lucide-react";
 import { Link, useParams } from "react-router";
+import { ArticlePriceChart } from "../components/research/article-price-chart";
 import { loginWithGoogle, useAuth } from "../contexts/auth";
 import { research } from "../lib/api";
 
@@ -37,6 +38,11 @@ export function ResearchArticlePage() {
 
 	const { article, gated } = articleQ.data;
 	const authed = state.status === "auth";
+	const showChart =
+		!gated &&
+		(article.type === "deep_dive" || article.type === "earnings_preview") &&
+		article.tickers.length > 0;
+	const subjectTicker = showChart ? article.tickers[0] : null;
 
 	return (
 		<div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
@@ -76,6 +82,8 @@ export function ResearchArticlePage() {
 				)}
 			</div>
 
+			{subjectTicker && <ArticlePriceChart ticker={subjectTicker} />}
+
 			<article className="prose-terminal mt-8">
 				<MarkdownBody md={article.body_md} />
 			</article>
@@ -90,7 +98,8 @@ export function ResearchArticlePage() {
 						className="mt-2 font-extrabold text-[22px] text-ink tracking-[-0.01em]"
 						style={{ fontFamily: "var(--font-display)" }}
 					>
-						Keep reading with AIgnited {article.required_tier === "institutional" ? "Institutional" : "Pro"}
+						Keep reading with AIgnited{" "}
+						{article.required_tier === "institutional" ? "Institutional" : "Pro"}
 					</h3>
 					<p className="mt-2 text-[14px] text-ink-2 leading-relaxed">
 						Daily AM briefs, company deep-dives, sector reports, and earnings coverage — delivered

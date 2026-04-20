@@ -2,6 +2,7 @@
 // insider activity + broker flow + recent disclosures + peers, prompts the
 // LLM to write a 1500-2500 word markdown article, stores as Pro-gated draft.
 
+import { challenge, renderContrarianSection } from "./devils-advocate";
 import { callLLM, type LLMEnv } from "./llm";
 import { upsertArticle } from "./research";
 import type { Tool } from "./tools";
@@ -36,10 +37,7 @@ interface DeepDiveSources {
 	peers: unknown;
 }
 
-async function gatherDeepDiveSources(
-	env: DeepDiveEnv,
-	ticker: string,
-): Promise<DeepDiveSources> {
+async function gatherDeepDiveSources(env: DeepDiveEnv, ticker: string): Promise<DeepDiveSources> {
 	const t = encodeURIComponent(ticker);
 	const [company, financials, insiders, brokerSummary, foreignFlow, disclosures, peers] =
 		await Promise.all([
@@ -92,7 +90,8 @@ const SUBMIT_DEEP_DIVE_TOOL: Tool = {
 			summary: { type: "string", description: "1-2 sentence dek for paywall preview" },
 			body_md: {
 				type: "string",
-				description: "Full markdown body, 1500-2500 words, with ## section headings. No code blocks.",
+				description:
+					"Full markdown body, 1500-2500 words, with ## section headings. No code blocks.",
 			},
 			tickers: {
 				type: "array",
@@ -115,9 +114,7 @@ const SUBMIT_DEEP_DIVE_TOOL: Tool = {
 	dispatch: async () => ({ ok: true, data: null }),
 };
 
-function extract(
-	content: Array<{ type: string; [k: string]: unknown }>,
-): ParsedDeepDive | null {
+function extract(content: Array<{ type: string; [k: string]: unknown }>): ParsedDeepDive | null {
 	const tu = content.find((b) => b.type === "tool_use" && b.name === "submit_deep_dive");
 	if (!tu) return null;
 	const input = tu.input as Partial<ParsedDeepDive>;
@@ -180,6 +177,17 @@ export async function generateDeepDive(
 		return { ok: false, error: "llm did not call submit_deep_dive tool with valid arguments" };
 	}
 
+	const contrarian = await challenge(env, {
+		ticker,
+		articleTitle: parsed.title,
+		articleSummary: parsed.summary,
+		articleBody: parsed.body_md,
+	});
+	const contrarianSection = renderContrarianSection(contrarian);
+	const bodyWithContrarian = contrarianSection
+		? `${parsed.body_md}\n\n${contrarianSection}`
+		: parsed.body_md;
+
 	const slug = monthSlug(ticker);
 	try {
 		await upsertArticle(env.AUTH_DATABASE_URL, {
@@ -187,12 +195,18 @@ export async function generateDeepDive(
 			type: "deep_dive",
 			title: parsed.title,
 			summary: parsed.summary,
-			body_md: parsed.body_md,
+			body_md: bodyWithContrarian,
 			tickers: [ticker, ...parsed.tickers.filter((t) => t.toUpperCase() !== ticker)]
 				.map((t) => t.toUpperCase().replace(/\.JK$/i, ""))
 				.slice(0, 10),
 			sectors: parsed.sectors.map((s) => s.toLowerCase()),
-			tags: Array.from(new Set(["deep_dive", ...parsed.tags.map((t) => t.toLowerCase())])),
+			tags: Array.from(
+				new Set([
+					"deep_dive",
+					...parsed.tags.map((t) => t.toLowerCase()),
+					...(contrarianSection ? ["contrarian"] : []),
+				]),
+			),
 			required_tier: "pro",
 			status: "draft",
 			generated_by: llm.provider,

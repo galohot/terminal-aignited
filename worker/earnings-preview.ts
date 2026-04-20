@@ -2,6 +2,7 @@
 // financials + recent disclosures + short price/flow context, writes a
 // 500-800 word preview covering what to watch at the upcoming release.
 
+import { challenge, renderContrarianSection } from "./devils-advocate";
 import { callLLM, type LLMEnv } from "./llm";
 import { upsertArticle } from "./research";
 import type { Tool } from "./tools";
@@ -74,7 +75,8 @@ interface ParsedPreview {
 
 const SUBMIT_TOOL: Tool = {
 	name: "submit_earnings_preview",
-	description: "Submit the completed earnings preview. Call exactly once with all fields populated.",
+	description:
+		"Submit the completed earnings preview. Call exactly once with all fields populated.",
 	input_schema: {
 		type: "object",
 		properties: {
@@ -93,9 +95,7 @@ const SUBMIT_TOOL: Tool = {
 	dispatch: async () => ({ ok: true, data: null }),
 };
 
-function extract(
-	content: Array<{ type: string; [k: string]: unknown }>,
-): ParsedPreview | null {
+function extract(content: Array<{ type: string; [k: string]: unknown }>): ParsedPreview | null {
 	const tu = content.find((b) => b.type === "tool_use" && b.name === "submit_earnings_preview");
 	if (!tu) return null;
 	const input = tu.input as Partial<ParsedPreview>;
@@ -152,6 +152,17 @@ export async function generateEarningsPreview(
 	const parsed = extract(llm.content as Array<{ type: string; [k: string]: unknown }>);
 	if (!parsed) return { ok: false, error: "llm did not call submit_earnings_preview" };
 
+	const contrarian = await challenge(env, {
+		ticker,
+		articleTitle: parsed.title,
+		articleSummary: parsed.summary,
+		articleBody: parsed.body_md,
+	});
+	const contrarianSection = renderContrarianSection(contrarian);
+	const bodyWithContrarian = contrarianSection
+		? `${parsed.body_md}\n\n${contrarianSection}`
+		: parsed.body_md;
+
 	const slug = previewSlug(ticker);
 	try {
 		await upsertArticle(env.AUTH_DATABASE_URL, {
@@ -159,12 +170,18 @@ export async function generateEarningsPreview(
 			type: "earnings_preview",
 			title: parsed.title,
 			summary: parsed.summary,
-			body_md: parsed.body_md,
+			body_md: bodyWithContrarian,
 			tickers: [ticker, ...parsed.tickers.filter((t) => t.toUpperCase() !== ticker)]
 				.map((t) => t.toUpperCase().replace(/\.JK$/i, ""))
 				.slice(0, 6),
 			sectors: parsed.sectors.map((s) => s.toLowerCase()),
-			tags: Array.from(new Set(["earnings_preview", ...parsed.tags.map((t) => t.toLowerCase())])),
+			tags: Array.from(
+				new Set([
+					"earnings_preview",
+					...parsed.tags.map((t) => t.toLowerCase()),
+					...(contrarianSection ? ["contrarian"] : []),
+				]),
+			),
 			required_tier: "pro",
 			status: "draft",
 			generated_by: llm.provider,
