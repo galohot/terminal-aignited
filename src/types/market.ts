@@ -717,3 +717,27 @@ export interface KseiInvestorListResponse {
 	page: number;
 	per_page: number;
 }
+
+export interface IdxScoreStrategy {
+	name: string;
+	signal: number;
+	weight: number;
+	confidence: number;
+}
+
+export interface IdxScoreAxis {
+	score: number;
+	strategies: IdxScoreStrategy[];
+}
+
+export interface IdxScoreCard {
+	ticker: string;
+	valuation: IdxScoreAxis;
+	momentum: IdxScoreAxis;
+	quality: IdxScoreAxis;
+	risk: IdxScoreAxis;
+	overall: number;
+	history_bars: number;
+	has_fundamentals: boolean;
+	has_foreign_flow: boolean;
+}

@@ -37,6 +37,7 @@ import type {
 	IdxInsiderSearchResponse,
 	IdxInsiderTransactionsResponse,
 	IdxPeersResponse,
+	IdxScoreCard,
 	IdxScreenerParams,
 	IdxScreenerResponse,
 	IdxSectorsResponse,
@@ -246,6 +247,7 @@ export const api = {
 			`/idx/foreign-flow/${kode}`,
 			days ? { days: String(days) } : undefined,
 		),
+	idxScore: (ticker: string) => fetchAPI<IdxScoreCard>(`/idx/score/${ticker}`),
 	idxDisclosures: (params?: { kode?: string; limit?: number }) =>
 		fetchAPI<IdxDisclosuresResponse>(
 			"/idx/disclosures",
