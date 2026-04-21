@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, NotebookPen, RefreshCw, Trash2, X } from "lucide-react";
+import { BookOpen, Download, NotebookPen, RefreshCw, Trash2, X } from "lucide-react";
 import { type FormEvent, forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { Link } from "react-router";
 import { TierGate } from "../components/auth/tier-gate";
-import { type ApiError, api, journal, type JournalEntry, type JournalKind } from "../lib/api";
+import { useHasTier } from "../contexts/auth";
+import { type ApiError, api, type JournalEntry, type JournalKind, journal } from "../lib/api";
+import { arrayToCsv, type CsvColumn, downloadCsv } from "../lib/csv";
 import type { OrderSide, OrderType, PaperOrder, PaperPortfolio } from "../types/paper";
 
 export function PortfolioPage() {
@@ -25,6 +27,43 @@ function fmtIdr(n: number): string {
 
 function fmtPct(n: number): string {
 	return `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
+}
+
+function todayStamp(): string {
+	const d = new Date();
+	const y = d.getFullYear();
+	const m = String(d.getMonth() + 1).padStart(2, "0");
+	const day = String(d.getDate()).padStart(2, "0");
+	return `${y}${m}${day}`;
+}
+
+function exportPositionsCsv(p: PaperPortfolio): void {
+	const cols: CsvColumn<PaperPortfolio["positions"][number]>[] = [
+		{ header: "ticker", value: (r) => r.ticker },
+		{ header: "qty_lots", value: (r) => r.qty_lots },
+		{ header: "qty_shares", value: (r) => r.qty_shares },
+		{ header: "avg_cost_idr", value: (r) => r.avg_cost_idr },
+		{ header: "current_price_idr", value: (r) => r.current_price_idr },
+		{ header: "market_value_idr", value: (r) => r.market_value_idr },
+		{ header: "unrealized_pnl_idr", value: (r) => r.unrealized_pnl_idr },
+		{ header: "unrealized_pnl_pct", value: (r) => r.unrealized_pnl_pct },
+		{ header: "realized_pnl_idr", value: (r) => r.realized_pnl_idr },
+		{ header: "price_stale", value: (r) => (r.price_stale ? "true" : "false") },
+	];
+	downloadCsv(`aignited-positions-${todayStamp()}.csv`, arrayToCsv(p.positions, cols));
+}
+
+function exportFillsCsv(fills: readonly FillRow[]): void {
+	const cols: CsvColumn<FillRow>[] = [
+		{ header: "filled_at", value: (r) => r.filled_at },
+		{ header: "order_id", value: (r) => r.order_id },
+		{ header: "ticker", value: (r) => r.ticker },
+		{ header: "side", value: (r) => r.side },
+		{ header: "qty_lots", value: (r) => r.qty_lots },
+		{ header: "price_idr", value: (r) => r.price_idr },
+		{ header: "fee_idr", value: (r) => r.fee_idr },
+	];
+	downloadCsv(`aignited-fills-${todayStamp()}.csv`, arrayToCsv(fills, cols));
 }
 
 function Portfolio() {
@@ -113,7 +152,13 @@ function Portfolio() {
 				cashIdr={p.cash_idr}
 			/>
 
-			<Section title="Positions" count={p.positions.length}>
+			<Section
+				title="Positions"
+				count={p.positions.length}
+				action={
+					p.positions.length > 0 && <ExportCsvButton onExport={() => exportPositionsCsv(p)} />
+				}
+			>
 				{p.positions.length === 0 ? (
 					<EmptyRow>No open positions.</EmptyRow>
 				) : (
@@ -134,7 +179,14 @@ function Portfolio() {
 				)}
 			</Section>
 
-			<Section title="Recent Fills">
+			<Section
+				title="Recent Fills"
+				action={
+					fillsQ.data && fillsQ.data.length > 0 ? (
+						<ExportCsvButton onExport={() => exportFillsCsv(fillsQ.data)} />
+					) : undefined
+				}
+			>
 				{!fillsQ.data || fillsQ.data.length === 0 ? (
 					<EmptyRow>No fills yet.</EmptyRow>
 				) : (
@@ -193,9 +245,7 @@ function JournalSection({ formRef }: { formRef: React.RefObject<JournalFormHandl
 					pending={createMut.isPending}
 					error={createMut.isError ? (createMut.error as Error)?.message : null}
 				/>
-				{entriesQ.isLoading && (
-					<div className="font-mono text-xs text-ink-4">Loading entries…</div>
-				)}
+				{entriesQ.isLoading && <div className="font-mono text-xs text-ink-4">Loading entries…</div>}
 				{entriesQ.data && entriesQ.data.items.length === 0 && (
 					<EmptyRow>
 						No journal entries yet. Log a thesis, post-mortem, or note to build your track record.
@@ -264,11 +314,7 @@ const JournalForm = forwardRef<JournalFormHandle, JournalFormProps>(function Jou
 	};
 
 	return (
-		<form
-			ref={formEl}
-			onSubmit={handle}
-			className="rounded-xl border border-rule bg-paper-2 p-4"
-		>
+		<form ref={formEl} onSubmit={handle} className="rounded-xl border border-rule bg-paper-2 p-4">
 			<div className="mb-3 flex items-center gap-2">
 				<NotebookPen className="h-4 w-4 text-ember-600" />
 				<span className="font-mono text-[11px] uppercase tracking-[0.22em] text-ember-600">
@@ -346,9 +392,7 @@ function JournalRow({
 			<div className="flex items-start justify-between gap-2">
 				<div className="flex items-center gap-2">
 					<BookOpen className="h-3.5 w-3.5 text-ink-4" />
-					<span
-						className={`font-mono text-[10px] uppercase tracking-[0.18em] ${kindColor}`}
-					>
+					<span className={`font-mono text-[10px] uppercase tracking-[0.18em] ${kindColor}`}>
 						{entry.kind}
 					</span>
 					{entry.ticker && (
@@ -521,22 +565,57 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "up
 function Section({
 	title,
 	count,
+	action,
 	children,
 }: {
 	title: string;
 	count?: number;
+	action?: React.ReactNode;
 	children: React.ReactNode;
 }) {
 	return (
 		<div>
-			<div className="mb-2 flex items-baseline gap-2">
-				<h3 className="font-mono text-xs uppercase tracking-[0.22em] text-ink">{title}</h3>
-				{count !== undefined && (
-					<span className="font-mono text-[10px] text-ink-4">· {count}</span>
-				)}
+			<div className="mb-2 flex items-baseline justify-between gap-2">
+				<div className="flex items-baseline gap-2">
+					<h3 className="font-mono text-xs uppercase tracking-[0.22em] text-ink">{title}</h3>
+					{count !== undefined && (
+						<span className="font-mono text-[10px] text-ink-4">· {count}</span>
+					)}
+				</div>
+				{action}
 			</div>
 			<div className="rounded-[18px] border border-rule bg-card">{children}</div>
 		</div>
+	);
+}
+
+function ExportCsvButton({ onExport, disabled }: { onExport: () => void; disabled?: boolean }) {
+	const isPro = useHasTier("pro");
+	if (!isPro) {
+		return (
+			<Link
+				to="/pricing"
+				className="inline-flex items-center gap-1 rounded-full border border-rule px-2 py-0.5 font-mono text-[11px] text-ink-4 transition-colors hover:border-ember-400/40 hover:text-ember-600"
+				title="CSV export is a Pro feature"
+			>
+				<Download className="h-3 w-3" />
+				Export CSV
+				<span className="ml-1 rounded-full bg-ember-500/15 px-1.5 py-px text-[9px] uppercase tracking-[0.14em] text-ember-600">
+					Pro
+				</span>
+			</Link>
+		);
+	}
+	return (
+		<button
+			type="button"
+			onClick={onExport}
+			disabled={disabled}
+			className="inline-flex items-center gap-1 rounded-full border border-rule px-2 py-0.5 font-mono text-[11px] text-ink-3 transition-colors hover:border-ember-400/40 hover:text-ember-600 disabled:opacity-40"
+		>
+			<Download className="h-3 w-3" />
+			Export CSV
+		</button>
 	);
 }
 
@@ -629,9 +708,7 @@ function OrdersTable({
 							className="border-b border-rule/70 transition-colors last:border-b-0 hover:bg-paper-2/60"
 						>
 							<Td className="text-left font-mono text-ember-600">{o.ticker}</Td>
-							<Td className={o.side === "buy" ? "text-pos" : "text-neg"}>
-								{o.side.toUpperCase()}
-							</Td>
+							<Td className={o.side === "buy" ? "text-pos" : "text-neg"}>{o.side.toUpperCase()}</Td>
 							<Td>{o.order_type}</Td>
 							<Td>{o.qty_lots}</Td>
 							<Td>{o.limit_price_idr ? o.limit_price_idr.toLocaleString() : "—"}</Td>
@@ -699,9 +776,7 @@ function FillsTable({
 								{new Date(f.filled_at).toLocaleString("en-GB", { hour12: false })}
 							</Td>
 							<Td className="font-mono text-ember-600">{f.ticker}</Td>
-							<Td className={f.side === "buy" ? "text-pos" : "text-neg"}>
-								{f.side.toUpperCase()}
-							</Td>
+							<Td className={f.side === "buy" ? "text-pos" : "text-neg"}>{f.side.toUpperCase()}</Td>
 							<Td>{f.qty_lots}</Td>
 							<Td>{f.price_idr.toLocaleString()}</Td>
 							<Td>{f.fee_idr.toLocaleString()}</Td>
