@@ -128,7 +128,6 @@ export function SectorTreemap({
 				const g = d3.select(this);
 				const cellW = d.x1 - d.x0;
 				const cellH = d.y1 - d.y0;
-				const color = sectorColor.get(d.data.sector) ?? "#6b7280";
 
 				if (cellH < 22) return;
 

@@ -3,7 +3,6 @@ import { Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { IdxNav } from "../components/idx/idx-nav";
-import { INVESTOR_TYPE_COLORS, INVESTOR_TYPE_LABELS } from "../components/ownership/constants";
 import { Badge } from "../components/ownership/ownership-badge";
 import { OwnershipNav } from "../components/ownership/ownership-nav";
 import type { InvestorType } from "../components/ownership/types";

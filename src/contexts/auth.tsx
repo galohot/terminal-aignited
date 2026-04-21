@@ -75,8 +75,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	useEffect(() => {
 		refresh();
-		const id = setInterval(refresh, 60_000);
-		return () => clearInterval(id);
+		const id = setInterval(() => {
+			if (document.visibilityState === "visible") refresh();
+		}, 60_000);
+		const onVisible = () => {
+			if (document.visibilityState === "visible") refresh();
+		};
+		document.addEventListener("visibilitychange", onVisible);
+		return () => {
+			clearInterval(id);
+			document.removeEventListener("visibilitychange", onVisible);
+		};
 	}, [refresh]);
 
 	return <AuthContext.Provider value={{ state, refresh, logout }}>{children}</AuthContext.Provider>;

@@ -81,9 +81,9 @@ export function IdxOwnershipPage() {
 	const chord = useKseiChord();
 	const heatmap = useKseiHeatmap(40);
 
-	const [recordsPage, setRecordsPage] = useState(1);
-	const [recordsSort, setRecordsSort] = useState("percentage");
-	const [recordsOrder, setRecordsOrder] = useState("desc");
+	const [recordsPage] = useState(1);
+	const [recordsSort] = useState("percentage");
+	const [recordsOrder] = useState("desc");
 	const records = useKseiRecords({
 		page: recordsPage,
 		per_page: 50,

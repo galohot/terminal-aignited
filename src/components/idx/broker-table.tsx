@@ -54,7 +54,7 @@ export function BrokerTable() {
 									<a
 										href={b.website.startsWith("http") ? b.website : `https://${b.website}`}
 										target="_blank"
-										rel="noreferrer"
+										rel="noopener noreferrer"
 										className="font-mono text-xs text-cyan-700 hover:underline"
 									>
 										{b.website.replace(/^https?:\/\/(www\.)?/, "")}

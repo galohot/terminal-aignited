@@ -1,5 +1,5 @@
 import { clsx } from "clsx";
-import { BarChart3, Building2, Network, PieChart, Users } from "lucide-react";
+import { Building2, Network, PieChart, Users } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
 const OWNERSHIP_LINKS = [

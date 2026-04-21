@@ -1,10 +1,8 @@
-import { clsx } from "clsx";
 import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { BreadthChart } from "../components/idx/breadth-chart";
 import { IdxNav } from "../components/idx/idx-nav";
 import {
-	MOVERS_PRESETS,
 	type MoversPreset,
 	MoversPresetsBar,
 } from "../components/idx/movers-presets";
