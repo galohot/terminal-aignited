@@ -32,12 +32,21 @@ export function WatchlistRow({ quote, onRemove, selected = false }: WatchlistRow
 
 	return (
 		<tr
+			role="link"
+			tabIndex={0}
+			aria-label={`Open ${quote.symbol} ${quote.name}`}
 			className={clsx(
-				"cursor-pointer border-b border-rule transition-colors hover:bg-paper-2/60",
+				"cursor-pointer border-b border-rule transition-colors hover:bg-paper-2/60 focus:bg-paper-2 focus:outline-none focus:ring-1 focus:ring-ember-400",
 				selected && "bg-paper-2",
 				rowFlash,
 			)}
 			onClick={() => navigate(`/stock/${quote.symbol}`)}
+			onKeyDown={(e) => {
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
+					navigate(`/stock/${quote.symbol}`);
+				}
+			}}
 		>
 			<td className="px-4 py-3 align-top">
 				<div className="font-mono text-xs font-semibold text-ember-600">{quote.symbol}</div>

@@ -13,10 +13,11 @@ import {
 } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
 import { Link } from "react-router";
+import { useShallow } from "zustand/react/shallow";
 import { useDashboard } from "../../hooks/use-dashboard";
 import { useRealtimeSubscription } from "../../hooks/use-realtime";
 import { formatPercent, formatPrice, formatTime, formatVolume } from "../../lib/format";
-import type { ConnectionStatus } from "../../stores/realtime-store";
+import type { ConnectionStatus, PriceData } from "../../stores/realtime-store";
 import { useRealtimeStore } from "../../stores/realtime-store";
 import type { Quote } from "../../types/market";
 import { IdxIndicesGrid } from "../idx/indices-grid";
@@ -87,7 +88,15 @@ export function MarketGrid() {
 
 	useRealtimeSubscription(allSymbols);
 
-	const realtimePrices = useRealtimeStore((state) => state.prices);
+	// Only observe realtime entries for symbols we render. Shallow-compare skips
+	// re-renders when unrelated tickers tick in the shared store.
+	const realtimePrices = useRealtimeStore(
+		useShallow((state) => {
+			const out: Record<string, PriceData | undefined> = {};
+			for (const sym of allSymbols) out[sym] = state.prices[sym];
+			return out;
+		}),
+	);
 	const connectionStatus = useRealtimeStore((state) => state.status);
 
 	if (isLoading) return <MarketGridSkeleton />;

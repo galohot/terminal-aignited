@@ -62,7 +62,14 @@ export class MarketWS {
 
 		try {
 			const ticket = await getTicket();
-			const wsUrl = `wss://terminal.thedailycatalyst.site/ws?ticket=${ticket}`;
+			// Derive the WS URL from the current origin so staging/preview hosts
+			// don't accidentally connect to production. In SSR or Node test
+			// environments `window.location` is undefined — fall back to prod.
+			const origin =
+				typeof window !== "undefined" && window.location
+					? window.location.origin
+					: "https://terminal.aignited.id";
+			const wsUrl = `${origin.replace(/^http/, "ws")}/ws?ticket=${encodeURIComponent(ticket)}`;
 			this.ws = new WebSocket(wsUrl);
 		} catch (err) {
 			if ((err as { status?: number }).status === 429) {

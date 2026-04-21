@@ -52,6 +52,7 @@ import type { ToolCtx } from "./tools";
 import { authenticateWithCode, buildAuthorizeUrl, displayName, type WorkOSUser } from "./workos";
 import { signUser } from "./lib/sign";
 import { ensureRateBucketTable, gcRateBuckets, takeAgentToken } from "./lib/rate-limit";
+import { tierMeets } from "./lib/tier";
 
 interface Env {
 	ASSETS: Fetcher;
@@ -292,11 +293,27 @@ interface Session {
 	emailVerified: boolean;
 }
 
+let sessionVersionColumnEnsured = false;
+
+async function ensureSessionVersionColumn(sql: ReturnType<typeof neon>): Promise<void> {
+	if (sessionVersionColumnEnsured) return;
+	await sql`ALTER TABLE terminal_users ADD COLUMN IF NOT EXISTS session_version INT NOT NULL DEFAULT 1`;
+	sessionVersionColumnEnsured = true;
+}
+
 async function getSession(request: Request, env: Env): Promise<Session | null> {
 	const token = parseCookie(request, "tai_session");
 	if (!token) return null;
 	const payload = await verifyJwt(token, env.JWT_SIGNING_SECRET);
 	if (!payload) return null;
+	// Legacy tokens issued before session_version rollout lack `sv`. Reject them
+	// so everyone ends up with a rotation-capable JWT after the next login.
+	if (typeof payload.sv !== "number") return null;
+	const sql = neon(env.AUTH_DATABASE_URL);
+	const rows = (await sql`
+		SELECT session_version FROM terminal_users WHERE id = ${payload.sub} LIMIT 1
+	`) as { session_version: number }[];
+	if (rows[0]?.session_version !== payload.sv) return null;
 	return {
 		userId: payload.sub,
 		email: payload.email,
@@ -373,8 +390,9 @@ async function handleAuthCallback(request: Request, env: Env): Promise<Response>
 	}
 
 	const sql = neon(env.AUTH_DATABASE_URL);
+	await ensureSessionVersionColumn(sql);
 	const name = displayName(user);
-	await sql`
+	const rows = (await sql`
 		INSERT INTO terminal_users (id, email, name, picture)
 		VALUES (${user.id}, ${user.email}, ${name}, ${user.profile_picture_url ?? null})
 		ON CONFLICT (id) DO UPDATE SET
@@ -382,10 +400,17 @@ async function handleAuthCallback(request: Request, env: Env): Promise<Response>
 			name = EXCLUDED.name,
 			picture = EXCLUDED.picture,
 			updated_at = now()
-	`;
+		RETURNING session_version
+	`) as { session_version: number }[];
+	const sv = rows[0]?.session_version ?? 1;
 
 	const jwt = await signJwt(
-		{ sub: user.id, email: user.email, email_verified: user.email_verified === true },
+		{
+			sub: user.id,
+			email: user.email,
+			email_verified: user.email_verified === true,
+			sv,
+		},
 		env.JWT_SIGNING_SECRET,
 	);
 
@@ -420,19 +445,27 @@ async function handleAuthLogout(request: Request): Promise<Response> {
 	return new Response(null, { status: 204, headers: h });
 }
 
+async function handleAuthRevokeSessions(request: Request, env: Env): Promise<Response> {
+	if (request.method === "OPTIONS") return corsResponse(request);
+	if (request.method !== "POST") {
+		return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 }, request);
+	}
+	const session = await getSession(request, env);
+	if (!session) return jsonResponse({ error: "UNAUTHENTICATED" }, { status: 401 }, request);
+	const sql = neon(env.AUTH_DATABASE_URL);
+	await ensureSessionVersionColumn(sql);
+	await sql`UPDATE terminal_users SET session_version = session_version + 1 WHERE id = ${session.userId}`;
+	const h = new Headers({ "Set-Cookie": clearSessionCookie() });
+	applyCors(h, request);
+	return new Response(null, { status: 204, headers: h });
+}
+
 // --- Agent ---
 
 interface AgentChatBody {
 	message: string;
 	history?: Array<{ role: "user" | "assistant"; content: unknown }>;
 	thread_id?: string;
-}
-
-const TIER_RANK: Record<string, number> = { starter: 1, pro: 2, institutional: 3 };
-
-function tierAtLeast(tier: string | null | undefined, min: "pro" | "institutional"): boolean {
-	if (!tier) return false;
-	return (TIER_RANK[tier] ?? 0) >= TIER_RANK[min];
 }
 
 async function handleAgentChat(request: Request, env: Env): Promise<Response> {
@@ -495,7 +528,7 @@ async function handleAgentChat(request: Request, env: Env): Promise<Response> {
 
 	// Threaded path — persist + load history + apply persona system prompt.
 	if (body.thread_id) {
-		if (!tierAtLeast(tier, "pro")) {
+		if (!tierMeets(tier, "pro")) {
 			return jsonResponse({ error: "UPGRADE_REQUIRED", required: "pro" }, { status: 403 });
 		}
 		const existing = await agentGetThread(env.AUTH_DATABASE_URL, session.userId, body.thread_id);
@@ -554,7 +587,7 @@ async function requireProForThreads(
 	const session = await getSession(request, env);
 	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
 	const sub = await getActiveSubscription(env, session.userId, session.email, session.emailVerified);
-	if (!tierAtLeast(sub?.tier ?? null, "pro")) {
+	if (!tierMeets(sub?.tier ?? null, "pro")) {
 		return jsonResponse({ error: "UPGRADE_REQUIRED", required: "pro" }, { status: 403 });
 	}
 	return { userId: session.userId };
@@ -719,6 +752,8 @@ interface EventBody {
 	referrer?: string;
 }
 
+const SESSION_ID_RE = /^[a-zA-Z0-9_-]{8,64}$/;
+
 async function handleAnalyticsEvent(request: Request, env: Env): Promise<Response> {
 	if (request.method === "OPTIONS") return corsResponse(request);
 
@@ -726,6 +761,15 @@ async function handleAnalyticsEvent(request: Request, env: Env): Promise<Respons
 		const body = (await request.json()) as EventBody;
 		if (!body.session_id || !body.path) {
 			return jsonResponse({ error: "missing fields" }, { status: 400 });
+		}
+		if (!SESSION_ID_RE.test(body.session_id)) {
+			return jsonResponse({ error: "invalid session_id" }, { status: 400 });
+		}
+		if (body.path.length > 512) {
+			return jsonResponse({ error: "path too long" }, { status: 400 });
+		}
+		if (body.referrer && body.referrer.length > 1024) {
+			return jsonResponse({ error: "referrer too long" }, { status: 400 });
 		}
 
 		const sql = neon(env.DATABASE_URL);
@@ -1025,6 +1069,7 @@ export default {
 			if (request.method === "OPTIONS") return corsResponse(request);
 			return handleAuthLogout(request);
 		}
+		if (path === "/api/auth/revoke-sessions") return handleAuthRevokeSessions(request, env);
 
 		// Agent
 		if (path === "/api/agent/chat") return handleAgentChat(request, env);

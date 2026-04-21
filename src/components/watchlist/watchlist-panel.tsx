@@ -1,9 +1,10 @@
 import { Activity, CircleAlert, ListPlus, TrendingDown, TrendingUp } from "lucide-react";
 import type { ReactNode } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useBatchQuotes } from "../../hooks/use-batch-quotes";
 import { useRealtimeSubscription } from "../../hooks/use-realtime";
 import { formatPercent, formatPrice } from "../../lib/format";
-import { useRealtimeStore } from "../../stores/realtime-store";
+import { type PriceData, useRealtimeStore } from "../../stores/realtime-store";
 import { useWatchlistStore } from "../../stores/watchlist-store";
 import type { Quote } from "../../types/market";
 import { Skeleton } from "../ui/loading";
@@ -19,7 +20,15 @@ export function WatchlistPanel({ selectedIndex = -1 }: WatchlistPanelProps) {
 	const { data, error, isLoading } = useBatchQuotes(symbols);
 
 	useRealtimeSubscription(symbols);
-	const realtimePrices = useRealtimeStore((state) => state.prices);
+	// Only track realtime prices for watchlist symbols. Shallow compare means
+	// we skip re-renders when unrelated tickers update in the shared store.
+	const realtimePrices = useRealtimeStore(
+		useShallow((state) => {
+			const out: Record<string, PriceData | undefined> = {};
+			for (const sym of symbols) out[sym] = state.prices[sym];
+			return out;
+		}),
+	);
 
 	if (symbols.length === 0) {
 		return (

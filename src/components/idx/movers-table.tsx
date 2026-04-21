@@ -92,8 +92,17 @@ export function MoversTable({
 					{movers.map((stock) => (
 						<tr
 							key={stock.symbol}
+							role="link"
+							tabIndex={0}
+							aria-label={`Open ${stock.symbol} ${stock.name}`}
 							onClick={() => navigate(`/stock/${stock.symbol}`)}
-							className="cursor-pointer transition-colors hover:bg-paper-2/60"
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									navigate(`/stock/${stock.symbol}`);
+								}
+							}}
+							className="cursor-pointer transition-colors hover:bg-paper-2/60 focus:bg-paper-2 focus:outline-none focus:ring-1 focus:ring-ember-400"
 						>
 							<td className="whitespace-nowrap px-3 py-2">
 								<span className="font-mono text-xs font-semibold text-ember-600">

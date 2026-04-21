@@ -32,12 +32,13 @@ export interface JwtPayload {
 	sub: string;
 	email: string;
 	email_verified?: boolean;
+	sv?: number;
 	iat: number;
 	exp: number;
 }
 
 export async function signJwt(
-	payload: { sub: string; email: string; email_verified?: boolean },
+	payload: { sub: string; email: string; email_verified?: boolean; sv?: number },
 	secret: string,
 	ttlSeconds = 604800,
 ): Promise<string> {
@@ -97,11 +98,4 @@ export function randomState(): string {
 	return b64urlEncode(b);
 }
 
-export type Tier = "starter" | "pro" | "institutional";
-
-const TIER_ORDER: Record<Tier, number> = { starter: 1, pro: 2, institutional: 3 };
-
-export function tierMeets(have: Tier | null | undefined, min: Tier): boolean {
-	if (!have) return false;
-	return TIER_ORDER[have] >= TIER_ORDER[min];
-}
+export { type Tier, tierMeets } from "./lib/tier";

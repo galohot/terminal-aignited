@@ -1,6 +1,7 @@
 import { useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useDashboard } from "../../hooks/use-dashboard";
-import { useRealtimeStore } from "../../stores/realtime-store";
+import { type PriceData, useRealtimeStore } from "../../stores/realtime-store";
 import type { Quote } from "../../types/market";
 
 const FALLBACK_TICKS: Array<[string, string, number]> = [
@@ -47,31 +48,43 @@ function quoteToTick(q: Quote): [string, string, number] {
 
 export function TickerRail() {
 	const { data } = useDashboard();
-	const realtimePrices = useRealtimeStore((s) => s.prices);
 
-	const ticks = useMemo<Array<[string, string, number]>>(() => {
-		if (!data?.markets) return FALLBACK_TICKS;
+	// The fixed picks derived from the dashboard payload. Recomputes only when
+	// the dashboard itself changes, not on every realtime tick.
+	const picks = useMemo<Quote[]>(() => {
+		if (!data?.markets) return [];
 		const m = data.markets;
-		// Weight local + regional + FX + crypto for 24 slots
-		const picks = [
+		return [
 			...m.indices.indonesia.slice(0, 6),
 			...m.indices.asia_pacific.slice(0, 5),
 			...m.forex.slice(0, 4),
 			...m.commodities.slice(0, 4),
 			...m.crypto.slice(0, 3),
 			...m.indices.us.slice(0, 2),
-		].map((q): Quote => {
-			const rt = realtimePrices[q.symbol];
-			if (!rt) return q;
-			return {
-				...q,
-				price: rt.price,
-				change_percent: rt.changePercent,
-			};
-		});
+		];
+	}, [data]);
+
+	// Pull only the realtime entries for the symbols we actually display,
+	// shallow-compared so unrelated symbol updates don't re-render the rail.
+	const symbols = useMemo(() => picks.map((q) => q.symbol), [picks]);
+	const realtimePrices = useRealtimeStore(
+		useShallow((s) => {
+			const out: Record<string, PriceData | undefined> = {};
+			for (const sym of symbols) out[sym] = s.prices[sym];
+			return out;
+		}),
+	);
+
+	const ticks = useMemo<Array<[string, string, number]>>(() => {
 		if (picks.length === 0) return FALLBACK_TICKS;
-		return picks.map(quoteToTick);
-	}, [data, realtimePrices]);
+		return picks
+			.map((q): Quote => {
+				const rt = realtimePrices[q.symbol];
+				if (!rt) return q;
+				return { ...q, price: rt.price, change_percent: rt.changePercent };
+			})
+			.map(quoteToTick);
+	}, [picks, realtimePrices]);
 
 	// Duplicate for seamless marquee loop
 	const looped = useMemo(() => [...ticks, ...ticks], [ticks]);

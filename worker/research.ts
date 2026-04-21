@@ -3,10 +3,12 @@
 // Auto-migrates on first hit (idempotent IF NOT EXISTS).
 
 import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
+import { type Tier, tierMeets } from "./lib/tier";
+
+export { tierMeets };
+export type { Tier };
 
 type Sql = NeonQueryFunction<false, false>;
-
-export type Tier = "starter" | "pro" | "institutional";
 export type ArticleType =
 	| "am_brief"
 	| "deep_dive"
@@ -153,13 +155,6 @@ export async function listEmailSubscribersForType(
 		  AND (sub.tier IN ('pro','institutional') OR u.email IN ('irwndedi@gmail.com','rivsyah@gmail.com','biroumumkemlu@gmail.com'))
 	`) as Array<{ user_id: string; email: string; name: string | null }>;
 	return rows;
-}
-
-// Tier ordering for gate checks.
-const TIER_RANK: Record<Tier, number> = { starter: 0, pro: 1, institutional: 2 };
-export function tierMeets(userTier: Tier | null, required: Tier): boolean {
-	if (!userTier) return false;
-	return TIER_RANK[userTier] >= TIER_RANK[required];
 }
 
 // First ~2 paragraphs of markdown for previews.
