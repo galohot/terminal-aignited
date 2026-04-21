@@ -2,7 +2,7 @@
 // Schema lives in AUTH_DATABASE_URL alongside terminal_users/terminal_subscriptions.
 // Auto-migrates on first hit (idempotent IF NOT EXISTS).
 
-import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
+import { type NeonQueryFunction, neon } from "@neondatabase/serverless";
 import { type Tier, tierMeets } from "./lib/tier";
 
 export { tierMeets };
@@ -97,10 +97,7 @@ export interface Subscription {
 	types: ArticleType[];
 }
 
-export async function getSubscription(
-	dbUrl: string,
-	userId: string,
-): Promise<Subscription> {
+export async function getSubscription(dbUrl: string, userId: string): Promise<Subscription> {
 	const sql = neon(dbUrl);
 	await ensureSchema(sql);
 	const rows = (await sql`
@@ -210,6 +207,30 @@ function stripBodyIfGated(a: Article): Article {
 	return { ...a, body_md: previewBody(a.body_md) };
 }
 
+// Full-body export for Institutional tier. No teaser strip, no tier gate
+// (caller must enforce institutional before calling). Filters by published_at
+// so syncs can incrementally fetch "everything since my last pull".
+export async function listArticlesFull(
+	dbUrl: string,
+	params: { since?: string; type?: ArticleType; limit: number },
+): Promise<Article[]> {
+	const sql = neon(dbUrl);
+	await ensureSchema(sql);
+	const limit = Math.min(Math.max(params.limit, 1), 200);
+	const since = params.since ?? new Date(Date.now() - 30 * 86_400_000).toISOString();
+	const rows = (await sql`
+		SELECT id, slug, type, title, summary, body_md, tickers, sectors, tags,
+		       required_tier, status, published_at, generated_by, reviewed_by, created_at
+		FROM terminal_research_articles
+		WHERE status = 'published'
+		  AND published_at >= ${since}::timestamptz
+		  AND (${params.type ?? null}::text IS NULL OR type = ${params.type ?? null})
+		ORDER BY published_at DESC
+		LIMIT ${limit}
+	`) as Article[];
+	return rows;
+}
+
 export async function getArticleBySlug(
 	dbUrl: string,
 	slug: string,
@@ -260,10 +281,7 @@ export interface SearchParams {
 	viewerTier?: Tier | null;
 }
 
-export async function searchArticles(
-	dbUrl: string,
-	params: SearchParams,
-): Promise<SearchHit[]> {
+export async function searchArticles(dbUrl: string, params: SearchParams): Promise<SearchHit[]> {
 	const sql = neon(dbUrl);
 	await ensureSchema(sql);
 
@@ -383,7 +401,11 @@ export async function listDrafts(dbUrl: string): Promise<Article[]> {
 	`) as Article[];
 }
 
-export async function publishArticle(dbUrl: string, id: string, editorEmail: string): Promise<void> {
+export async function publishArticle(
+	dbUrl: string,
+	id: string,
+	editorEmail: string,
+): Promise<void> {
 	const sql = neon(dbUrl);
 	await ensureSchema(sql);
 	await sql`

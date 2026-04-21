@@ -47,6 +47,7 @@ import {
 	getArticleBySlug,
 	getSubscription,
 	listArticles,
+	listArticlesFull,
 	listDrafts,
 	markRead,
 	publishArticle,
@@ -854,6 +855,36 @@ async function handleResearchList(request: Request, env: Env): Promise<Response>
 	return jsonResponse(result);
 }
 
+async function handleResearchExport(request: Request, env: Env): Promise<Response> {
+	const session = await getSession(request, env);
+	if (!session) {
+		return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 }, request);
+	}
+	const viewerTier =
+		(await getActiveSubscription(env, session.userId, session.email, session.emailVerified))
+			?.tier ?? null;
+	const effectiveTier: Tier | null = isFounder(session) ? "institutional" : viewerTier;
+	if (!tierMeets(effectiveTier, "institutional")) {
+		return jsonResponse({ error: "INSTITUTIONAL_REQUIRED" }, { status: 403 }, request);
+	}
+
+	const url = new URL(request.url);
+	const since = url.searchParams.get("since") || undefined;
+	const type = (url.searchParams.get("type") || undefined) as ArticleType | undefined;
+	const limit = parseInt(url.searchParams.get("limit") || "50", 10);
+
+	const items = await listArticlesFull(env.AUTH_DATABASE_URL, { since, type, limit });
+	return jsonResponse(
+		{
+			generated_at: new Date().toISOString(),
+			count: items.length,
+			items,
+		},
+		{},
+		request,
+	);
+}
+
 async function handleResearchArticle(request: Request, env: Env, slug: string): Promise<Response> {
 	const session = await getSession(request, env);
 	const viewerTier = session
@@ -1117,6 +1148,7 @@ export default {
 
 		// Research
 		if (path === "/api/research/list") return handleResearchList(request, env);
+		if (path === "/api/research/export.json") return handleResearchExport(request, env);
 		if (path === "/api/research/subscriptions") return handleResearchSubscriptions(request, env);
 		if (path.startsWith("/api/research/article/")) {
 			const slug = path.replace("/api/research/article/", "");
