@@ -12,12 +12,6 @@ import {
 } from "./agent-threads";
 import { autoPublishStaleDrafts, generateAmBrief } from "./am-brief";
 import {
-	generateRotatingDeepDive,
-	generateWeeklyEarningsPreviews,
-} from "./content-rotation";
-import { generateDeepDive } from "./deep-dive";
-import { generateEarningsPreview } from "./earnings-preview";
-import {
 	clearSessionCookie,
 	parseCookie,
 	randomState,
@@ -28,6 +22,14 @@ import {
 } from "./auth";
 import { createCheckout, handleWebhook, TIERS, type Tier } from "./billing";
 import {
+	generateMonthlySector,
+	generateRotatingDeepDive,
+	generateWeeklyEarningsPreviews,
+	generateWeeklyPowerMap,
+} from "./content-rotation";
+import { generateDeepDive } from "./deep-dive";
+import { generateEarningsPreview } from "./earnings-preview";
+import {
 	type CreateInput as JournalCreate,
 	type JournalKind,
 	type UpdateInput as JournalUpdate,
@@ -36,6 +38,9 @@ import {
 	listEntries as journalList,
 	updateEntry as journalUpdate,
 } from "./journal";
+import { ensureRateBucketTable, gcRateBuckets, takeAgentToken } from "./lib/rate-limit";
+import { signUser } from "./lib/sign";
+import { tierMeets } from "./lib/tier";
 import {
 	type ArticleInput,
 	type ArticleType,
@@ -50,9 +55,6 @@ import {
 } from "./research";
 import type { ToolCtx } from "./tools";
 import { authenticateWithCode, buildAuthorizeUrl, displayName, type WorkOSUser } from "./workos";
-import { signUser } from "./lib/sign";
-import { ensureRateBucketTable, gcRateBuckets, takeAgentToken } from "./lib/rate-limit";
-import { tierMeets } from "./lib/tier";
 
 interface Env {
 	ASSETS: Fetcher;
@@ -431,7 +433,12 @@ async function handleAuthMe(request: Request, env: Env): Promise<Response> {
 	`) as { id: string; email: string; name: string | null; picture: string | null }[];
 	if (!userRows[0]) return jsonResponse({ authenticated: false });
 
-	const sub = await getActiveSubscription(env, session.userId, session.email, session.emailVerified);
+	const sub = await getActiveSubscription(
+		env,
+		session.userId,
+		session.email,
+		session.emailVerified,
+	);
 	return jsonResponse({
 		authenticated: true,
 		user: userRows[0],
@@ -493,7 +500,12 @@ async function handleAgentChat(request: Request, env: Env): Promise<Response> {
 		);
 	}
 
-	const sub = await getActiveSubscription(env, session.userId, session.email, session.emailVerified);
+	const sub = await getActiveSubscription(
+		env,
+		session.userId,
+		session.email,
+		session.emailVerified,
+	);
 	const tier = (sub?.tier ?? null) as ToolCtx["tier"];
 
 	const rateSql = neon(env.AUTH_DATABASE_URL);
@@ -586,7 +598,12 @@ async function requireProForThreads(
 ): Promise<{ userId: string } | Response> {
 	const session = await getSession(request, env);
 	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
-	const sub = await getActiveSubscription(env, session.userId, session.email, session.emailVerified);
+	const sub = await getActiveSubscription(
+		env,
+		session.userId,
+		session.email,
+		session.emailVerified,
+	);
 	if (!tierMeets(sub?.tier ?? null, "pro")) {
 		return jsonResponse({ error: "UPGRADE_REQUIRED", required: "pro" }, { status: 403 });
 	}
@@ -840,10 +857,10 @@ async function handleResearchList(request: Request, env: Env): Promise<Response>
 async function handleResearchArticle(request: Request, env: Env, slug: string): Promise<Response> {
 	const session = await getSession(request, env);
 	const viewerTier = session
-		? ((await getActiveSubscription(env, session.userId, session.email, session.emailVerified))?.tier ?? null)
+		? ((await getActiveSubscription(env, session.userId, session.email, session.emailVerified))
+				?.tier ?? null)
 		: null;
-	const tierForRead =
-		session && isFounder(session) ? "institutional" : (viewerTier as Tier | null);
+	const tierForRead = session && isFounder(session) ? "institutional" : (viewerTier as Tier | null);
 
 	const result = await getArticleBySlug(env.AUTH_DATABASE_URL, slug, tierForRead);
 	if (!result) return jsonResponse({ error: "not_found" }, { status: 404 });
@@ -1025,10 +1042,7 @@ async function handleAdminGenerateDeepDive(request: Request, env: Env): Promise<
 	return jsonResponse(result, { status: result.ok ? 200 : 500 });
 }
 
-async function handleAdminGenerateEarningsPreview(
-	request: Request,
-	env: Env,
-): Promise<Response> {
+async function handleAdminGenerateEarningsPreview(request: Request, env: Env): Promise<Response> {
 	if (request.method === "OPTIONS") return corsResponse(request);
 	const session = await getSession(request, env);
 	if (!session || !isFounder(session)) {
@@ -1159,6 +1173,7 @@ export default {
 				}),
 			);
 			const dow = new Date(event.scheduledTime).getUTCDay(); // 0=Sun..6=Sat
+			const dom = new Date(event.scheduledTime).getUTCDate(); // 1..31
 			if (dow === 0) {
 				ctx.waitUntil(
 					generateWeeklyEarningsPreviews(env, 3).then((r) => {
@@ -1169,6 +1184,20 @@ export default {
 				ctx.waitUntil(
 					generateRotatingDeepDive(env).then((r) => {
 						console.log(`[deep-dive] generate: ${JSON.stringify(r)}`);
+					}),
+				);
+			}
+			if (dom === 1) {
+				ctx.waitUntil(
+					generateMonthlySector(env).then((r) => {
+						console.log(`[sector-monthly] generate: ${JSON.stringify(r)}`);
+					}),
+				);
+			}
+			if (dow === 5) {
+				ctx.waitUntil(
+					generateWeeklyPowerMap(env).then((r) => {
+						console.log(`[power-map] generate: ${JSON.stringify(r)}`);
 					}),
 				);
 			}

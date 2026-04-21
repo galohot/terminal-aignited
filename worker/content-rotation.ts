@@ -7,30 +7,57 @@
 
 import { generateDeepDive } from "./deep-dive";
 import { generateEarningsPreview } from "./earnings-preview";
+import { generatePowerMap } from "./power-map";
+import { generateSectorMonthly } from "./sector-monthly";
 
 // Top ~30 IDX names by liquidity + sector coverage. First-pass curation.
 // Intentionally banks-weighted (they dominate flow + are what subs want).
 export const ROTATION_TICKERS: readonly string[] = [
 	// Banks
-	"BBCA", "BBRI", "BMRI", "BBNI", "BRIS",
+	"BBCA",
+	"BBRI",
+	"BMRI",
+	"BBNI",
+	"BRIS",
 	// Telco
-	"TLKM", "EXCL", "ISAT",
+	"TLKM",
+	"EXCL",
+	"ISAT",
 	// Consumer staples / goods
-	"ICBP", "INDF", "MYOR", "UNVR", "KLBF",
+	"ICBP",
+	"INDF",
+	"MYOR",
+	"UNVR",
+	"KLBF",
 	// Energy / coal
-	"MEDC", "ADRO", "PTBA", "ITMG",
+	"MEDC",
+	"ADRO",
+	"PTBA",
+	"ITMG",
 	// Materials / metals
-	"ANTM", "INCO", "TINS", "MDKA",
+	"ANTM",
+	"INCO",
+	"TINS",
+	"MDKA",
 	// Infrastructure / construction
-	"JSMR", "WIKA", "WSKT", "PGAS",
+	"JSMR",
+	"WIKA",
+	"WSKT",
+	"PGAS",
 	// Property
-	"BSDE", "SMRA", "PWON", "CTRA",
+	"BSDE",
+	"SMRA",
+	"PWON",
+	"CTRA",
 	// Tech / internet
-	"GOTO", "BUKA",
+	"GOTO",
+	"BUKA",
 	// Auto / industrial
-	"ASII", "UNTR",
+	"ASII",
+	"UNTR",
 	// Healthcare
-	"SIDO", "KAEF",
+	"SIDO",
+	"KAEF",
 ] as const;
 
 // UTC-day based index so two calls on the same UTC day pick the same ticker.
@@ -51,6 +78,36 @@ export async function generateRotatingDeepDive(env: Parameters<typeof generateDe
 	const seed = dayOfYearUTC(now);
 	const ticker = pickTicker(ROTATION_TICKERS.length, seed);
 	return generateDeepDive(env, ticker);
+}
+
+// Monthly sector rotation. 9 sectors, indexed by UTC month so the same month
+// always maps to the same sector — deterministic, no state needed.
+export const SECTOR_ROTATION: readonly string[] = [
+	"financials",
+	"telecom",
+	"consumer_goods",
+	"energy",
+	"basic_materials",
+	"infrastructure",
+	"property",
+	"technology",
+	"healthcare",
+] as const;
+
+export function pickSectorOfMonth(now: Date = new Date()): string {
+	return SECTOR_ROTATION[now.getUTCMonth() % SECTOR_ROTATION.length];
+}
+
+// Called by the daily cron on day-of-month == 1. Picks one sector by month
+// index, writes draft. Upsert handles slug collision → same month regenerates
+// in place (intentional — rare re-runs should refresh the draft, not duplicate).
+export async function generateMonthlySector(env: Parameters<typeof generateSectorMonthly>[0]) {
+	return generateSectorMonthly(env, pickSectorOfMonth(new Date()));
+}
+
+// Called by the daily cron on Fridays. Power Map is market-wide — no arg.
+export async function generateWeeklyPowerMap(env: Parameters<typeof generatePowerMap>[0]) {
+	return generatePowerMap(env);
 }
 
 // Weekly earnings previews — generates previews for the next N tickers in
