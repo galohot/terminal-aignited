@@ -19,7 +19,12 @@ import {
 	storedMessagesToTurns,
 	useAgentChat,
 } from "../hooks/use-agent-chat";
-import { type AgentPersona, type AgentThread, agent as agentApi } from "../lib/api";
+import {
+	type AgentPersona,
+	type AgentThread,
+	agent as agentApi,
+	type PersonaInput,
+} from "../lib/api";
 
 const SUGGESTIONS = [
 	"Quote BBCA and BBRI, compare today's move",
@@ -48,6 +53,7 @@ function ThreadedAgent() {
 	const [personas, setPersonas] = useState<AgentPersona[]>([]);
 	const [activeThread, setActiveThread] = useState<AgentThread | null>(null);
 	const [loadError, setLoadError] = useState<string | null>(null);
+	const [managerOpen, setManagerOpen] = useState(false);
 	// Chat owns turns; parent forwards hydrate/clear via a ref-held callback.
 	const chatControllerRef = useRef<{ hydrate: (t: ChatTurn[]) => void; clear: () => void } | null>(
 		null,
@@ -99,6 +105,15 @@ function ThreadedAgent() {
 		[activeThread],
 	);
 
+	const refreshPersonas = useCallback(async () => {
+		try {
+			const p = await agentApi.listPersonas();
+			setPersonas(p.personas);
+		} catch (e) {
+			setLoadError(e instanceof Error ? e.message : "Failed to reload personas");
+		}
+	}, []);
+
 	const onThreadUpdated = useCallback((thread: AgentThread) => {
 		setActiveThread(thread);
 		setThreads((prev) => prev.map((t) => (t.id === thread.id ? thread : t)));
@@ -145,6 +160,7 @@ function ThreadedAgent() {
 					personas={personas}
 					controllerRef={chatControllerRef}
 					ensureThread={ensureThread}
+					onManagePersonas={() => setManagerOpen(true)}
 					onPersonaChange={async (personaId) => {
 						if (!activeThread) return;
 						try {
@@ -155,6 +171,13 @@ function ThreadedAgent() {
 						}
 					}}
 				/>
+				{managerOpen && (
+					<PersonaManager
+						personas={personas}
+						onClose={() => setManagerOpen(false)}
+						onChanged={refreshPersonas}
+					/>
+				)}
 				{loadError && (
 					<div className="border-t border-neg/30 bg-neg/10 px-4 py-2 font-mono text-xs text-neg">
 						{loadError}
@@ -299,6 +322,7 @@ function ChatPane({
 	controllerRef,
 	ensureThread,
 	onPersonaChange,
+	onManagePersonas,
 }: {
 	thread: AgentThread | null;
 	personas: AgentPersona[];
@@ -308,6 +332,7 @@ function ChatPane({
 	} | null>;
 	ensureThread: (firstMessage: string, personaId: string | null) => Promise<AgentThread>;
 	onPersonaChange: (personaId: string | null) => void;
+	onManagePersonas: () => void;
 }) {
 	const [pendingPersonaId, setPendingPersonaId] = useState<string | null>(null);
 	const threadId = thread?.id ?? null;
@@ -381,6 +406,7 @@ function ChatPane({
 						if (thread) onPersonaChange(id);
 						else setPendingPersonaId(id);
 					}}
+					onManage={onManagePersonas}
 				/>
 			</div>
 
@@ -416,11 +442,15 @@ function PersonaPicker({
 	personas,
 	active,
 	onChange,
+	onManage,
 }: {
 	personas: AgentPersona[];
 	active: AgentPersona | null;
 	onChange: (id: string | null) => void;
+	onManage: () => void;
 }) {
+	const userPersonas = personas.filter((p) => p.user_id);
+	const seedPersonas = personas.filter((p) => !p.user_id && p.id !== "default");
 	return (
 		<div className="flex shrink-0 items-center gap-2">
 			<label
@@ -432,19 +462,262 @@ function PersonaPicker({
 			<select
 				id="persona-picker"
 				value={active?.id ?? ""}
-				onChange={(e) => onChange(e.target.value || null)}
+				onChange={(e) => {
+					const v = e.target.value;
+					if (v === "__manage__") {
+						onManage();
+						return;
+					}
+					onChange(v || null);
+				}}
 				className="rounded-[8px] border border-rule bg-card px-2 py-1 font-mono text-xs text-ink focus:border-ember-400 focus:outline-none"
 				title={active?.description}
 			>
 				<option value="">Generalist</option>
-				{personas
-					.filter((p) => p.id !== "default")
-					.map((p) => (
-						<option key={p.id} value={p.id} title={p.description}>
-							{p.name}
-						</option>
-					))}
+				{seedPersonas.map((p) => (
+					<option key={p.id} value={p.id} title={p.description}>
+						{p.name}
+					</option>
+				))}
+				{userPersonas.length > 0 && (
+					<optgroup label="Your personas">
+						{userPersonas.map((p) => (
+							<option key={p.id} value={p.id} title={p.description}>
+								{p.name}
+							</option>
+						))}
+					</optgroup>
+				)}
+				<option value="__manage__">Manage personas…</option>
 			</select>
+		</div>
+	);
+}
+
+function PersonaManager({
+	personas,
+	onClose,
+	onChanged,
+}: {
+	personas: AgentPersona[];
+	onClose: () => void;
+	onChanged: () => Promise<void>;
+}) {
+	const [editingId, setEditingId] = useState<string | null>(null);
+	const [form, setForm] = useState<PersonaInput>({ name: "", description: "", system_prompt: "" });
+	const [saving, setSaving] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const userPersonas = personas.filter((p) => p.user_id);
+
+	function resetForm() {
+		setEditingId(null);
+		setForm({ name: "", description: "", system_prompt: "" });
+		setError(null);
+	}
+
+	function startEdit(p: AgentPersona) {
+		setEditingId(p.id);
+		setForm({
+			name: p.name,
+			description: p.description,
+			system_prompt: p.system_prompt ?? "",
+		});
+		setError(null);
+	}
+
+	async function onSave(e: FormEvent<HTMLFormElement>) {
+		e.preventDefault();
+		setError(null);
+		setSaving(true);
+		try {
+			if (editingId) {
+				await agentApi.updatePersona(editingId, form);
+			} else {
+				await agentApi.createPersona(form);
+			}
+			await onChanged();
+			resetForm();
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Save failed");
+		} finally {
+			setSaving(false);
+		}
+	}
+
+	async function onDelete(id: string) {
+		if (!confirm("Delete this persona? Threads using it will fall back to the default.")) return;
+		try {
+			await agentApi.deletePersona(id);
+			await onChanged();
+			if (editingId === id) resetForm();
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Delete failed");
+		}
+	}
+
+	return (
+		<div
+			className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+			onClick={onClose}
+			onKeyDown={(e) => {
+				if (e.key === "Escape") onClose();
+			}}
+			role="dialog"
+			aria-modal="true"
+			aria-label="Manage personas"
+		>
+			<div
+				className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-[12px] border border-rule bg-card p-5 shadow-xl"
+				onClick={(e) => e.stopPropagation()}
+				onKeyDown={(e) => e.stopPropagation()}
+				role="document"
+			>
+				<div className="mb-4 flex items-center justify-between">
+					<h2
+						className="text-lg text-ink"
+						style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.01em" }}
+					>
+						Manage personas
+					</h2>
+					<button
+						type="button"
+						onClick={onClose}
+						className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-4 hover:text-ink"
+					>
+						Close
+					</button>
+				</div>
+
+				<div className="mb-4">
+					<div className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-4">
+						Your personas ({userPersonas.length})
+					</div>
+					{userPersonas.length === 0 ? (
+						<div className="rounded-[8px] border border-rule border-dashed px-3 py-2 font-mono text-xs text-ink-4">
+							None yet. Create one below.
+						</div>
+					) : (
+						<ul className="space-y-2">
+							{userPersonas.map((p) => (
+								<li
+									key={p.id}
+									className="flex items-center justify-between rounded-[8px] border border-rule bg-bg px-3 py-2"
+								>
+									<div className="min-w-0">
+										<div className="truncate text-sm text-ink">{p.name}</div>
+										{p.description && (
+											<div className="truncate font-mono text-[10px] text-ink-4">
+												{p.description}
+											</div>
+										)}
+									</div>
+									<div className="flex shrink-0 items-center gap-2">
+										<button
+											type="button"
+											onClick={() => startEdit(p)}
+											className="rounded-[6px] border border-rule px-2 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-4 hover:border-ember-400 hover:text-ember-600"
+											title="Edit"
+										>
+											<Pencil className="h-3 w-3" />
+										</button>
+										<button
+											type="button"
+											onClick={() => onDelete(p.id)}
+											className="rounded-[6px] border border-rule px-2 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-4 hover:border-neg hover:text-neg"
+											title="Delete"
+										>
+											<Trash2 className="h-3 w-3" />
+										</button>
+									</div>
+								</li>
+							))}
+						</ul>
+					)}
+				</div>
+
+				<form onSubmit={onSave} className="space-y-3 border-t border-rule pt-4">
+					<div className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-4">
+						{editingId ? "Edit persona" : "New persona"}
+					</div>
+					<div>
+						<label
+							htmlFor="pm-name"
+							className="block font-mono text-[10px] uppercase tracking-[0.18em] text-ink-4"
+						>
+							Name
+						</label>
+						<input
+							id="pm-name"
+							type="text"
+							maxLength={80}
+							value={form.name}
+							onChange={(e) => setForm({ ...form, name: e.target.value })}
+							className="mt-1 w-full rounded-[8px] border border-rule bg-bg px-2 py-1 text-sm text-ink focus:border-ember-400 focus:outline-none"
+							placeholder="e.g. Earnings-focused banks analyst"
+							required
+						/>
+					</div>
+					<div>
+						<label
+							htmlFor="pm-desc"
+							className="block font-mono text-[10px] uppercase tracking-[0.18em] text-ink-4"
+						>
+							Description (optional)
+						</label>
+						<input
+							id="pm-desc"
+							type="text"
+							maxLength={200}
+							value={form.description ?? ""}
+							onChange={(e) => setForm({ ...form, description: e.target.value })}
+							className="mt-1 w-full rounded-[8px] border border-rule bg-bg px-2 py-1 text-sm text-ink focus:border-ember-400 focus:outline-none"
+							placeholder="One-liner shown in picker hover"
+						/>
+					</div>
+					<div>
+						<label
+							htmlFor="pm-prompt"
+							className="block font-mono text-[10px] uppercase tracking-[0.18em] text-ink-4"
+						>
+							System prompt ({form.system_prompt.length}/8000)
+						</label>
+						<textarea
+							id="pm-prompt"
+							rows={10}
+							minLength={20}
+							maxLength={8000}
+							value={form.system_prompt}
+							onChange={(e) => setForm({ ...form, system_prompt: e.target.value })}
+							className="mt-1 w-full rounded-[8px] border border-rule bg-bg px-2 py-1 font-mono text-xs text-ink focus:border-ember-400 focus:outline-none"
+							placeholder="You are a [lens] IDX analyst on AIgnited Terminal…"
+							required
+						/>
+					</div>
+					{error && (
+						<div className="rounded-[6px] border border-neg/30 bg-neg/10 px-2 py-1 font-mono text-[10px] text-neg">
+							{error}
+						</div>
+					)}
+					<div className="flex items-center gap-2">
+						<button
+							type="submit"
+							disabled={saving}
+							className="rounded-[8px] border border-ember-400 bg-ember-400/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ember-600 hover:bg-ember-400/20 disabled:opacity-50"
+						>
+							{saving ? "Saving…" : editingId ? "Update" : "Create"}
+						</button>
+						{editingId && (
+							<button
+								type="button"
+								onClick={resetForm}
+								className="rounded-[8px] border border-rule px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-4 hover:text-ink"
+							>
+								Cancel
+							</button>
+						)}
+					</div>
+				</form>
+			</div>
 		</div>
 	);
 }

@@ -13,6 +13,7 @@ export interface Persona {
 	name: string;
 	description: string;
 	system_prompt: string;
+	user_id: string | null;
 }
 
 export interface Thread {
@@ -32,8 +33,10 @@ export interface StoredMessage {
 	created_at: string;
 }
 
-// Baked-in persona presets. IDs are stable identifiers.
-const SEED_PERSONAS: Persona[] = [
+type SeedPersona = Omit<Persona, "user_id">;
+
+// Baked-in persona presets. IDs are stable identifiers. user_id is NULL for seeds.
+const SEED_PERSONAS: SeedPersona[] = [
 	{
 		id: "default",
 		name: "Generalist",
@@ -185,6 +188,13 @@ async function ensureSchema(sql: Sql): Promise<void> {
 			updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 		)
 	`;
+	// user_id NULL = seeded built-in (shared), NOT NULL = user-owned custom persona.
+	await sql`
+		ALTER TABLE terminal_agent_personas
+		ADD COLUMN IF NOT EXISTS user_id TEXT
+		REFERENCES terminal_users(id) ON DELETE CASCADE
+	`;
+	await sql`CREATE INDEX IF NOT EXISTS idx_agent_personas_user ON terminal_agent_personas (user_id) WHERE user_id IS NOT NULL`;
 	await sql`
 		CREATE TABLE IF NOT EXISTS terminal_agent_threads (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -225,27 +235,148 @@ async function ensureSchema(sql: Sql): Promise<void> {
 
 // ---- Personas ------------------------------------------------------------
 
-export async function listPersonas(dbUrl: string): Promise<Persona[]> {
+export async function listPersonas(dbUrl: string, userId?: string | null): Promise<Persona[]> {
 	const sql = neon(dbUrl);
 	await ensureSchema(sql);
 	return (await sql`
-		SELECT id, name, description, system_prompt
+		SELECT id, name, description, system_prompt, user_id
 		FROM terminal_agent_personas
+		WHERE user_id IS NULL OR user_id = ${userId ?? null}
 		ORDER BY
+			CASE WHEN user_id IS NULL THEN 0 ELSE 1 END,
 			CASE id WHEN 'default' THEN 0 ELSE 1 END,
 			name
 	`) as Persona[];
 }
 
-export async function getPersona(dbUrl: string, id: string): Promise<Persona | null> {
+export async function getPersona(
+	dbUrl: string,
+	id: string,
+	userId?: string | null,
+): Promise<Persona | null> {
 	const sql = neon(dbUrl);
 	await ensureSchema(sql);
 	const rows = (await sql`
-		SELECT id, name, description, system_prompt
+		SELECT id, name, description, system_prompt, user_id
 		FROM terminal_agent_personas
-		WHERE id = ${id}
+		WHERE id = ${id} AND (user_id IS NULL OR user_id = ${userId ?? null})
 	`) as Persona[];
 	return rows[0] ?? null;
+}
+
+export interface PersonaInput {
+	name: string;
+	description?: string;
+	system_prompt: string;
+}
+
+const PERSONA_LIMITS = {
+	nameMax: 80,
+	descMax: 200,
+	promptMin: 20,
+	promptMax: 8000,
+};
+
+function validatePersonaInput(input: PersonaInput): string | null {
+	const name = (input.name ?? "").trim();
+	const desc = (input.description ?? "").trim();
+	const prompt = (input.system_prompt ?? "").trim();
+	if (name.length === 0 || name.length > PERSONA_LIMITS.nameMax) return "INVALID_NAME";
+	if (desc.length > PERSONA_LIMITS.descMax) return "INVALID_DESCRIPTION";
+	if (prompt.length < PERSONA_LIMITS.promptMin || prompt.length > PERSONA_LIMITS.promptMax) {
+		return "INVALID_PROMPT";
+	}
+	return null;
+}
+
+function newPersonaId(userId: string): string {
+	const slice =
+		userId
+			.replace(/[^a-z0-9]/gi, "")
+			.slice(0, 8)
+			.toLowerCase() || "u";
+	const rand = Math.random().toString(36).slice(2, 10);
+	return `user-${slice}-${rand}`;
+}
+
+export async function createPersona(
+	dbUrl: string,
+	userId: string,
+	input: PersonaInput,
+): Promise<{ persona: Persona } | { error: string }> {
+	const err = validatePersonaInput(input);
+	if (err) return { error: err };
+	const sql = neon(dbUrl);
+	await ensureSchema(sql);
+	const id = newPersonaId(userId);
+	const rows = (await sql`
+		INSERT INTO terminal_agent_personas (id, name, description, system_prompt, user_id)
+		VALUES (
+			${id},
+			${input.name.trim()},
+			${(input.description ?? "").trim()},
+			${input.system_prompt.trim()},
+			${userId}
+		)
+		RETURNING id, name, description, system_prompt, user_id
+	`) as Persona[];
+	return { persona: rows[0] };
+}
+
+export async function updatePersona(
+	dbUrl: string,
+	userId: string,
+	id: string,
+	patch: Partial<PersonaInput>,
+): Promise<{ persona: Persona } | { error: string }> {
+	const sql = neon(dbUrl);
+	await ensureSchema(sql);
+	// Load owner; reject if seed or someone else's.
+	const existing = (await sql`
+		SELECT user_id FROM terminal_agent_personas WHERE id = ${id}
+	`) as { user_id: string | null }[];
+	if (existing.length === 0) return { error: "PERSONA_NOT_FOUND" };
+	if (existing[0].user_id !== userId) return { error: "FORBIDDEN" };
+
+	const merged: PersonaInput = {
+		name: patch.name ?? "",
+		description: patch.description,
+		system_prompt: patch.system_prompt ?? "",
+	};
+	// For fields not provided, skip validation and preserve existing values.
+	const current = (await sql`
+		SELECT name, description, system_prompt
+		FROM terminal_agent_personas WHERE id = ${id}
+	`) as { name: string; description: string; system_prompt: string }[];
+	if (patch.name === undefined) merged.name = current[0].name;
+	if (patch.description === undefined) merged.description = current[0].description;
+	if (patch.system_prompt === undefined) merged.system_prompt = current[0].system_prompt;
+
+	const err = validatePersonaInput(merged);
+	if (err) return { error: err };
+
+	const rows = (await sql`
+		UPDATE terminal_agent_personas
+		SET
+			name = ${merged.name.trim()},
+			description = ${(merged.description ?? "").trim()},
+			system_prompt = ${merged.system_prompt.trim()},
+			updated_at = now()
+		WHERE id = ${id} AND user_id = ${userId}
+		RETURNING id, name, description, system_prompt, user_id
+	`) as Persona[];
+	return { persona: rows[0] };
+}
+
+export async function deletePersona(dbUrl: string, userId: string, id: string): Promise<boolean> {
+	const sql = neon(dbUrl);
+	await ensureSchema(sql);
+	const rows = (await sql`
+		DELETE FROM terminal_agent_personas
+		WHERE id = ${id} AND user_id = ${userId}
+		RETURNING id
+	`) as { id: string }[];
+	return rows.length > 0;
 }
 
 // ---- Threads -------------------------------------------------------------

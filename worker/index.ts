@@ -1,13 +1,16 @@
 import { neon } from "@neondatabase/serverless";
 import { runAgent } from "./agent";
 import {
+	createPersona as agentCreatePersona,
 	createThread as agentCreateThread,
+	deletePersona as agentDeletePersona,
 	deleteThread as agentDeleteThread,
 	getPersona as agentGetPersona,
 	getThread as agentGetThread,
 	toLlmHistory as agentHistoryToLlm,
 	listPersonas as agentListPersonas,
 	listThreads as agentListThreads,
+	updatePersona as agentUpdatePersona,
 	updateThread as agentUpdateThread,
 } from "./agent-threads";
 import { autoPublishStaleDrafts, generateAmBrief } from "./am-brief";
@@ -549,7 +552,11 @@ async function handleAgentChat(request: Request, env: Env): Promise<Response> {
 		const history = agentHistoryToLlm(existing.messages);
 		let systemPrompt: string | undefined;
 		if (existing.thread.persona_id) {
-			const persona = await agentGetPersona(env.AUTH_DATABASE_URL, existing.thread.persona_id);
+			const persona = await agentGetPersona(
+				env.AUTH_DATABASE_URL,
+				existing.thread.persona_id,
+				session.userId,
+			);
 			if (persona) systemPrompt = persona.system_prompt;
 		}
 		// Auto-title placeholder threads on first user message.
@@ -581,16 +588,76 @@ async function handleAgentChat(request: Request, env: Env): Promise<Response> {
 
 async function handleAgentPersonas(request: Request, env: Env): Promise<Response> {
 	if (request.method === "OPTIONS") return corsResponse(request);
-	if (request.method !== "GET") {
-		return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
-	}
 	const session = await getSession(request, env);
 	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
-	const personas = await agentListPersonas(env.AUTH_DATABASE_URL);
-	// Strip system_prompt — callers only need to identify + describe, not reveal internals.
-	return jsonResponse({
-		personas: personas.map((p) => ({ id: p.id, name: p.name, description: p.description })),
-	});
+
+	if (request.method === "GET") {
+		const personas = await agentListPersonas(env.AUTH_DATABASE_URL, session.userId);
+		// Reveal user-owned system_prompt only (so the manage UI can edit it).
+		return jsonResponse({
+			personas: personas.map((p) => ({
+				id: p.id,
+				name: p.name,
+				description: p.description,
+				user_id: p.user_id,
+				system_prompt: p.user_id ? p.system_prompt : undefined,
+			})),
+		});
+	}
+
+	if (request.method === "POST") {
+		const auth = await requireProForThreads(request, env);
+		if (auth instanceof Response) return auth;
+		let body: { name?: string; description?: string; system_prompt?: string } = {};
+		try {
+			body = (await request.json()) as typeof body;
+		} catch {
+			return jsonResponse({ error: "INVALID_JSON" }, { status: 400 });
+		}
+		const result = await agentCreatePersona(env.AUTH_DATABASE_URL, auth.userId, {
+			name: body.name ?? "",
+			description: body.description,
+			system_prompt: body.system_prompt ?? "",
+		});
+		if ("error" in result) return jsonResponse({ error: result.error }, { status: 400 });
+		return jsonResponse({ persona: result.persona }, { status: 201 });
+	}
+
+	return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
+}
+
+async function handleAgentPersonaItem(
+	request: Request,
+	env: Env,
+	personaId: string,
+): Promise<Response> {
+	if (request.method === "OPTIONS") return corsResponse(request);
+	const auth = await requireProForThreads(request, env);
+	if (auth instanceof Response) return auth;
+
+	if (request.method === "PATCH" || request.method === "PUT") {
+		let body: { name?: string; description?: string; system_prompt?: string } = {};
+		try {
+			body = (await request.json()) as typeof body;
+		} catch {
+			return jsonResponse({ error: "INVALID_JSON" }, { status: 400 });
+		}
+		const result = await agentUpdatePersona(env.AUTH_DATABASE_URL, auth.userId, personaId, body);
+		if ("error" in result) {
+			const status =
+				result.error === "PERSONA_NOT_FOUND" ? 404 : result.error === "FORBIDDEN" ? 403 : 400;
+			return jsonResponse({ error: result.error }, { status });
+		}
+		return jsonResponse({ persona: result.persona });
+	}
+
+	if (request.method === "DELETE") {
+		const ok = await agentDeletePersona(env.AUTH_DATABASE_URL, auth.userId, personaId);
+		if (!ok) return jsonResponse({ error: "PERSONA_NOT_FOUND" }, { status: 404 });
+		return jsonResponse({ ok: true });
+	}
+
+	return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
 }
 
 async function requireProForThreads(
@@ -1119,6 +1186,10 @@ export default {
 		// Agent
 		if (path === "/api/agent/chat") return handleAgentChat(request, env);
 		if (path === "/api/agent/personas") return handleAgentPersonas(request, env);
+		if (path.startsWith("/api/agent/personas/")) {
+			const id = path.replace("/api/agent/personas/", "");
+			return handleAgentPersonaItem(request, env, id);
+		}
 		if (path === "/api/agent/threads") return handleAgentThreadsList(request, env);
 		if (path.startsWith("/api/agent/thread/")) {
 			const id = path.replace("/api/agent/thread/", "");

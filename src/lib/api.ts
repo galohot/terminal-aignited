@@ -591,6 +591,14 @@ export interface AgentPersona {
 	id: string;
 	name: string;
 	description: string;
+	user_id?: string | null;
+	system_prompt?: string;
+}
+
+export interface PersonaInput {
+	name: string;
+	description?: string;
+	system_prompt: string;
 }
 
 export interface AgentThread {
@@ -612,6 +620,12 @@ export interface AgentStoredMessage {
 
 export const agent = {
 	listPersonas: () => fetchWorker<{ personas: AgentPersona[] }>("/api/agent/personas"),
+	createPersona: (input: PersonaInput) =>
+		postWorker<{ persona: AgentPersona }>("/api/agent/personas", input),
+	updatePersona: (id: string, patch: Partial<PersonaInput>) =>
+		patchWorker<{ persona: AgentPersona }>(`/api/agent/personas/${encodeURIComponent(id)}`, patch),
+	deletePersona: (id: string) =>
+		deleteWorker<{ ok: boolean }>(`/api/agent/personas/${encodeURIComponent(id)}`),
 	listThreads: () => fetchWorker<{ threads: AgentThread[] }>("/api/agent/threads"),
 	createThread: (input: { personaId?: string | null; title?: string } = {}) =>
 		postWorker<{ thread: AgentThread }>("/api/agent/threads", input),
