@@ -506,6 +506,12 @@ export const research = {
 // TODO: wire via env var from the worker once the channel has a public @ handle.
 export const TELEGRAM_CHANNEL_URL: string | null = null;
 
+export const telegramLink = {
+	status: () => fetchWorker<{ linked: boolean; types: string[] }>("/api/telegram/link"),
+	start: () => postWorker<{ url: string; expiresAt: string }>("/api/telegram/link", {}),
+	unlink: () => deleteWorker<{ ok: boolean }>("/api/telegram/link"),
+};
+
 // --- Journal ---
 export type JournalKind = "entry" | "exit" | "note";
 

@@ -1,10 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clsx } from "clsx";
-import { Bell, BookOpen, Briefcase, Building2, Calendar, Globe2, Loader2, Lock, Mail, Newspaper, Send, TrendingUp } from "lucide-react";
+import {
+	Bell,
+	BookOpen,
+	Briefcase,
+	Building2,
+	Calendar,
+	Globe2,
+	Loader2,
+	Lock,
+	Mail,
+	Newspaper,
+	Send,
+	TrendingUp,
+} from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import { useAuth } from "../contexts/auth";
-import { research, type ResearchArticle, type ResearchType, TELEGRAM_CHANNEL_URL } from "../lib/api";
+import {
+	type ResearchArticle,
+	type ResearchType,
+	research,
+	TELEGRAM_CHANNEL_URL,
+	telegramLink,
+} from "../lib/api";
 
 const TYPE_META: Record<ResearchType, { label: string; icon: typeof BookOpen; accent: string }> = {
 	am_brief: { label: "AM Brief", icon: Newspaper, accent: "text-ember-600" },
@@ -137,7 +156,10 @@ function SubscriptionPanel() {
 				<div className="flex items-center gap-2 font-mono text-[11px] text-ember-600 uppercase tracking-[0.28em]">
 					<Bell className="h-3.5 w-3.5" /> Get the daily brief
 				</div>
-				<h3 className="mt-2 font-extrabold text-[20px] text-ink" style={{ fontFamily: "var(--font-display)" }}>
+				<h3
+					className="mt-2 font-extrabold text-[20px] text-ink"
+					style={{ fontFamily: "var(--font-display)" }}
+				>
 					Delivered at 06:40 WIB
 				</h3>
 				<p className="mt-2 text-[14px] text-ink-3">
@@ -155,7 +177,10 @@ function SubscriptionPanel() {
 			<div className="flex items-center gap-2 font-mono text-[11px] text-ember-600 uppercase tracking-[0.28em]">
 				<Bell className="h-3.5 w-3.5" /> Delivery preferences
 			</div>
-			<h3 className="mt-2 font-extrabold text-[20px] text-ink" style={{ fontFamily: "var(--font-display)" }}>
+			<h3
+				className="mt-2 font-extrabold text-[20px] text-ink"
+				style={{ fontFamily: "var(--font-display)" }}
+			>
 				Get the AM brief at 06:40 WIB
 			</h3>
 
@@ -172,7 +197,9 @@ function SubscriptionPanel() {
 					<div className="flex items-start gap-3">
 						<Mail className={clsx("mt-0.5 h-4 w-4", emailOn ? "text-ember-600" : "text-ink-3")} />
 						<div>
-							<div className="font-mono text-[11px] text-ink-3 uppercase tracking-[0.18em]">Email</div>
+							<div className="font-mono text-[11px] text-ink-3 uppercase tracking-[0.18em]">
+								Email
+							</div>
 							<div className="mt-0.5 font-semibold text-[14px] text-ink">
 								{emailOn ? "On — you're subscribed" : "Off"}
 							</div>
@@ -211,7 +238,9 @@ function SubscriptionPanel() {
 					<div className="flex items-start gap-3">
 						<Send className="mt-0.5 h-4 w-4 text-ink-3" />
 						<div>
-							<div className="font-mono text-[11px] text-ink-3 uppercase tracking-[0.18em]">Telegram</div>
+							<div className="font-mono text-[11px] text-ink-3 uppercase tracking-[0.18em]">
+								Telegram
+							</div>
 							<div className="mt-0.5 font-semibold text-[14px] text-ink">
 								{TELEGRAM_CHANNEL_URL ? "Join the channel" : "Channel link coming soon"}
 							</div>
@@ -225,7 +254,76 @@ function SubscriptionPanel() {
 			{update.isError && (
 				<p className="mt-3 font-mono text-[11px] text-neg">Failed to update — try again.</p>
 			)}
+
+			<TelegramDmPanel />
 		</section>
+	);
+}
+
+function TelegramDmPanel() {
+	const qc = useQueryClient();
+	const statusQ = useQuery({
+		queryKey: ["telegram", "link"],
+		queryFn: () => telegramLink.status(),
+		staleTime: 30_000,
+	});
+	const startMut = useMutation({
+		mutationFn: () => telegramLink.start(),
+		onSuccess: ({ url }) => {
+			window.open(url, "_blank", "noopener,noreferrer");
+		},
+	});
+	const unlinkMut = useMutation({
+		mutationFn: () => telegramLink.unlink(),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["telegram", "link"] });
+		},
+	});
+
+	const linked = statusQ.data?.linked ?? false;
+
+	return (
+		<div className="mt-5 rounded-xl border border-rule bg-card p-4">
+			<div className="flex items-start justify-between gap-3">
+				<div className="flex items-start gap-3">
+					<Send className={clsx("mt-0.5 h-4 w-4", linked ? "text-ember-600" : "text-ink-3")} />
+					<div>
+						<div className="font-mono text-[11px] text-ink-3 uppercase tracking-[0.18em]">
+							Personal Telegram digest
+						</div>
+						<div className="mt-0.5 font-semibold text-[14px] text-ink">
+							{linked ? "Connected — daily digest at 06:40 WIB" : "Daily DM of new articles"}
+						</div>
+						<div className="mt-1 text-[12px] text-ink-3">
+							{linked
+								? "One DM per day listing fresh articles matching your tier."
+								: "Opens Telegram — hit Start to link your account."}
+						</div>
+					</div>
+				</div>
+				<div className="shrink-0">
+					{linked ? (
+						<button
+							type="button"
+							onClick={() => unlinkMut.mutate()}
+							disabled={unlinkMut.isPending}
+							className="rounded-lg border border-rule px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-3 hover:border-neg hover:text-neg disabled:opacity-50"
+						>
+							{unlinkMut.isPending ? "…" : "Disconnect"}
+						</button>
+					) : (
+						<button
+							type="button"
+							onClick={() => startMut.mutate()}
+							disabled={startMut.isPending}
+							className="rounded-lg border border-ember-600 bg-ember-600 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-paper hover:bg-ember-500 disabled:opacity-50"
+						>
+							{startMut.isPending ? "…" : "Connect"}
+						</button>
+					)}
+				</div>
+			</div>
+		</div>
 	);
 }
 
@@ -299,9 +397,7 @@ function ArticleCard({ article }: { article: ResearchArticle }) {
 			<h3 className="mt-3 font-bold text-[16px] text-ink leading-snug tracking-[-0.005em] group-hover:text-ink-2">
 				{article.title}
 			</h3>
-			<p className="mt-2 line-clamp-3 text-[13px] text-ink-3 leading-relaxed">
-				{article.summary}
-			</p>
+			<p className="mt-2 line-clamp-3 text-[13px] text-ink-3 leading-relaxed">{article.summary}</p>
 			<div className="mt-4 flex items-center justify-between border-t border-rule pt-3">
 				<span className="font-mono text-[10px] text-ink-4 uppercase tracking-[0.18em]">
 					{formatDate(article.published_at)}

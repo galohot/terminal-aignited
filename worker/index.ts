@@ -57,6 +57,14 @@ import {
 	upsertArticle,
 	upsertSubscription,
 } from "./research";
+import { runTelegramDigest } from "./telegram-digest";
+import {
+	clearTelegramChatId,
+	consumeLinkToken,
+	createLinkToken,
+	getTelegramStatus,
+	setTelegramChatId,
+} from "./telegram-link";
 import type { ToolCtx } from "./tools";
 import { authenticateWithCode, buildAuthorizeUrl, displayName, type WorkOSUser } from "./workos";
 
@@ -81,6 +89,8 @@ interface Env {
 	RESEND_API_KEY?: string;
 	TELEGRAM_NEWSLETTER_BOT_TOKEN?: string;
 	TELEGRAM_NEWSLETTER_CHAT_ID?: string;
+	TELEGRAM_WEBHOOK_SECRET?: string;
+	TELEGRAM_BOT_USERNAME?: string;
 }
 
 const ALLOWED_ORIGINS = new Set([
@@ -952,6 +962,119 @@ async function handleResearchExport(request: Request, env: Env): Promise<Respons
 	);
 }
 
+// --- Telegram: link flow + bot webhook ------------------------------------
+
+async function handleTelegramLink(request: Request, env: Env): Promise<Response> {
+	if (request.method === "OPTIONS") return corsResponse(request);
+	const session = await getSession(request, env);
+	if (!session) return jsonResponse({ error: "AUTH_REQUIRED" }, { status: 401 });
+
+	if (request.method === "GET") {
+		const status = await getTelegramStatus(env.AUTH_DATABASE_URL, session.userId);
+		return jsonResponse(status);
+	}
+
+	if (request.method === "POST") {
+		if (!env.TELEGRAM_BOT_USERNAME) {
+			return jsonResponse({ error: "TELEGRAM_NOT_CONFIGURED" }, { status: 503 });
+		}
+		const { token, expiresAt } = await createLinkToken(env.AUTH_DATABASE_URL, session.userId);
+		const url = `https://t.me/${env.TELEGRAM_BOT_USERNAME}?start=${token}`;
+		return jsonResponse({ url, expiresAt });
+	}
+
+	if (request.method === "DELETE") {
+		await clearTelegramChatId(env.AUTH_DATABASE_URL, session.userId);
+		return jsonResponse({ ok: true });
+	}
+
+	return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
+}
+
+interface TelegramUpdate {
+	message?: {
+		chat?: { id?: number };
+		text?: string;
+		from?: { id?: number; username?: string };
+	};
+}
+
+async function sendBotReply(env: Env, chatId: number | string, text: string): Promise<void> {
+	if (!env.TELEGRAM_NEWSLETTER_BOT_TOKEN) return;
+	try {
+		await fetch(`https://api.telegram.org/bot${env.TELEGRAM_NEWSLETTER_BOT_TOKEN}/sendMessage`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
+		});
+	} catch (e) {
+		console.warn(`[tg-bot-reply] ${e instanceof Error ? e.message : String(e)}`);
+	}
+}
+
+async function handleTelegramWebhook(request: Request, env: Env): Promise<Response> {
+	// Always 200 to Telegram (otherwise it retries). Auth via secret header.
+	if (request.method !== "POST") {
+		return new Response("ok", { status: 200 });
+	}
+	if (
+		env.TELEGRAM_WEBHOOK_SECRET &&
+		request.headers.get("X-Telegram-Bot-Api-Secret-Token") !== env.TELEGRAM_WEBHOOK_SECRET
+	) {
+		return new Response("ok", { status: 200 });
+	}
+
+	let update: TelegramUpdate;
+	try {
+		update = (await request.json()) as TelegramUpdate;
+	} catch {
+		return new Response("ok", { status: 200 });
+	}
+
+	const chatId = update.message?.chat?.id;
+	const text = (update.message?.text ?? "").trim();
+	if (!chatId || !text) return new Response("ok", { status: 200 });
+
+	if (text.startsWith("/start")) {
+		const parts = text.split(/\s+/);
+		const token = parts[1] ?? "";
+		if (!token) {
+			await sendBotReply(
+				env,
+				chatId,
+				"Hi! To receive Research DMs, log into terminal.aignited.id and click <b>Connect Telegram</b>.",
+			);
+			return new Response("ok", { status: 200 });
+		}
+		const result = await consumeLinkToken(env.AUTH_DATABASE_URL, token);
+		if (!result) {
+			await sendBotReply(env, chatId, "That link expired. Generate a new one on the site.");
+			return new Response("ok", { status: 200 });
+		}
+		await setTelegramChatId(env.AUTH_DATABASE_URL, result.userId, String(chatId));
+		await sendBotReply(
+			env,
+			chatId,
+			"✅ Connected. You'll receive a daily digest of new AIgnited Research. Send /stop to unsubscribe.",
+		);
+		return new Response("ok", { status: 200 });
+	}
+
+	if (text === "/stop") {
+		// Telegram only gives us chat_id, not user_id. Delete by chat_id match.
+		const { neon: neonFn } = await import("@neondatabase/serverless");
+		const sql = neonFn(env.AUTH_DATABASE_URL);
+		await sql`
+			DELETE FROM terminal_research_subscriptions
+			WHERE channel = 'telegram' AND telegram_chat_id = ${String(chatId)}
+		`;
+		await sendBotReply(env, chatId, "Unsubscribed. You can re-link anytime on the site.");
+		return new Response("ok", { status: 200 });
+	}
+
+	return new Response("ok", { status: 200 });
+}
+
 async function handleResearchArticle(request: Request, env: Env, slug: string): Promise<Response> {
 	const session = await getSession(request, env);
 	const viewerTier = session
@@ -1168,7 +1291,11 @@ export default {
 
 		// CSRF guard: mutations on /api/* must carry X-Requested-With: terminal.
 		// Exempt external webhook ingress — callers can't set custom headers.
-		const CSRF_EXEMPT = new Set(["/api/billing/webhook", "/api/auth/callback"]);
+		const CSRF_EXEMPT = new Set([
+			"/api/billing/webhook",
+			"/api/auth/callback",
+			"/api/telegram/webhook",
+		]);
 		if (path.startsWith("/api/") && !CSRF_EXEMPT.has(path) && !csrfOk(request)) {
 			return jsonResponse({ error: "CSRF_BLOCKED" }, { status: 403 }, request);
 		}
@@ -1220,6 +1347,10 @@ export default {
 		// Research
 		if (path === "/api/research/list") return handleResearchList(request, env);
 		if (path === "/api/research/export.json") return handleResearchExport(request, env);
+
+		// Telegram
+		if (path === "/api/telegram/link") return handleTelegramLink(request, env);
+		if (path === "/api/telegram/webhook") return handleTelegramWebhook(request, env);
 		if (path === "/api/research/subscriptions") return handleResearchSubscriptions(request, env);
 		if (path.startsWith("/api/research/article/")) {
 			const slug = path.replace("/api/research/article/", "");
@@ -1305,10 +1436,15 @@ export default {
 				);
 			}
 		} else if (cron === "40 23 * * *") {
+			// Publish drafts first, then fan out Telegram DM digest — must be
+			// sequenced so today's new articles are eligible for the digest.
 			ctx.waitUntil(
-				autoPublishStaleDrafts(env).then((r) => {
-					console.log(`[auto-publish] all-types: ${JSON.stringify(r)}`);
-				}),
+				(async () => {
+					const pub = await autoPublishStaleDrafts(env);
+					console.log(`[auto-publish] all-types: ${JSON.stringify(pub)}`);
+					const digest = await runTelegramDigest(env);
+					console.log(`[tg-digest] ${JSON.stringify(digest)}`);
+				})().catch((e) => console.error(`[publish+digest] ${e}`)),
 			);
 			ctx.waitUntil(
 				(async () => {
